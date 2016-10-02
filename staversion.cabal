@@ -9,7 +9,8 @@ description:            A command line tool to answer questions like "What versi
 category:               Development
 cabal-version:          >= 1.10
 build-type:             Simple
-extra-source-files:     README.md, ChangeLog.md
+extra-source-files:     README.md, ChangeLog.md,
+                        test/data/*.yaml
 homepage:               https://github.com/debug-ito/staversion
 bug-reports:            https://github.com/debug-ito/staversion/issues
 
@@ -19,9 +20,11 @@ library
   ghc-options:          -Wall -fno-warn-unused-imports
   -- default-extensions:   
   -- other-extensions:     
-  exposed-modules:      Staversion
+  exposed-modules:      Staversion,
+                        Staversion.Internal.BuildPlan
   -- other-modules:        
-  build-depends:        base
+  build-depends:        base,
+                        Cabal
 
 -- executable staversion
 --   default-language:     Haskell2010
@@ -41,8 +44,8 @@ test-suite spec
   main-is:              Spec.hs
   -- default-extensions:   
   -- other-extensions:     
-  other-modules:        StaversionSpec
-  build-depends:        base, staversion,
+  other-modules:        Staversion.Internal.BuildPlanSpec
+  build-depends:        base, staversion, Cabal,
                         hspec
 
 source-repository head
