@@ -4,14 +4,14 @@ author:                 Toshio Ito <debug.ito@gmail.com>
 maintainer:             Toshio Ito <debug.ito@gmail.com>
 license:                BSD3
 license-file:           LICENSE
--- synopsis:               
--- description:            
--- category:               
+synopsis:               What version is the package X in stackage lts-Y.ZZ?
+description:            A command line tool to answer questions like "What version is the package X in stackage lts-Y.ZZ?" See README.md.
+category:               Development
 cabal-version:          >= 1.10
 build-type:             Simple
 extra-source-files:     README.md, ChangeLog.md
--- homepage:               
--- bug-reports:            
+homepage:               https://github.com/debug-ito/staversion
+bug-reports:            https://github.com/debug-ito/staversion/issues
 
 library
   default-language:     Haskell2010
@@ -47,4 +47,4 @@ test-suite spec
 
 source-repository head
   type:                 git
---  location:             
+  location:             https://github.com/debug-ito/staversion.git
