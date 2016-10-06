@@ -14,7 +14,7 @@ import Control.Applicative (empty)
 import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text, unpack)
-import Distribution.Version (Version)
+import Data.Version (Version)
 
 -- | A data structure that keeps a map between package names and their
 -- versions.

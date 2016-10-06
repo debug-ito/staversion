@@ -24,7 +24,6 @@ library
                         Staversion.Internal.BuildPlan
   -- other-modules:        
   build-depends:        base,
-                        Cabal,
                         unordered-containers,
                         aeson,
                         text
@@ -48,7 +47,7 @@ test-suite spec
   default-extensions:   OverloadedStrings
   -- other-extensions:     
   other-modules:        Staversion.Internal.BuildPlanSpec
-  build-depends:        base, staversion, Cabal, text,
+  build-depends:        base, staversion, text,
                         hspec
                         
 source-repository head

@@ -1,6 +1,6 @@
 module Staversion.Internal.BuildPlanSpec (main,spec) where
 
-import Distribution.Version (Version(..))
+import Data.Version (Version(..))
 import Test.Hspec
 
 import Staversion.Internal.BuildPlan (BuildPlan, loadBuildPlanYAML, packageVersion)
