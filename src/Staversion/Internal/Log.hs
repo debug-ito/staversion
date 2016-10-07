@@ -6,6 +6,7 @@
 -- 
 module Staversion.Internal.Log
        ( LogLevel(..),
+         Logger(loggerThreshold),
          defaultLogger,
          putLog
        ) where
@@ -21,7 +22,7 @@ data LogLevel = LogDebug
 
 data Logger = Logger { loggerThreshold :: LogLevel,
                        loggerHandle :: Handle
-                     }
+                     } deriving (Show,Eq)
 
 defaultLogger :: Logger
 defaultLogger = Logger { loggerThreshold = LogInfo,

@@ -18,6 +18,9 @@ import qualified Paths_staversion as MyInfo
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
 
+import Staversion.Internal.Log
+  ( LogLevel(..), Logger(loggerThreshold), defaultLogger
+  )
 import Staversion.Internal.Query
   ( Resolver,
     PackageName,
@@ -29,11 +32,13 @@ import Staversion.Internal.Query
 data Command =
   Command { commBuildPlanDir :: FilePath,
             -- ^ path to the directory where build plan files are stored.
+            commLogger :: Logger,
+            -- ^ the logger
             commResolvers :: [Resolver],
             -- ^ stackage resolvers to search
             commPackages :: [PackageName]
             -- ^ package names to search for
-          } deriving (Show,Eq,Ord)
+          } deriving (Show,Eq)
 
 -- | Default values for 'Command'.
 data DefCommand = DefCommand { defBuildPlanDir :: FilePath
@@ -47,7 +52,14 @@ defCommand = DefCommand <$> def_build_plan_dir where
 
 
 commandParser :: DefCommand -> Opt.Parser Command
-commandParser def_comm = Command <$> build_plan_dir <*> resolvers <*> packages where
+commandParser def_comm = Command <$> build_plan_dir <*> logger <*> resolvers <*> packages where
+  logger = makeLogger <$> is_verbose
+  makeLogger True = defaultLogger { loggerThreshold = LogDebug }
+  makeLogger False = defaultLogger
+  is_verbose = Opt.switch $ mconcat [ Opt.long "verbose",
+                                      Opt.short 'v',
+                                      Opt.help "Verbose messages."
+                                    ]
   build_plan_dir = Opt.strOption
                    $ mconcat [ Opt.long "build-plan-dir",
                                Opt.help "Directory where build plan YAML files are stored.",
