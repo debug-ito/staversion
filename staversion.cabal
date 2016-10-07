@@ -21,7 +21,8 @@ library
   default-extensions:   OverloadedStrings
   -- other-extensions:     
   exposed-modules:      Staversion,
-                        Staversion.Internal.BuildPlan
+                        Staversion.Internal.BuildPlan,
+                        Staversion.Internal.Query
   -- other-modules:        
   build-depends:        base >=4.6,
                         unordered-containers,

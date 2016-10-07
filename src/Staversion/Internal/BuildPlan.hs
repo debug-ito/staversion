@@ -25,9 +25,8 @@ import qualified Data.Yaml as Yaml
 import Text.Read (readMaybe)
 import Text.ParserCombinators.ReadP (readP_to_S)
 
+import Staversion.Internal.Query (PackageName)
 
-type PackageName = Text
-  
 -- | A data structure that keeps a map between package names and their
 -- versions.
 newtype BuildPlan = BuildPlan (HM.HashMap PackageName Version)
