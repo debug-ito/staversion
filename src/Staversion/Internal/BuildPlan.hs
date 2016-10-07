@@ -7,7 +7,8 @@
 module Staversion.Internal.BuildPlan
        ( BuildPlan,
          loadBuildPlanYAML,
-         packageVersion
+         packageVersion,
+         parseVersionText
        ) where
 
 import Control.Applicative (empty)
@@ -29,9 +30,9 @@ instance FromJSON BuildPlan where
   parseJSON (Object object) = toBuildPlan =<< (object .: "packages") where
     toBuildPlan (Object o) = BuildPlan <$> traverse parsePackageObject o
     toBuildPlan _ = empty
-    parsePackageObject (Object o) = parseVersionText =<< (o .: "version")
+    parsePackageObject (Object o) = versionParser =<< (o .: "version")
     parsePackageObject _ = empty
-    parseVersionText = maybe empty return . readMaybe  . unpack
+    versionParser = maybe empty return . parseVersionText
   parseJSON _ = empty
 
 
@@ -42,3 +43,6 @@ loadBuildPlanYAML yaml_file = (toException . Yaml.decodeEither') =<< BS.readFile
 
 packageVersion :: BuildPlan -> Text -> Maybe Version
 packageVersion (BuildPlan bp_map) name = HM.lookup name bp_map
+
+parseVersionText :: Text -> Maybe Version
+parseVersionText = readMaybe  . unpack
