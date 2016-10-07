@@ -9,6 +9,7 @@ module Staversion.Internal.Query
          Resolver,
          PackageSource(..),
          Query(..),
+         ErrorMsg,
          Result(..)
        ) where
 
@@ -28,8 +29,10 @@ data PackageSource = SourceStackage Resolver -- ^ stackage.
 data Query = QueryName PackageName
            deriving (Show,Eq,Ord)
 
+type ErrorMsg = String
+
 -- | Result for a query.
 data Result = Result { resultIn :: PackageSource,
                        resultFor :: Query,
-                       resultVersion :: Maybe Version
+                       resultVersion :: Either ErrorMsg Version
                      } deriving (Show,Eq,Ord)

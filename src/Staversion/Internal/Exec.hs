@@ -11,10 +11,11 @@ module Staversion.Internal.Exec
 
 import Data.Function (on)
 import Data.List (groupBy)
+import Data.Text (unpack)
 import System.FilePath ((</>), (<.>))
 
 import Staversion.Internal.BuildPlan
-  ( BuildPlan, loadBuildPlanYAML, packageVersion
+  ( BuildPlan, loadBuildPlanYAML, packageVersion, buildPlanDesc
   )
 import Staversion.Internal.Command
   ( parseCommandArgs,
@@ -47,4 +48,5 @@ searchVersion source build_plan query@(QueryName package_name) =
            resultVersion = ret_version
          }
   where
-    ret_version = packageVersion build_plan package_name
+    ret_version = maybe (Left error_msg) Right $ packageVersion build_plan package_name
+    error_msg = unpack package_name ++ " is not found in the build plan " ++ buildPlanDesc build_plan
