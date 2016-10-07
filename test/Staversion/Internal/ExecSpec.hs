@@ -7,7 +7,8 @@ import Test.Hspec
 import Staversion.Internal.Command (Command(..))
 import Staversion.Internal.Exec (processCommand)
 import Staversion.Internal.Query
-  ( Query(..),
+  ( PackageName,
+    Query(..),
     PackageSource(..),
     Result(..),
     ResultVersions,
@@ -23,16 +24,38 @@ spec :: Spec
 spec = describe "processCommand" $ do
   specify "QueryName, SourceStackage, hit" $ do
     singleCase (SourceStackage "conpact_build_plan") (QueryName "drawille")
-      (Right $ resultVersionsFromList [("drawille", Just $ ver [0,1,0,6])])
+      (Right $ rvers [("drawille", Just $ ver [0,1,0,6])])
   specify "QueryName, SourceStackage, miss" $ do
     singleCase (SourceStackage "conpact_build_plan") (QueryName "unknown")
-      (Right $ resultVersionsFromList [("unknown", Nothing)])
+      (Right $ rvers [("unknown", Nothing)])
   specify "QueryName, SourceStackage, source not found" $ do
     singleCase' (SourceStackage "unknown") (QueryName "drawille") $ \got -> case got of
       Right _ -> expectationFailure "it should fail"
       Left msg -> do
         msg `shouldContain` "unknown.yaml"
         msg `shouldContain` "not found"
+  specify "QueryName, SourceStackage, full-mesh" $ do
+    let src2 = SourceStackage "lts-2.22_conpact"
+        src7 = SourceStackage "lts-7.0_conpact"
+        qc = QueryName "conduit"
+        qa = QueryName "aeson"
+        comm = baseCommand { commSources = [src2, src7], commQueries = [qc, qa] }
+        expected = [ Result { resultIn = src2, resultFor = qc,
+                              resultVersions = Right $ rvers [("conduit", Just $ ver [1,2,5])]
+                            },
+                     Result { resultIn = src2, resultFor = qa,
+                              resultVersions = Right $ rvers [("aeson", Just $ ver [0,8,0,2])]
+                            },
+                     Result { resultIn = src7, resultFor = qc,
+                              resultVersions = Right $ rvers [("conduit", Just $ ver [1,2,7])]
+                            },
+                     Result { resultIn = src7, resultFor = qa,
+                              resultVersions = Right $ rvers [("aeson", Just $ ver [0,11,2,1])]
+                            }
+                   ]
+    got <- processCommand comm
+    got `shouldMatchList` expected
+        
 
 singleCase :: PackageSource -> Query -> Either ErrorMsg ResultVersions -> IO ()
 singleCase src query exp_ret_vers = singleCase' src query (`shouldBe` exp_ret_vers)
@@ -57,3 +80,6 @@ baseCommand = Command { commBuildPlanDir = "test" </> "data",
 
 ver :: [Int] -> Version
 ver vs = Version vs []
+
+rvers :: [(PackageName, Maybe Version)] -> ResultVersions
+rvers = resultVersionsFromList

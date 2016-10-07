@@ -1,0 +1,676 @@
+all-cabal-hashes-commit: 5d00e91223715777b5551a98a2a0863e72c7fc0f
+github-users:
+  yesodweb:
+  - snoyberg
+  telegram-api:
+  - klappvisor
+  stackbuilders:
+  - jpvillaisaza
+  - jsantos17
+  - jsl
+  - mrkkrp
+  - sestrella
+  silkapp:
+  - bergmark
+  - hesselink
+  Happstack:
+  - stepcut
+system-info:
+  core-packages:
+    ghc: '8.0.1'
+    hoopl: '3.10.2.1'
+    bytestring: '0.10.8.1'
+    unix: '2.7.2.0'
+    base: '4.9.0.0'
+    time: '1.6.0.1'
+    hpc: '0.6.0.3'
+    filepath: '1.4.1.0'
+    process: '1.4.2.0'
+    array: '0.5.1.1'
+    integer-gmp: '1.0.0.1'
+    containers: '0.5.7.1'
+    ghc-boot: '8.0.1'
+    binary: '0.8.3.0'
+    ghc-prim: '0.5.0.0'
+    ghci: '8.0.1'
+    rts: '1.0'
+    transformers: '0.5.2.0'
+    deepseq: '1.4.2.0'
+    ghc-boot-th: '8.0.1'
+    pretty: '1.1.3.3'
+    template-haskell: '2.11.0.0'
+    directory: '1.2.6.2'
+  ghc-version: '8.0.1'
+  os: linux
+  core-executables:
+  - ghc
+  - ghc-8.0.1
+  - ghc-pkg
+  - ghc-pkg-8.0.1
+  - ghci
+  - ghci-8.0.1
+  - haddock
+  - haddock-ghc-8.0.1
+  - hp2ps
+  - hpc
+  - hsc2hs
+  - runghc
+  - runghc-8.0.1
+  - runhaskell
+  arch: x86_64
+packages:
+  conduit:
+    users:
+    - BlastHTTP
+    - HTTP
+    - MFlow
+    - MusicBrainz
+    - amazonka
+    - amazonka-core
+    - amazonka-test
+    - atndapi
+    - atom-conduit
+    - authenticate
+    - aws
+    - b9
+    - binary-conduit
+    - bitcoin-api-extra
+    - bzlib-conduit
+    - cabal-src
+    - cassava-conduit
+    - cereal-conduit
+    - classy-prelude-conduit
+    - conduit
+    - conduit-combinators
+    - conduit-extra
+    - conduit-iconv
+    - conduit-parse
+    - cryptohash-conduit
+    - cryptonite-conduit
+    - dns
+    - editor-open
+    - fb
+    - fold-debounce-conduit
+    - fsnotify-conduit
+    - gitlib
+    - gitlib-libgit2
+    - gitlib-test
+    - gogol
+    - gogol-core
+    - hOpenPGP
+    - hackage-mirror
+    - haskell-spacegoo
+    - haskoin-core
+    - hoogle
+    - hopenpgp-tools
+    - html-conduit
+    - http-conduit
+    - http-reverse-proxy
+    - hw-conduit
+    - hw-rankselect
+    - hw-succinct
+    - imagesize-conduit
+    - imm
+    - irc-client
+    - irc-conduit
+    - keter
+    - machines
+    - markdown
+    - mime-mail-ses
+    - monad-logger
+    - ndjson-conduit
+    - network-conduit-tls
+    - opml-conduit
+    - osdkeys
+    - pager
+    - pagerduty
+    - persistent
+    - persistent-postgresql
+    - persistent-sqlite
+    - project-template
+    - rss-conduit
+    - sandi
+    - serf
+    - shell-conduit
+    - simple-sendfile
+    - soap
+    - stack
+    - stackage-curator
+    - stm-conduit
+    - store
+    - tagstream-conduit
+    - thumbnail-plus
+    - twitter-conduit
+    - wai-conduit
+    - wai-middleware-consul
+    - withdependencies
+    - xlsior
+    - xlsx
+    - xml-conduit
+    - xml-conduit-parse
+    - yackage
+    - yaml
+    - yesod-auth
+    - yesod-bin
+    - yesod-core
+    - yesod-eventsource
+    - yesod-fb
+    - yesod-persistent
+    - yesod-sitemap
+    - yesod-static
+    - yesod-websockets
+    - zip
+    constraints:
+      benches: expect-success
+      library-profiling: true
+      flags: {}
+      build-benchmarks: true
+      skip-build: false
+      tests: expect-success
+      haddocks: expect-success
+      configure-args: []
+      version-range: -any
+    version: '1.2.7'
+    cabal-file-info:
+      size: 4041
+      hashes:
+        MD5: 3cac157771a3fe620548760f44a27285
+        Skein512_512: 70ecee198d5e0281de4163b8ec8f9e06231dd82d1fe8163a0632ea91ed7c0e35313f622cfc4cb250b05fd893d89901b67a7ec4e4fb3c019b6f25a7d23ecc3018
+        SHA1: 147aae20b2b1a425833ddf7825580475105b86eb
+        SHA512: 888471c06ba9db0a84d7212af48461f33277fa61668391a61cd7c2e8cda95d768c10b7cf8c9f1570249859a05e4eb8c6ab9125ecda37cb3963f63651844fd530
+        SHA256: f5e83ea27ee3cc4a6c190336143d38a468c228f53342a49c63d1fac18e4079c7
+        GitSHA1: 7750ddac3f1edf2499d37dbbcbcfac37db6a89db
+    github-pings:
+    - snoyberg
+    description:
+      cabal-version: '1.8'
+      modules:
+      - Data.Conduit
+      - Data.Conduit.Internal
+      - Data.Conduit.Internal.Fusion
+      - Data.Conduit.Internal.List.Stream
+      - Data.Conduit.Lift
+      - Data.Conduit.List
+      provided-exes: []
+      packages:
+        exceptions:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.6'
+        mwc-random:
+          components:
+          - benchmark
+          range: -any
+        base:
+          components:
+          - library
+          - test-suite
+          - benchmark
+          range: ! '>=4.5 && <5'
+        hspec:
+          components:
+          - test-suite
+          - benchmark
+          range: ! '>=1.3'
+        kan-extensions:
+          components:
+          - benchmark
+          range: -any
+        criterion:
+          components:
+          - benchmark
+          range: -any
+        lifted-base:
+          components:
+          - library
+          range: ! '>=0.1'
+        conduit:
+          components:
+          - test-suite
+          - benchmark
+          range: -any
+        containers:
+          components:
+          - test-suite
+          - benchmark
+          range: -any
+        mtl:
+          components:
+          - library
+          - test-suite
+          range: -any
+        mmorph:
+          components:
+          - library
+          range: -any
+        transformers-base:
+          components:
+          - library
+          range: ! '>=0.4.1 && <0.5'
+        transformers:
+          components:
+          - library
+          - test-suite
+          - benchmark
+          range: ! '>=0.2.2'
+        deepseq:
+          components:
+          - benchmark
+          range: -any
+        QuickCheck:
+          components:
+          - test-suite
+          range: ! '>=2.7'
+        resourcet:
+          components:
+          - library
+          - test-suite
+          range: ==1.1.*
+        safe:
+          components:
+          - test-suite
+          range: -any
+        vector:
+          components:
+          - benchmark
+          range: -any
+      tools: {}
+  aeson:
+    users:
+    - HTF
+    - MusicBrainz
+    - Spock-api
+    - Spock-core
+    - aeson
+    - aeson-better-errors
+    - aeson-casing
+    - aeson-compat
+    - aeson-injector
+    - aeson-pretty
+    - aeson-qq
+    - aeson-utils
+    - amazonka-core
+    - amazonka-test
+    - api-field-json-th
+    - arbtt
+    - atndapi
+    - authenticate
+    - aws
+    - b9
+    - bake
+    - base32string
+    - base58string
+    - bimap-server
+    - binary-orphans
+    - binary-tagged
+    - bitcoin-api
+    - bitcoin-payment-channel
+    - bitx-bitcoin
+    - blank-canvas
+    - bloodhound
+    - bower-json
+    - cabal2nix
+    - cacophony
+    - cayley-client
+    - cheapskate
+    - clash-lib
+    - classy-prelude-yesod
+    - clckwrks
+    - clckwrks-plugin-page
+    - configuration-tools
+    - consul-haskell
+    - criterion
+    - descriptive
+    - distribution-nixpkgs
+    - docopt
+    - doctest-discover
+    - ede
+    - ekg
+    - ekg-json
+    - elm-bridge
+    - emailaddress
+    - envelope
+    - etcd
+    - eventstore
+    - fast-builder
+    - fay
+    - fb
+    - find-clumpiness
+    - forecast-io
+    - generic-aeson
+    - gipeda
+    - giphy-api
+    - github-types
+    - github-webhook-handler
+    - gitson
+    - glabrous
+    - gogol
+    - gogol-core
+    - google-cloud
+    - graylog
+    - hOpenPGP
+    - hailgun
+    - handwriting
+    - happstack-authenticate
+    - haskell-names
+    - haskell-neo4j-client
+    - haskell-packages
+    - haskell-spacegoo
+    - haskoin-core
+    - hasql
+    - hexstring
+    - hjsonpointer
+    - hjsonschema
+    - hoauth2
+    - holy-project
+    - hoogle
+    - hopenpgp-tools
+    - hpack
+    - hpack-convert
+    - hpc-coveralls
+    - hruby
+    - hsebaysdk
+    - hspec-expectations-pretty-diff
+    - hspec-golden-aeson
+    - hspec-wai-json
+    - hspec-webdriver
+    - htoml
+    - http-conduit
+    - http-streams
+    - http2
+    - hworker
+    - hworker-ses
+    - ical
+    - idris
+    - imm
+    - inline-r
+    - insert-ordered-containers
+    - jmacro
+    - jmacro-rpc
+    - jmacro-rpc-happstack
+    - jose
+    - jose-jwt
+    - json-autotype
+    - json-rpc-generic
+    - json-schema
+    - jwt
+    - kansas-comet
+    - kawhi
+    - keter
+    - koofr-client
+    - kraken
+    - language-puppet
+    - lens-aeson
+    - mandrill
+    - microformats2-parser
+    - microlens-aeson
+    - moesocks
+    - monad-logger-json
+    - mustache
+    - ndjson-conduit
+    - octane
+    - omnifmt
+    - opaleye
+    - opensource
+    - pagerduty
+    - pandoc
+    - pandoc-citeproc
+    - pandoc-types
+    - path
+    - persistent
+    - persistent-postgresql
+    - persistent-redis
+    - persistent-sqlite
+    - persistent-template
+    - pinboard
+    - pipes-aeson
+    - postgresql-binary
+    - postgresql-query
+    - postgresql-simple
+    - profiteur
+    - purescript
+    - quantum-random
+    - ratel
+    - rest-core
+    - rest-gen
+    - rest-stringmap
+    - rest-types
+    - rethinkdb
+    - rethinkdb-client-driver
+    - scotty
+    - servant
+    - servant-aeson-specs
+    - servant-client
+    - servant-docs
+    - servant-js
+    - servant-mock
+    - servant-purescript
+    - servant-server
+    - servant-subscriber
+    - servant-swagger
+    - servant-swagger-ui
+    - servant-yaml
+    - serversession
+    - shakespeare
+    - simple
+    - simple-templates
+    - slug
+    - smoothie
+    - smsaero
+    - solga
+    - sourcemap
+    - stache
+    - stack
+    - stackage-curator
+    - stackage-types
+    - statistics
+    - stratosphere
+    - strict-base-types
+    - stripe-core
+    - strive
+    - stylish-haskell
+    - swagger
+    - swagger2
+    - text-region
+    - these
+    - thyme
+    - tttool
+    - twitter-conduit
+    - twitter-feed
+    - twitter-types
+    - ua-parser
+    - userid
+    - users
+    - wai-extra
+    - wai-middleware-content-type
+    - waitra
+    - webdriver
+    - webdriver-angular
+    - werewolf
+    - werewolf-slack
+    - wreq
+    - xlsx-tabular
+    - yahoo-finance-api
+    - yaml
+    - yesod
+    - yesod-auth
+    - yesod-auth-oauth2
+    - yesod-core
+    - yesod-fay
+    - yesod-fb
+    - yesod-form
+    - yesod-gitrev
+    - yesod-job-queue
+    - yesod-static-angular
+    constraints:
+      benches: expect-success
+      library-profiling: true
+      flags: {}
+      build-benchmarks: true
+      skip-build: false
+      tests: expect-success
+      haddocks: expect-success
+      maintainer: Adam Bergmark <adam@bergmark.nl> @bergmark
+      configure-args: []
+      version-range: <1.0
+    version: '0.11.2.1'
+    cabal-file-info:
+      size: 4634
+      hashes:
+        MD5: b2b4ef66114e351b788af8df16513df9
+        Skein512_512: 2c1a12cacd8bb458c11d2b94125f3fcdc976f81daf2cf7f6d4795a734ea0accbbc950916be70703cd088be646032c1aef3108f3b220baf8c931efd4e6a1dec2d
+        SHA1: 92b374f030103c92dbf9ce22240dde0109e28209
+        SHA512: 33bc7d601f800354ce5b8087122b4d9cc40d1d62623f5a89e355bf04ea4a2d92688ff3941cb0d8586179bdd01c902e99eb504ca66681540f21cdab1fc00e54d7
+        SHA256: 9d08400d818255b7ee068ed6cfe2d4db1270066e4699f8c85afa6efc63787821
+        GitSHA1: 06f8123070664e3d80d39baf5e3e8c1f92c3003c
+    github-pings:
+    - bos
+    description:
+      cabal-version: '1.10'
+      modules:
+      - Data.Aeson
+      - Data.Aeson.Encode
+      - Data.Aeson.Internal
+      - Data.Aeson.Internal.Time
+      - Data.Aeson.Parser
+      - Data.Aeson.TH
+      - Data.Aeson.Types
+      provided-exes: []
+      packages:
+        test-framework-hunit:
+          components:
+          - test-suite
+          range: -any
+        bytestring:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.10.4.0'
+        test-framework:
+          components:
+          - test-suite
+          range: -any
+        fail:
+          components:
+          - library
+          range: ==4.9.*
+        base:
+          components:
+          - library
+          - test-suite
+          range: ! '>=4.5 && <5'
+        time:
+          components:
+          - library
+          - test-suite
+          range: ! '>=1.5'
+        unordered-containers:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.2.5.0'
+        text:
+          components:
+          - library
+          - test-suite
+          range: ! '>=1.1.1.0'
+        syb:
+          components:
+          - library
+          range: -any
+        test-framework-quickcheck2:
+          components:
+          - test-suite
+          range: -any
+        dlist:
+          components:
+          - library
+          range: ! '>=0.2'
+        HUnit:
+          components:
+          - test-suite
+          range: -any
+        base-orphans:
+          components:
+          - test-suite
+          range: ! '>=0.5.3 && <0.6'
+        tagged:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.8.3 && <0.9'
+        containers:
+          components:
+          - library
+          - test-suite
+          range: -any
+        quickcheck-instances:
+          components:
+          - test-suite
+          range: ! '>=0.3.12'
+        ghc-prim:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.2'
+        mtl:
+          components:
+          - library
+          range: -any
+        hashable:
+          components:
+          - library
+          - test-suite
+          range: ! '>=1.1.2.0'
+        attoparsec:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.13.0.1'
+        transformers:
+          components:
+          - library
+          range: -any
+        deepseq:
+          components:
+          - library
+          range: -any
+        scientific:
+          components:
+          - library
+          range: ! '>=0.3.1 && <0.4'
+        QuickCheck:
+          components:
+          - test-suite
+          range: ! '>=2.7 && <2.10'
+        aeson:
+          components:
+          - test-suite
+          range: -any
+        template-haskell:
+          components:
+          - library
+          - test-suite
+          range: ! '>=2.7'
+        vector:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.8'
+      tools: {}
+tools:
+- name: alex
+  version: '3.1.7'
+- name: c2hs
+  version: '0.28.1'
+- name: cabal-install
+  version: '1.24.0.0'
+- name: cpphs
+  version: '1.20.2'
+- name: happy
+  version: '1.19.5'
+- name: hsx2hs
+  version: '0.13.5'
+- name: gtk2hs-buildtools
+  version: '0.13.2.1'

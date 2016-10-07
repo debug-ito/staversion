@@ -1,0 +1,497 @@
+github-users:
+  yesodweb:
+  - snoyberg
+  silkapp:
+  - bergmark
+  - hesselink
+  elm-lang:
+  - JoeyEremondi
+  snapframework:
+  - mightybyte
+  haskell-ro:
+  - mihaimaruseac
+  faylang:
+  - bergmark
+  fpco:
+  - snoyberg
+  diagrams:
+  - bergey
+  - byorgey
+  - fryguybob
+  - jeffreyrosenbluth
+system-info:
+  core-packages:
+    ghc: '7.8.4'
+    hoopl: '3.10.0.1'
+    bytestring: '0.10.4.0'
+    unix: '2.7.0.1'
+    haskeline: '0.7.1.2'
+    Cabal: '1.18.1.5'
+    base: '4.7.0.2'
+    time: '1.4.2'
+    xhtml: '3000.2.1'
+    haskell98: '2.0.0.3'
+    hpc: '0.6.0.1'
+    filepath: '1.3.0.2'
+    process: '1.2.0.0'
+    array: '0.5.0.0'
+    integer-gmp: '0.5.1.0'
+    bin-package-db: '0.0.0.0'
+    containers: '0.5.5.1'
+    haskell2010: '1.1.2.0'
+    binary: '0.7.1.0'
+    ghc-prim: '0.3.1.0'
+    old-time: '1.1.0.2'
+    old-locale: '1.0.0.6'
+    rts: '1.0'
+    terminfo: '0.4.0.0'
+    transformers: '0.3.0.0'
+    deepseq: '1.3.0.2'
+    pretty: '1.1.1.1'
+    template-haskell: '2.9.0.0'
+    directory: '1.2.1.0'
+  ghc-version: '7.8.4'
+  os: linux
+  core-executables:
+  - ghc
+  - ghc-7.8.4
+  - ghc-pkg
+  - ghc-pkg-7.8.4
+  - ghci
+  - ghci-7.8.4
+  - haddock
+  - haddock-ghc-7.8.4
+  - hp2ps
+  - hpc
+  - hsc2hs
+  - runghc
+  - runghc-7.8.4
+  - runhaskell
+  arch: x86_64
+packages:
+  conduit:
+    users:
+    - BlastHTTP
+    - MFlow
+    - MusicBrainz
+    - amazonka
+    - amazonka-core
+    - authenticate
+    - aws
+    - binary-conduit
+    - bloodhound
+    - bzlib-conduit
+    - cabal-src
+    - cereal-conduit
+    - classy-prelude-conduit
+    - conduit
+    - conduit-combinators
+    - conduit-extra
+    - cryptohash-conduit
+    - csv-conduit
+    - esqueleto
+    - fb
+    - gitlib
+    - gitlib-libgit2
+    - gitlib-test
+    - hOpenPGP
+    - hackage-mirror
+    - hoogle
+    - hopenpgp-tools
+    - html-conduit
+    - http-conduit
+    - http-reverse-proxy
+    - imagesize-conduit
+    - keter
+    - lzma-conduit
+    - markdown
+    - mime-mail-ses
+    - monad-logger
+    - network-conduit
+    - network-conduit-tls
+    - osdkeys
+    - pagerduty
+    - persistent
+    - persistent-mongoDB
+    - persistent-mysql
+    - persistent-postgresql
+    - persistent-sqlite
+    - project-template
+    - shell-conduit
+    - simple-sendfile
+    - soap
+    - stackage-cli
+    - stackage-curator
+    - stm-conduit
+    - tagstream-conduit
+    - wai-conduit
+    - wai-middleware-consul
+    - xml-conduit
+    - yackage
+    - yaml
+    - yesod-auth
+    - yesod-auth-fb
+    - yesod-bin
+    - yesod-core
+    - yesod-eventsource
+    - yesod-fb
+    - yesod-persistent
+    - yesod-sitemap
+    - yesod-static
+    - yesod-websockets
+    constraints:
+      library-profiling: true
+      flags: {}
+      build-benchmarks: true
+      skip-build: false
+      tests: expect-success
+      haddocks: expect-success
+      version-range: ! '>=1.2.5 && <1.3'
+    version: '1.2.5'
+    github-pings:
+    - snoyberg
+    description:
+      modules:
+      - Data.Conduit
+      - Data.Conduit.Internal
+      - Data.Conduit.Internal.Fusion
+      - Data.Conduit.Internal.List.Stream
+      - Data.Conduit.Lift
+      - Data.Conduit.List
+      provided-exes: []
+      packages:
+        exceptions:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.6'
+        void:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.5.5'
+        mwc-random:
+          components:
+          - benchmark
+          range: -any
+        base:
+          components:
+          - library
+          - test-suite
+          - benchmark
+          range: ! '>=4.3 && <5'
+        hspec:
+          components:
+          - test-suite
+          - benchmark
+          range: ! '>=1.3'
+        kan-extensions:
+          components:
+          - benchmark
+          range: -any
+        criterion:
+          components:
+          - benchmark
+          range: -any
+        lifted-base:
+          components:
+          - library
+          range: ! '>=0.1'
+        conduit:
+          components:
+          - test-suite
+          - benchmark
+          range: -any
+        containers:
+          components:
+          - test-suite
+          - benchmark
+          range: -any
+        mtl:
+          components:
+          - library
+          - test-suite
+          range: -any
+        mmorph:
+          components:
+          - library
+          range: -any
+        transformers-base:
+          components:
+          - library
+          range: ! '>=0.4.1 && <0.5'
+        transformers:
+          components:
+          - library
+          - test-suite
+          - benchmark
+          range: ! '>=0.2.2 && <0.5'
+        deepseq:
+          components:
+          - benchmark
+          range: -any
+        QuickCheck:
+          components:
+          - test-suite
+          range: ! '>=2.5'
+        resourcet:
+          components:
+          - library
+          - test-suite
+          range: ==1.1.*
+        safe:
+          components:
+          - test-suite
+          range: -any
+        vector:
+          components:
+          - benchmark
+          range: -any
+      tools: {}
+  aeson:
+    users:
+    - HTF
+    - MusicBrainz
+    - Spock
+    - aeson
+    - aeson-pretty
+    - aeson-qq
+    - aeson-utils
+    - amazonka-core
+    - arbtt
+    - authenticate
+    - aws
+    - bake
+    - blank-canvas
+    - bloodhound
+    - classy-prelude-yesod
+    - consul-haskell
+    - criterion
+    - descriptive
+    - ede
+    - fay
+    - fb
+    - generic-aeson
+    - gipeda
+    - gitson
+    - groundhog
+    - groundhog-th
+    - hOpenPGP
+    - haskell-names
+    - haskell-packages
+    - hasql-postgres
+    - hdocs
+    - heist
+    - hoauth2
+    - holy-project
+    - hoogle
+    - hopenpgp-tools
+    - hpc-coveralls
+    - hsdev
+    - hspec-wai-json
+    - ide-backend
+    - ide-backend-common
+    - jmacro
+    - jmacro-rpc
+    - jmacro-rpc-happstack
+    - jmacro-rpc-snap
+    - jose-jwt
+    - json-autotype
+    - json-schema
+    - kansas-comet
+    - keter
+    - koofr-client
+    - lens-aeson
+    - mandrill
+    - monad-logger-json
+    - pagerduty
+    - pandoc
+    - pandoc-citeproc
+    - pandoc-types
+    - persistent
+    - persistent-mongoDB
+    - persistent-mysql
+    - persistent-postgresql
+    - persistent-sqlite
+    - persistent-template
+    - pipes-aeson
+    - postgresql-simple
+    - present
+    - quandl-api
+    - rest-core
+    - rest-gen
+    - rest-stringmap
+    - rest-types
+    - rethinkdb-client-driver
+    - scotty
+    - servant-client
+    - servant-docs
+    - servant-jquery
+    - servant-server
+    - shakespeare
+    - snap
+    - snaplet-fay
+    - sourcemap
+    - stackage-build-plan
+    - stackage-curator
+    - stackage-install
+    - stackage-types
+    - stackage-upload
+    - statistics
+    - stylish-haskell
+    - thyme
+    - tttool
+    - users
+    - users-postgresql-simple
+    - users-test
+    - waitra
+    - webdriver
+    - wreq
+    - xml-to-json
+    - yaml
+    - yesod
+    - yesod-auth
+    - yesod-auth-deskcom
+    - yesod-auth-fb
+    - yesod-auth-oauth2
+    - yesod-core
+    - yesod-fay
+    - yesod-fb
+    - yesod-form
+    - yesod-text-markdown
+    constraints:
+      library-profiling: true
+      flags:
+        old-locale: true
+      build-benchmarks: true
+      skip-build: false
+      tests: expect-success
+      haddocks: expect-success
+      version-range: ! '>=0.8.0.2 && <0.8.1'
+    version: '0.8.0.2'
+    github-pings:
+    - bos
+    description:
+      modules:
+      - Data.Aeson
+      - Data.Aeson.Encode
+      - Data.Aeson.Generic
+      - Data.Aeson.Parser
+      - Data.Aeson.TH
+      - Data.Aeson.Types
+      provided-exes: []
+      packages:
+        test-framework-hunit:
+          components:
+          - test-suite
+          range: -any
+        bytestring:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.10.4.0'
+        test-framework:
+          components:
+          - test-suite
+          range: -any
+        base:
+          components:
+          - library
+          - test-suite
+          range: ==4.*
+        time:
+          components:
+          - library
+          - test-suite
+          range: <1.5
+        unordered-containers:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.2.3.0'
+        text:
+          components:
+          - library
+          - test-suite
+          range: ! '>=1.1.1.0'
+        syb:
+          components:
+          - library
+          range: -any
+        test-framework-quickcheck2:
+          components:
+          - test-suite
+          range: -any
+        dlist:
+          components:
+          - library
+          range: ! '>=0.2'
+        HUnit:
+          components:
+          - test-suite
+          range: -any
+        containers:
+          components:
+          - library
+          - test-suite
+          range: -any
+        ghc-prim:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.2'
+        old-locale:
+          components:
+          - library
+          range: -any
+        mtl:
+          components:
+          - library
+          range: -any
+        hashable:
+          components:
+          - library
+          range: ! '>=1.1.2.0'
+        attoparsec:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.11.3.4'
+        deepseq:
+          components:
+          - library
+          range: -any
+        scientific:
+          components:
+          - library
+          range: ! '>=0.3.1 && <0.4'
+        QuickCheck:
+          components:
+          - test-suite
+          range: -any
+        aeson:
+          components:
+          - test-suite
+          range: -any
+        template-haskell:
+          components:
+          - library
+          - test-suite
+          range: ! '>=2.4'
+        vector:
+          components:
+          - library
+          - test-suite
+          range: ! '>=0.7.1'
+      tools: {}
+tools:
+- name: alex
+  version: '3.1.4'
+- name: c2hs
+  version: '0.25.2'
+- name: cpphs
+  version: '1.19.2'
+- name: happy
+  version: '1.19.5'
+- name: gtk2hs-buildtools
+  version: '0.13.0.4'
