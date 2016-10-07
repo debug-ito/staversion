@@ -9,7 +9,6 @@ module Staversion.Internal.BuildPlan
          BuildPlan,
          loadBuildPlanYAML,
          packageVersion,
-         buildPlanDesc,
          parseVersionText
        ) where
 
@@ -49,9 +48,6 @@ loadBuildPlanYAML yaml_file = (toException . Yaml.decodeEither') =<< BS.readFile
 
 packageVersion :: BuildPlan -> PackageName -> Maybe Version
 packageVersion (BuildPlan bp_map) name = HM.lookup name bp_map
-
-buildPlanDesc :: BuildPlan -> String
-buildPlanDesc = undefined -- TODO
 
 -- | Parse a version text. There must not be any trailing characters
 -- after a valid version text.

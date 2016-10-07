@@ -15,14 +15,14 @@ import Data.Text (unpack)
 import System.FilePath ((</>), (<.>))
 
 import Staversion.Internal.BuildPlan
-  ( BuildPlan, loadBuildPlanYAML, packageVersion, buildPlanDesc
+  ( BuildPlan, loadBuildPlanYAML, packageVersion
   )
 import Staversion.Internal.Command
   ( parseCommandArgs,
     Command(..)
   )
 import Staversion.Internal.Query
-  ( Query(..), Result(..), PackageSource(..)
+  ( Query(..), Result(..), PackageSource(..), resultVersionsFromList
   )
 
 main :: IO ()
@@ -45,8 +45,5 @@ searchVersion :: PackageSource -> BuildPlan -> Query -> Result
 searchVersion source build_plan query@(QueryName package_name) =
   Result { resultIn = source,
            resultFor = query,
-           resultVersion = ret_version
+           resultVersions = Right $ resultVersionsFromList [(package_name, packageVersion build_plan package_name)]
          }
-  where
-    ret_version = maybe (Left error_msg) Right $ packageVersion build_plan package_name
-    error_msg = unpack package_name ++ " is not found in the build plan " ++ buildPlanDesc build_plan

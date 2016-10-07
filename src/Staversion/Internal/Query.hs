@@ -10,9 +10,12 @@ module Staversion.Internal.Query
          PackageSource(..),
          Query(..),
          ErrorMsg,
-         Result(..)
+         Result(..),
+         ResultVersions,
+         resultVersionsFromList
        ) where
 
+import qualified Data.HashMap.Strict as HM
 import Data.Text (Text)
 import Data.Version (Version)
 
@@ -34,5 +37,13 @@ type ErrorMsg = String
 -- | Result for a query.
 data Result = Result { resultIn :: PackageSource,
                        resultFor :: Query,
-                       resultVersion :: Either ErrorMsg Version
-                     } deriving (Show,Eq,Ord)
+                       resultVersions :: Either ErrorMsg ResultVersions
+                     } deriving (Show,Eq)
+
+
+-- | The obtained version map.
+newtype ResultVersions = ResultVersions (HM.HashMap PackageName (Maybe Version))
+                       deriving (Show,Eq)
+
+resultVersionsFromList :: [(PackageName, Maybe Version)] -> ResultVersions
+resultVersionsFromList = ResultVersions . HM.fromList
