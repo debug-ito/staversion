@@ -17,10 +17,12 @@ import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.HashMap.Strict as HM
+import Data.Maybe (listToMaybe)
 import Data.Text (Text, unpack)
-import Data.Version (Version)
+import Data.Version (Version, parseVersion)
 import qualified Data.Yaml as Yaml
 import Text.Read (readMaybe)
+import Text.ParserCombinators.ReadP (readP_to_S)
   
 -- | A data structure that keeps a map between package names and their
 -- versions.
@@ -44,5 +46,8 @@ loadBuildPlanYAML yaml_file = (toException . Yaml.decodeEither') =<< BS.readFile
 packageVersion :: BuildPlan -> Text -> Maybe Version
 packageVersion (BuildPlan bp_map) name = HM.lookup name bp_map
 
+-- | Parse a version text. There must not be any trailing characters
+-- after a valid version text.
 parseVersionText :: Text -> Maybe Version
-parseVersionText = readMaybe  . unpack
+parseVersionText = extractResult . (readP_to_S parseVersion) . unpack where
+  extractResult = listToMaybe . map fst . filter (\pair -> snd pair == "")
