@@ -5,7 +5,8 @@ import Data.Version (Version(..))
 import Test.Hspec
 
 import Staversion.Internal.BuildPlan
-  ( BuildPlan, 
+  ( PackageName,
+    BuildPlan, 
     loadBuildPlanYAML, 
     packageVersion,
     parseVersionText
@@ -44,7 +45,7 @@ forBuildPlan :: String -> (IO BuildPlan -> Spec) -> Spec
 forBuildPlan build_plan_base testWith = describe build_plan_base (testWith loader) where
   loader = loadBuildPlanYAML ("test/data/" ++ build_plan_base ++ ".yaml")
 
-loadVersion :: Text -> IO BuildPlan -> IO (Maybe Version)
+loadVersion :: PackageName -> IO BuildPlan -> IO (Maybe Version)
 loadVersion package_name loader = do
   plan <- loader
   return $ packageVersion plan package_name
