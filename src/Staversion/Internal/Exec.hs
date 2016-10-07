@@ -3,7 +3,7 @@
 -- Description: executable
 -- Maintainer: Toshio Ito <debug.ito@gmail.com>
 --
--- 
+-- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.Exec
        ( main,
          processCommand

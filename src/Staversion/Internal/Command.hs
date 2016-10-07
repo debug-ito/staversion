@@ -62,7 +62,9 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> q
                                     ]
   build_plan_dir = Opt.strOption
                    $ mconcat [ Opt.long "build-plan-dir",
-                               Opt.help "Directory where build plan YAML files are stored.",
+                               Opt.help ( "Directory where build plan YAML files are stored. Default: "
+                                          ++ defBuildPlanDir def_comm
+                                        ),
                                Opt.metavar "DIR",
                                Opt.value (defBuildPlanDir def_comm)
                              ]
