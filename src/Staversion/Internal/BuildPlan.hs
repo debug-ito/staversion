@@ -11,10 +11,14 @@ module Staversion.Internal.BuildPlan
        ) where
 
 import Control.Applicative (empty)
+import Control.Exception (throwIO)
 import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as BS
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text, unpack)
 import Data.Version (Version)
+import qualified Data.Yaml as Yaml
 import Text.Read (readMaybe)
   
 -- | A data structure that keeps a map between package names and their
@@ -30,9 +34,11 @@ instance FromJSON BuildPlan where
     parseVersionText = maybe empty return . readMaybe  . unpack
   parseJSON _ = empty
 
+
 -- | Load a 'BuildPlan' from a file.
 loadBuildPlanYAML :: FilePath -> IO BuildPlan
-loadBuildPlanYAML = undefined
+loadBuildPlanYAML yaml_file = (toException . Yaml.decodeEither') =<< BS.readFile yaml_file where -- TODO: make it memory-efficient!
+  toException = either (throwIO) return
 
 packageVersion :: BuildPlan -> Text -> Maybe Version
-packageVersion = undefined
+packageVersion (BuildPlan bp_map) name = HM.lookup name bp_map
