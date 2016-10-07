@@ -5,7 +5,8 @@
 --
 -- 
 module Staversion.Internal.Exec
-       ( main
+       ( main,
+         processCommand
        ) where
 
 import Data.Function (on)

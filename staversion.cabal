@@ -54,8 +54,9 @@ test-suite spec
   main-is:              Spec.hs
   default-extensions:   OverloadedStrings
   -- other-extensions:     
-  other-modules:        Staversion.Internal.BuildPlanSpec
-  build-depends:        base, staversion, text,
+  other-modules:        Staversion.Internal.BuildPlanSpec,
+                        Staversion.Internal.ExecSpec
+  build-depends:        base, staversion, text, filepath,
                         hspec
                         
 source-repository head
