@@ -22,14 +22,17 @@ library
   -- other-extensions:     
   exposed-modules:      Staversion,
                         Staversion.Internal.BuildPlan,
-                        Staversion.Internal.Query
+                        Staversion.Internal.Query,
+                        Staversion.Internal.Command
   -- other-modules:        
   build-depends:        base >=4.6,
                         unordered-containers,
                         aeson,
                         text,
                         bytestring,
-                        yaml >=0.8.3
+                        yaml >=0.8.3,
+                        filepath,
+                        directory
 
 -- executable staversion
 --   default-language:     Haskell2010

@@ -1,6 +1,6 @@
 -- |
 -- Module: Staversion.Internal.Query
--- Description:  
+-- Description: Query, Result and related symbols.
 -- Maintainer: Toshio Ito <debug.ito@gmail.com>
 --
 -- __This is an internal module. End-users should not use it.__
