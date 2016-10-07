@@ -23,7 +23,8 @@ library
   exposed-modules:      Staversion,
                         Staversion.Internal.BuildPlan,
                         Staversion.Internal.Query,
-                        Staversion.Internal.Command
+                        Staversion.Internal.Command,
+                        Staversion.Internal.Log
   other-modules:        Paths_staversion
   build-depends:        base >=4.6,
                         unordered-containers,
