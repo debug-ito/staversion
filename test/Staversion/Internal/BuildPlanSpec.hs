@@ -2,6 +2,7 @@ module Staversion.Internal.BuildPlanSpec (main,spec) where
 
 import Data.Text (Text, pack)
 import Data.Version (Version(..))
+import System.FilePath ((</>), (<.>))
 import Test.Hspec
 
 import Staversion.Internal.BuildPlan
@@ -43,7 +44,7 @@ packageVersion_spec = describe "packageVersion" $ do
 
 forBuildPlan :: String -> (IO BuildPlan -> Spec) -> Spec
 forBuildPlan build_plan_base testWith = describe build_plan_base (testWith loader) where
-  loader = loadBuildPlanYAML ("test/data/" ++ build_plan_base ++ ".yaml")
+  loader = loadBuildPlanYAML ("test" </> "data" </> build_plan_base <.> "yaml")
 
 loadVersion :: PackageName -> IO BuildPlan -> IO (Maybe Version)
 loadVersion package_name loader = do
