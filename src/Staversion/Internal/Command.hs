@@ -5,7 +5,7 @@
 --
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.Command
-       ( Command,
+       ( Command(..),
          parseCommandArgs,
          queriesInCommand
        ) where
