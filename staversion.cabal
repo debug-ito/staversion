@@ -23,7 +23,7 @@ library
   exposed-modules:      Staversion,
                         Staversion.Internal.BuildPlan
   -- other-modules:        
-  build-depends:        base,
+  build-depends:        base >=4.6,
                         unordered-containers,
                         aeson,
                         text

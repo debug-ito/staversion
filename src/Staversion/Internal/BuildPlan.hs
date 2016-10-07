@@ -15,18 +15,19 @@ import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text, unpack)
 import Data.Version (Version)
-
+import Text.Read (readMaybe)
+  
 -- | A data structure that keeps a map between package names and their
 -- versions.
 newtype BuildPlan = BuildPlan (HM.HashMap Text Version)
 
 instance FromJSON BuildPlan where
-  parseJSON (Object o) = toBuildPlan =<< (o .: "packages") where
+  parseJSON (Object object) = toBuildPlan =<< (object .: "packages") where
     toBuildPlan (Object o) = BuildPlan <$> traverse parsePackageObject o
     toBuildPlan _ = empty
     parsePackageObject (Object o) = parseVersionText =<< (o .: "version")
     parsePackageObject _ = empty
-    parseVersionText = undefined -- TODO: Text -> Parser Version
+    parseVersionText = maybe empty return . readMaybe  . unpack
   parseJSON _ = empty
 
 -- | Load a 'BuildPlan' from a file.
