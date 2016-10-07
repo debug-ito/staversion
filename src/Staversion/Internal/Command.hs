@@ -13,6 +13,7 @@ module Staversion.Internal.Command
 import Control.Applicative ((<$>), (<*>), optional, some)
 import Data.Monoid (mconcat)
 import Data.Text (pack)
+import Data.Version (showVersion)
 import qualified Options.Applicative as Opt
 import qualified Paths_staversion as MyInfo
 import System.Directory (getHomeDirectory)
@@ -82,9 +83,9 @@ programDescription parser =
   Opt.info (Opt.helper <*> parser)
   $ mconcat [ Opt.fullDesc,
               Opt.progDesc ( "Look for version numbers for Haskell packages in specific stackage resolvers"
-                             ++ " (or possibly other package sources)\n"
-                             ++ "Version: " ++ (show MyInfo.version)
-                           )
+                             ++ " (or possibly other package sources)"
+                           ),
+              Opt.footer ("Version: " ++ (showVersion MyInfo.version))
             ]
 
 parseCommandArgs :: IO Command
