@@ -18,7 +18,6 @@ import Staversion.Internal.BuildPlan
   )
 import Staversion.Internal.Command
   ( parseCommandArgs,
-    queriesInCommand,
     Command(..)
   )
 import Staversion.Internal.Query
@@ -31,24 +30,21 @@ main = do
   (putStrLn . show) =<< (processCommand comm)
 
 processCommand :: Command -> IO [Result]
-processCommand comm = fmap concat $ mapM processGroupedQueries $ groupBy ((==) `on` querySource) $ queriesInCommand comm where
-  processGroupedQueries [] = return []
-  processGroupedQueries queries@(first_q : _) = processQueriesIn comm (querySource first_q) queries
-
-processQueriesIn :: Command -> PackageSource -> [Query] -> IO [Result]
-processQueriesIn comm source queries = do
-  build_plan <- loadBuildPlan comm source
-  return $ map (searchVersion build_plan) queries
+processCommand comm = fmap concat $ mapM processQueriesIn $ commSources comm where
+  processQueriesIn source = do
+    build_plan <- loadBuildPlan comm source
+    return $ map (searchVersion source build_plan) $ commQueries comm
 
 -- | TODO: implement error handling
 loadBuildPlan ::  Command -> PackageSource -> IO BuildPlan
 loadBuildPlan comm (SourceStackage resolver) = loadBuildPlanYAML yaml_file where
   yaml_file = commBuildPlanDir comm </> unpack resolver <.> "yaml"
 
-searchVersion :: BuildPlan -> Query -> Result
-searchVersion build_plan query@(QueryName _ _) =
-  Result { resultFor = query,
+searchVersion :: PackageSource -> BuildPlan -> Query -> Result
+searchVersion source build_plan query@(QueryName package_name) =
+  Result { resultIn = source,
+           resultFor = query,
            resultVersion = ret_version
          }
   where
-    ret_version = packageVersion build_plan (queryName query)
+    ret_version = packageVersion build_plan package_name

@@ -25,11 +25,11 @@ data PackageSource = SourceStackage Resolver -- ^ stackage.
                    deriving (Show,Eq,Ord)
 
 -- | Query for package version(s).
-data Query = QueryName { querySource :: PackageSource,
-                         queryName :: PackageName
-                       } deriving (Show,Eq,Ord)
+data Query = QueryName PackageName
+           deriving (Show,Eq,Ord)
 
 -- | Result for a query.
-data Result = Result { resultFor :: Query,
+data Result = Result { resultIn :: PackageSource,
+                       resultFor :: Query,
                        resultVersion :: Maybe Version
                      } deriving (Show,Eq,Ord)

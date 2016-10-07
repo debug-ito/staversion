@@ -6,8 +6,7 @@
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.Command
        ( Command(..),
-         parseCommandArgs,
-         queriesInCommand
+         parseCommandArgs
        ) where
 
 import Control.Applicative ((<$>), (<*>), optional, some)
@@ -35,10 +34,10 @@ data Command =
             -- ^ path to the directory where build plan files are stored.
             commLogger :: Logger,
             -- ^ the logger
-            commResolvers :: [Resolver],
-            -- ^ stackage resolvers to search
-            commPackages :: [PackageName]
-            -- ^ package names to search for
+            commSources :: [PackageSource],
+            -- ^ package sources to search
+            commQueries :: [Query]
+            -- ^ package queries
           } deriving (Show,Eq)
 
 -- | Default values for 'Command'.
@@ -53,7 +52,7 @@ defCommand = DefCommand <$> def_build_plan_dir where
 
 
 commandParser :: DefCommand -> Opt.Parser Command
-commandParser def_comm = Command <$> build_plan_dir <*> logger <*> resolvers <*> packages where
+commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> queries where
   logger = makeLogger <$> is_verbose
   makeLogger True = defaultLogger { loggerThreshold = LogDebug }
   makeLogger False = defaultLogger
@@ -67,16 +66,18 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> resolvers <*>
                                Opt.metavar "DIR",
                                Opt.value (defBuildPlanDir def_comm)
                              ]
-  resolvers = some $ fmap pack $ Opt.strOption
-              $ mconcat [ Opt.long "resolver",
-                          Opt.short 'r',
-                          Opt.help "Stackage resolver to search. e.g. \"lts-6.15\"",
-                          Opt.metavar "RESOLVER_NAME"
-                        ]
-  packages = some $ fmap pack $ Opt.strArgument
-             $ mconcat [ Opt.help "Name of package whose version you want to check.",
-                         Opt.metavar "PACKAGE_NAME"
+  sources = some $ SourceStackage <$> resolver
+  resolver = fmap pack $ Opt.strOption
+             $ mconcat [ Opt.long "resolver",
+                         Opt.short 'r',
+                         Opt.help "Stackage resolver to search. e.g. \"lts-6.15\"",
+                         Opt.metavar "RESOLVER_NAME"
                        ]
+  queries = some $ QueryName <$> package
+  package = fmap pack $ Opt.strArgument
+            $ mconcat [ Opt.help "Name of package whose version you want to check.",
+                        Opt.metavar "PACKAGE_NAME"
+                      ]
 
 programDescription :: Opt.Parser a -> Opt.ParserInfo a
 programDescription parser =
@@ -90,9 +91,3 @@ programDescription parser =
 
 parseCommandArgs :: IO Command
 parseCommandArgs = Opt.execParser . programDescription . commandParser =<< defCommand
-
-queriesInCommand :: Command -> [Query]
-queriesInCommand comm = do
-  name <- commPackages comm
-  resolver <- commResolvers comm
-  return $ QueryName { querySource = SourceStackage resolver, queryName = name }
