@@ -18,7 +18,7 @@ import Data.Version (Version)
 type PackageName = Text
 
 -- | Resolver name at stackage like "lts-4.1".
-type Resolver = Text
+type Resolver = String
 
 -- | Source of packages.
 data PackageSource = SourceStackage Resolver -- ^ stackage.

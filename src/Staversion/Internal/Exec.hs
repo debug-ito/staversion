@@ -10,7 +10,6 @@ module Staversion.Internal.Exec
 
 import Data.Function (on)
 import Data.List (groupBy)
-import Data.Text (unpack)
 import System.FilePath ((</>), (<.>))
 
 import Staversion.Internal.BuildPlan
@@ -38,7 +37,7 @@ processCommand comm = fmap concat $ mapM processQueriesIn $ commSources comm whe
 -- | TODO: implement error handling
 loadBuildPlan ::  Command -> PackageSource -> IO BuildPlan
 loadBuildPlan comm (SourceStackage resolver) = loadBuildPlanYAML yaml_file where
-  yaml_file = commBuildPlanDir comm </> unpack resolver <.> "yaml"
+  yaml_file = commBuildPlanDir comm </> resolver <.> "yaml"
 
 searchVersion :: PackageSource -> BuildPlan -> Query -> Result
 searchVersion source build_plan query@(QueryName package_name) =

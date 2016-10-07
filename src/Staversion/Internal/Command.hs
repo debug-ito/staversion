@@ -67,7 +67,7 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> q
                                Opt.value (defBuildPlanDir def_comm)
                              ]
   sources = some $ SourceStackage <$> resolver
-  resolver = fmap pack $ Opt.strOption
+  resolver = Opt.strOption
              $ mconcat [ Opt.long "resolver",
                          Opt.short 'r',
                          Opt.help "Stackage resolver to search. e.g. \"lts-6.15\"",
