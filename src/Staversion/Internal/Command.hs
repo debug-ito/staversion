@@ -6,7 +6,8 @@
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.Command
        ( Command,
-         parseCommandArgs
+         parseCommandArgs,
+         queriesInCommand
        ) where
 
 import Control.Applicative ((<$>), (<*>), optional, some)
@@ -19,7 +20,9 @@ import System.FilePath ((</>))
 
 import Staversion.Internal.Query
   ( Resolver,
-    PackageName
+    PackageName,
+    Query(..),
+    PackageSource(..)
   )
 
 -- | Command from the user.
@@ -75,3 +78,8 @@ programDescription parser =
 parseCommandArgs :: IO Command
 parseCommandArgs = Opt.execParser . programDescription . commandParser =<< defCommand
 
+queriesInCommand :: Command -> [Query]
+queriesInCommand comm = do
+  name <- commPackages comm
+  resolver <- commResolvers comm
+  return $ QueryName { querySource = SourceStackage resolver, queryName = name }
