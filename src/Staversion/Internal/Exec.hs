@@ -9,10 +9,13 @@ module Staversion.Internal.Exec
          processCommand
        ) where
 
+import Control.Applicative ((<$>))
+import Control.Exception (catch)
 import Data.Function (on)
 import Data.List (groupBy)
 import Data.Text (unpack)
 import System.FilePath ((</>), (<.>))
+import System.IO.Error (IOError)
 
 import Staversion.Internal.BuildPlan
   ( BuildPlan, loadBuildPlanYAML, packageVersion
@@ -22,7 +25,8 @@ import Staversion.Internal.Command
     Command(..)
   )
 import Staversion.Internal.Query
-  ( Query(..), Result(..), PackageSource(..), resultVersionsFromList
+  ( Query(..), Result(..), PackageSource(..), resultVersionsFromList,
+    ErrorMsg
   )
 
 main :: IO ()
@@ -33,13 +37,17 @@ main = do
 processCommand :: Command -> IO [Result]
 processCommand comm = fmap concat $ mapM processQueriesIn $ commSources comm where
   processQueriesIn source = do
-    build_plan <- loadBuildPlan comm source
-    return $ map (searchVersion source build_plan) $ commQueries comm
+    e_build_plan <- loadBuildPlan comm source
+    return $ map (makeResult source e_build_plan) $ commQueries comm
+  makeResult source e_build_plan query = case e_build_plan of
+    Left error_msg -> Result { resultIn = source, resultFor = query, resultVersions = Left error_msg }
+    Right build_plan -> searchVersion source build_plan query
 
--- | TODO: implement error handling
-loadBuildPlan ::  Command -> PackageSource -> IO BuildPlan
-loadBuildPlan comm (SourceStackage resolver) = loadBuildPlanYAML yaml_file where
+loadBuildPlan ::  Command -> PackageSource -> IO (Either ErrorMsg BuildPlan)
+loadBuildPlan comm source@(SourceStackage resolver) = (Right <$> loadBuildPlanYAML yaml_file) `catch` handleIOError where
   yaml_file = commBuildPlanDir comm </> resolver <.> "yaml"
+  handleIOError :: IOError -> IO (Either ErrorMsg BuildPlan)
+  handleIOError e = return $ Left ("Loading build plan for package source " ++ show source ++ " failed: " ++ show e)
 
 searchVersion :: PackageSource -> BuildPlan -> Query -> Result
 searchVersion source build_plan query@(QueryName package_name) =
