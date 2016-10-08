@@ -25,7 +25,8 @@ import Staversion.Internal.Command
     Command(..)
   )
 import Staversion.Internal.Query
-  ( Query(..), Result(..), PackageSource(..), resultVersionsFromList,
+  ( Query(..), Result(..), PackageSource(..),
+    resultVersionsFromList, ResultVersions,
     ErrorMsg
   )
 
@@ -41,7 +42,9 @@ processCommand comm = fmap concat $ mapM processQueriesIn $ commSources comm whe
     return $ map (makeResult source e_build_plan) $ commQueries comm
   makeResult source e_build_plan query = case e_build_plan of
     Left error_msg -> Result { resultIn = source, resultFor = query, resultVersions = Left error_msg }
-    Right build_plan -> searchVersion source build_plan query
+    Right build_plan -> Result { resultIn = source, resultFor = query,
+                                 resultVersions = Right $ searchVersions build_plan query
+                               }
 
 loadBuildPlan ::  Command -> PackageSource -> IO (Either ErrorMsg BuildPlan)
 loadBuildPlan comm source@(SourceStackage resolver) = catchJust handleIOError (Right <$> loadBuildPlanYAML yaml_file) (return . Left) where
@@ -53,9 +56,6 @@ loadBuildPlan comm source@(SourceStackage resolver) = catchJust handleIOError (R
   makeErrorMsg exception body = "Loading build plan for package source " ++ show source ++ " failed: " ++ body ++ "\n" ++ show exception
 
 
-searchVersion :: PackageSource -> BuildPlan -> Query -> Result
-searchVersion source build_plan query@(QueryName package_name) =
-  Result { resultIn = source,
-           resultFor = query,
-           resultVersions = Right $ resultVersionsFromList [(package_name, packageVersion build_plan package_name)]
-         }
+searchVersions :: BuildPlan -> Query -> ResultVersions
+searchVersions build_plan (QueryName package_name) =
+  resultVersionsFromList [(package_name, packageVersion build_plan package_name)]
