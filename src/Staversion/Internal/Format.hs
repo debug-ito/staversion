@@ -11,7 +11,7 @@ module Staversion.Internal.Format
        ) where
 
 import Data.Function (on)
-import Data.List (groupBy)
+import Data.List (groupBy, intersperse)
 import Data.Monoid (mempty, mconcat, (<>))
 import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
@@ -34,17 +34,18 @@ formatResults f@Formatter = toLazyText . mconcat . map (formatGroupedResults f) 
 
 formatGroupedResults :: Formatter -> [Result] -> Builder
 formatGroupedResults _ [] = mempty
-formatGroupedResults formatter@Formatter results@(head_ret : _) = header <> (mconcat $ map single_result_output results) where
-  header = "-- " <> (fromText $ sourceDesc $ resultIn head_ret) <> "\n"
+formatGroupedResults formatter@Formatter results@(head_ret : _) = header <> (concatLines $ map single_result_output results) where
+  header = "------ " <> (fromText $ sourceDesc $ resultIn head_ret) <> "\n"
   single_result_output ret = case resultVersions ret of
     Left _ -> error_result ret
     Right versions -> formatVersions formatter (resultFor ret) versions
   error_result ret = case resultFor ret of
-    QueryName query_name -> "---- " <> fromText query_name <> ": ERROR\n"
+    QueryName query_name -> "-- " <> fromText query_name <> " ERROR"
+  concatLines builder_lines = (mconcat $ intersperse ",\n" builder_lines) <> "\n\n"
 
 formatVersions :: Formatter -> Query -> ResultVersions -> Builder
 formatVersions Formatter (QueryName _) rvers = mconcat $ map format $ resultVersionsToList rvers where
   format (name, mver) = case mver of
-    Nothing -> "---- " <> fromText name <> ": N/A\n"
-    Just ver -> fromText name <> ": ==" <> (fromString $ showVersion ver) <> "\n"
+    Nothing -> "-- " <> fromText name <> " N/A"
+    Just ver -> fromText name <> " ==" <> (fromString $ showVersion ver)
 
