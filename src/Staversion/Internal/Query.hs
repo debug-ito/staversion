@@ -12,11 +12,13 @@ module Staversion.Internal.Query
          ErrorMsg,
          Result(..),
          ResultVersions,
-         resultVersionsFromList
+         resultVersionsFromList,
+         resultVersionsToList,
+         sourceDesc
        ) where
 
 import qualified Data.HashMap.Strict as HM
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import Data.Version (Version)
 
 type PackageName = Text
@@ -47,3 +49,10 @@ newtype ResultVersions = ResultVersions (HM.HashMap PackageName (Maybe Version))
 
 resultVersionsFromList :: [(PackageName, Maybe Version)] -> ResultVersions
 resultVersionsFromList = ResultVersions . HM.fromList
+
+resultVersionsToList :: ResultVersions -> [(PackageName, Maybe Version)]
+resultVersionsToList (ResultVersions m) = HM.toList m
+
+-- | description of a 'PackageSource'.
+sourceDesc :: PackageSource -> Text
+sourceDesc (SourceStackage r) = pack r

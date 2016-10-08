@@ -24,7 +24,8 @@ library
                         Staversion.Internal.Query,
                         Staversion.Internal.Command,
                         Staversion.Internal.Log,
-                        Staversion.Internal.Exec
+                        Staversion.Internal.Exec,
+                        Staversion.Internal.Format
   other-modules:        Paths_staversion
   build-depends:        base >=4.6,
                         unordered-containers,

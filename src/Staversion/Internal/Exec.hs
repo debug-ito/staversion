@@ -14,6 +14,7 @@ import Control.Exception (catchJust, IOException)
 import Data.Function (on)
 import Data.List (groupBy)
 import Data.Text (unpack)
+import qualified Data.Text.Lazy.IO as TLIO
 import System.FilePath ((</>), (<.>))
 import qualified System.IO.Error as IOE
 
@@ -24,6 +25,7 @@ import Staversion.Internal.Command
   ( parseCommandArgs,
     Command(..)
   )
+import Staversion.Internal.Format (formatResults, defaultFormatter)
 import Staversion.Internal.Query
   ( Query(..), Result(..), PackageSource(..),
     resultVersionsFromList, ResultVersions,
@@ -33,7 +35,7 @@ import Staversion.Internal.Query
 main :: IO ()
 main = do
   comm <- parseCommandArgs
-  (putStrLn . show) =<< (processCommand comm)
+  (TLIO.putStr . formatResults defaultFormatter) =<< (processCommand comm)
 
 processCommand :: Command -> IO [Result]
 processCommand comm = fmap concat $ mapM processQueriesIn $ commSources comm where
