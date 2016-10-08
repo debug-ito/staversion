@@ -10,12 +10,12 @@ module Staversion.Internal.Exec
        ) where
 
 import Control.Applicative ((<$>))
-import Control.Exception (catch)
+import Control.Exception (catchJust, IOException)
 import Data.Function (on)
 import Data.List (groupBy)
 import Data.Text (unpack)
 import System.FilePath ((</>), (<.>))
-import System.IO.Error (IOError)
+import qualified System.IO.Error as IOE
 
 import Staversion.Internal.BuildPlan
   ( BuildPlan, loadBuildPlanYAML, packageVersion
@@ -44,10 +44,14 @@ processCommand comm = fmap concat $ mapM processQueriesIn $ commSources comm whe
     Right build_plan -> searchVersion source build_plan query
 
 loadBuildPlan ::  Command -> PackageSource -> IO (Either ErrorMsg BuildPlan)
-loadBuildPlan comm source@(SourceStackage resolver) = (Right <$> loadBuildPlanYAML yaml_file) `catch` handleIOError where
+loadBuildPlan comm source@(SourceStackage resolver) = catchJust handleIOError (Right <$> loadBuildPlanYAML yaml_file) (return . Left) where
   yaml_file = commBuildPlanDir comm </> resolver <.> "yaml"
-  handleIOError :: IOError -> IO (Either ErrorMsg BuildPlan)
-  handleIOError e = return $ Left ("Loading build plan for package source " ++ show source ++ " failed: " ++ show e)
+  handleIOError :: IOException -> Maybe ErrorMsg
+  handleIOError e | IOE.isDoesNotExistError e = Just $ makeErrorMsg e (yaml_file ++ " not found.")
+                  | IOE.isPermissionError e = Just $ makeErrorMsg e ("you cannot open " ++ yaml_file ++ ".")
+                  | otherwise = Just $ makeErrorMsg e ("some error.")
+  makeErrorMsg exception body = "Loading build plan for package source " ++ show source ++ " failed: " ++ body ++ "\n" ++ show exception
+
 
 searchVersion :: PackageSource -> BuildPlan -> Query -> Result
 searchVersion source build_plan query@(QueryName package_name) =
