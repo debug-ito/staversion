@@ -73,7 +73,7 @@ singleCase' src query checker = do
 
 baseCommand :: Command
 baseCommand = Command { commBuildPlanDir = "test" </> "data",
-                        commLogger = defaultLogger { loggerThreshold = LogError },
+                        commLogger = defaultLogger { loggerThreshold = Nothing },
                         commSources = [],
                         commQueries = []
                       }

@@ -20,12 +20,13 @@ data LogLevel = LogDebug
               | LogError
               deriving (Show,Eq,Ord,Enum,Bounded)
 
-data Logger = Logger { loggerThreshold :: LogLevel,
+data Logger = Logger { loggerThreshold :: Maybe LogLevel,
+                       -- ^ If 'Nothing', logging is disabled.
                        loggerHandle :: Handle
                      } deriving (Show,Eq)
 
 defaultLogger :: Logger
-defaultLogger = Logger { loggerThreshold = LogInfo,
+defaultLogger = Logger { loggerThreshold = Just LogInfo,
                          loggerHandle = stderr
                        }
 
@@ -37,7 +38,7 @@ toLabel l = case l of
   LogError -> "[error]"
 
 putLog :: Logger -> LogLevel -> String -> IO ()
-putLog logger level raw_msg = when (level >= threshold) $ hPutStrLn log_handle msg where
-  threshold = loggerThreshold logger
+putLog logger level raw_msg = when (fmap (level >=) mthreshold == Just True) $ hPutStrLn log_handle msg where
+  mthreshold = loggerThreshold logger
   log_handle = loggerHandle logger
   msg = toLabel level ++ " " ++ raw_msg

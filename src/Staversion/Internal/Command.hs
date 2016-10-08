@@ -54,7 +54,7 @@ defCommand = DefCommand <$> def_build_plan_dir where
 commandParser :: DefCommand -> Opt.Parser Command
 commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> queries where
   logger = makeLogger <$> is_verbose
-  makeLogger True = defaultLogger { loggerThreshold = LogDebug }
+  makeLogger True = defaultLogger { loggerThreshold = Just LogDebug }
   makeLogger False = defaultLogger
   is_verbose = Opt.switch $ mconcat [ Opt.long "verbose",
                                       Opt.short 'v',
