@@ -17,6 +17,8 @@ import Staversion.Internal.Query
   )
 import Staversion.Internal.Log (defaultLogger, Logger(loggerThreshold), LogLevel(LogError))
 
+import Staversion.Internal.TestUtil (ver, rvers)
+
 main :: IO ()
 main = hspec spec
 
@@ -77,9 +79,3 @@ baseCommand = Command { commBuildPlanDir = "test" </> "data",
                         commSources = [],
                         commQueries = []
                       }
-
-ver :: [Int] -> Version
-ver vs = Version vs []
-
-rvers :: [(PackageName, Maybe Version)] -> ResultVersions
-rvers = resultVersionsFromList
