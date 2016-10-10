@@ -12,13 +12,14 @@ module Staversion.Internal.BuildPlan
          parseVersionText
        ) where
 
-import Control.Applicative (empty)
+import Control.Applicative (empty, (<$>), (<*>))
 import Control.Exception (throwIO)
 import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.HashMap.Strict as HM
 import Data.Maybe (listToMaybe)
+import Data.Monoid ((<>))
 import Data.Text (Text, unpack)
 import Data.Version (Version, parseVersion)
 import qualified Data.Yaml as Yaml
@@ -32,9 +33,16 @@ import Staversion.Internal.Query (PackageName)
 newtype BuildPlan = BuildPlan (HM.HashMap PackageName Version)
 
 instance FromJSON BuildPlan where
-  parseJSON (Object object) = toBuildPlan =<< (object .: "packages") where
-    toBuildPlan (Object o) = BuildPlan <$> traverse parsePackageObject o
-    toBuildPlan _ = empty
+  parseJSON (Object object) = (\p1 p2 -> BuildPlan $ p1 <> p2) <$> core_packages <*> other_packages where
+    core_packages = parseSysInfo =<< (object .: "system-info")
+    parseSysInfo (Object o) = parseCorePackages =<< (o .: "core-packages")
+    parseSysInfo _ = empty
+    parseCorePackages (Object o) = traverse (\v -> versionParser =<< parseJSON v) o
+    parseCorePackages _ = empty
+
+    other_packages = parsePackages =<< (object .: "packages")
+    parsePackages (Object o) = traverse parsePackageObject o
+    parsePackages _ = empty
     parsePackageObject (Object o) = versionParser =<< (o .: "version")
     parsePackageObject _ = empty
     versionParser = maybe empty return . parseVersionText
