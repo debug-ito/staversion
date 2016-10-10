@@ -54,7 +54,7 @@ spec = describe "processCommand" $ do
                             }
                    ]
     got <- processCommand comm
-    got `shouldMatchList` expected
+    got `shouldBe` expected
         
 
 singleCase :: PackageSource -> Query -> Either ErrorMsg ResultVersions -> IO ()
