@@ -25,7 +25,7 @@ import Staversion.Internal.Command
   ( parseCommandArgs,
     Command(..)
   )
-import Staversion.Internal.Format (formatResults, defaultFormatter)
+import Staversion.Internal.Format (formatResultsCabal)
 import Staversion.Internal.Query
   ( Query(..), Result(..), PackageSource(..),
     resultVersionsFromList, ResultVersions,
@@ -35,7 +35,7 @@ import Staversion.Internal.Query
 main :: IO ()
 main = do
   comm <- parseCommandArgs
-  (TLIO.putStr . formatResults defaultFormatter) =<< (processCommand comm)
+  (TLIO.putStr . formatResultsCabal) =<< (processCommand comm)
 
 processCommand :: Command -> IO [Result]
 processCommand comm = fmap concat $ mapM processQueriesIn $ commSources comm where

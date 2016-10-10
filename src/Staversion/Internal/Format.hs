@@ -5,9 +5,7 @@
 --
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.Format
-       ( Formatter,
-         defaultFormatter,
-         formatResults
+       ( formatResultsCabal
        ) where
 
 import Data.Function (on)
@@ -24,27 +22,23 @@ import Staversion.Internal.Query
     resultVersionsToList
   )
 
-data Formatter = Formatter
+-- | format 'Result's like it's in build-depends in .cabal files.
+formatResultsCabal :: [Result] -> TL.Text
+formatResultsCabal = toLazyText . mconcat . map formatGroupedResultsCabal . groupBy ((==) `on` resultIn)
 
-defaultFormatter :: Formatter
-defaultFormatter = Formatter
-
-formatResults :: Formatter -> [Result] -> TL.Text
-formatResults f@Formatter = toLazyText . mconcat . map (formatGroupedResults f) . groupBy ((==) `on` resultIn)
-
-formatGroupedResults :: Formatter -> [Result] -> Builder
-formatGroupedResults _ [] = mempty
-formatGroupedResults formatter@Formatter results@(head_ret : _) = header <> (concatLines $ map single_result_output results) where
+formatGroupedResultsCabal :: [Result] -> Builder
+formatGroupedResultsCabal [] = mempty
+formatGroupedResultsCabal results@(head_ret : _) = header <> (concatLines $ map single_result_output results) where
   header = "------ " <> (fromText $ sourceDesc $ resultIn head_ret) <> "\n"
   single_result_output ret = case resultVersions ret of
     Left _ -> error_result ret
-    Right versions -> formatVersions formatter (resultFor ret) versions
+    Right versions -> formatVersionsCabal (resultFor ret) versions
   error_result ret = case resultFor ret of
     QueryName query_name -> "-- " <> fromText query_name <> " ERROR"
   concatLines builder_lines = (mconcat $ intersperse ",\n" builder_lines) <> "\n\n"
 
-formatVersions :: Formatter -> Query -> ResultVersions -> Builder
-formatVersions Formatter (QueryName _) rvers = mconcat $ map format $ resultVersionsToList rvers where
+formatVersionsCabal :: Query -> ResultVersions -> Builder
+formatVersionsCabal (QueryName _) rvers = mconcat $ map format $ resultVersionsToList rvers where
   format (name, mver) = case mver of
     Nothing -> "-- " <> fromText name <> " N/A"
     Just ver -> fromText name <> " ==" <> (fromString $ showVersion ver)
