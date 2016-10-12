@@ -9,7 +9,7 @@ module Staversion.Internal.Format
        ) where
 
 import Data.Function (on)
-import Data.List (intersperse, find)
+import Data.List (intersperse)
 import Data.Monoid (mempty, mconcat, (<>))
 import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
