@@ -33,14 +33,18 @@ spec = describe "formatResultsCabal" $ do
     formatResultsCabal input `shouldBe` expected
   
   it "should group Results by PackageSource with preserved order" $ do
-    let input = [ simpleResult "source_a" "hoge" [1,0,0],
+    let input = [ simpleResult "source_c" "hoge" [0,5,7],
+                  simpleResult "source_a" "hoge" [1,0,0],
                   simpleResult "source_b" "foobar" [0,2,5,3],
                   simpleResult "source_b" "hoge" [1,2,0],
                   simpleResult "source_a" "quux" [300,5],
                   simpleResult "source_a" "foobar" [0,3,2],
                   simpleResult "source_b" "quux" [299,10]
                 ]
-        expected = ( "------ source_a\n"
+        expected = ( "------ source_c\n"
+                     <> "hoge ==0.5.7\n"
+                     <> "\n"
+                     <> "------ source_a\n"
                      <> "hoge ==1.0.0\n"
                      <> "quux ==300.5\n"
                      <> "foobar ==0.3.2\n"
