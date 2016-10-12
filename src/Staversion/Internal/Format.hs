@@ -9,7 +9,7 @@ module Staversion.Internal.Format
        ) where
 
 import Data.Function (on)
-import Data.List (groupBy, intersperse)
+import Data.List (intersperse, find)
 import Data.Monoid (mempty, mconcat, (<>))
 import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
@@ -24,7 +24,16 @@ import Staversion.Internal.Query
 
 -- | format 'Result's like it's in build-depends in .cabal files.
 formatResultsCabal :: [Result] -> TL.Text
-formatResultsCabal = toLazyText . mconcat . map formatGroupedResultsCabal . groupBy ((==) `on` resultIn)
+formatResultsCabal = toLazyText . mconcat . map formatGroupedResultsCabal . groupAllPreservingOrderBy ((==) `on` resultIn)
+
+groupAllPreservingOrderBy :: (a -> a -> Bool) -> [a] -> [[a]]
+groupAllPreservingOrderBy sameGroup = map snd  . foldr f [] where
+  f item acc = update [] acc where
+    update heads [] = (item, [item]) : heads
+    update heads (cur@(cur_item, cur_list) : rest) =
+      if sameGroup item cur_item
+      then heads ++ ( (cur_item, item : cur_list) : rest )
+      else update (heads ++ [cur]) rest
 
 formatGroupedResultsCabal :: [Result] -> Builder
 formatGroupedResultsCabal [] = mempty
