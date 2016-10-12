@@ -18,6 +18,8 @@ main = hspec spec
 
 spec :: Spec
 spec = describe "formatResultsCabal" $ do
+  it "should return empty text for empty list" $ do
+    formatResultsCabal [] `shouldBe` ""
   it "should format a Result in a Cabal way" $ do
     let input = [ Result { resultIn = SourceStackage "lts-6.10",
                            resultFor = QueryName "hoge",
