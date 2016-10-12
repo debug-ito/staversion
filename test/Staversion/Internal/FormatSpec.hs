@@ -5,7 +5,8 @@ import Test.Hspec
 
 import Staversion.Internal.Format (formatResultsCabal)
 import Staversion.Internal.Query
-  ( Result(..), PackageSource(..), Query(..)
+  ( Result(..), PackageSource(..), Query(..),
+    Resolver, PackageName
   )
 
 import Staversion.Internal.TestUtil (ver, rvers)
@@ -28,4 +29,30 @@ spec = describe "formatResultsCabal" $ do
                      <> "\n"
                    )
     formatResultsCabal input `shouldBe` expected
+  
+  it "should group Results by PackageSource with preserved order" $ do
+    let input = [ simpleResult "source_a" "hoge" [1,0,0],
+                  simpleResult "source_b" "foobar" [0,2,5,3],
+                  simpleResult "source_b" "hoge" [1,2,0],
+                  simpleResult "source_a" "quux" [300,5],
+                  simpleResult "source_a" "foobar" [0,3,2],
+                  simpleResult "source_b" "quux" [299,10]
+                ]
+        expected = ( "------ source_a\n"
+                     <> "hoge ==1.0.0\n"
+                     <> "quux ==300.5\n"
+                     <> "foobar ==0.3.2\n"
+                     <> "\n"
+                     <> "------ source_b\n"
+                     <> "foobar ==0.2.5.3\n"
+                     <> "hoge ==1.2.0\n"
+                     <> "quux ==299.10\n"
+                     <> "\n"
+                   )
+    formatResultsCabal input `shouldBe` expected
 
+simpleResult :: Resolver -> PackageName -> [Int] -> Result
+simpleResult res name vs = Result { resultIn = SourceStackage res,
+                                    resultFor = QueryName name,
+                                    resultVersions = Right $ rvers [(name, Just $ ver vs)]
+                                  }
