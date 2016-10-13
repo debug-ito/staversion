@@ -8,7 +8,10 @@ module Staversion.Internal.Log
        ( LogLevel(..),
          Logger(loggerThreshold),
          defaultLogger,
-         putLog
+         putLog,
+         logDebug,
+         logInfo,
+         logWarn
        ) where
 
 import Control.Monad (when)
@@ -42,3 +45,13 @@ putLog logger level raw_msg = when (fmap (level >=) mthreshold == Just True) $ h
   mthreshold = loggerThreshold logger
   log_handle = loggerHandle logger
   msg = toLabel level ++ " " ++ raw_msg
+
+logDebug :: Logger -> String -> IO ()
+logDebug = flip putLog $ LogDebug
+
+logInfo :: Logger -> String -> IO ()
+logInfo = flip putLog $ LogInfo
+
+logWarn :: Logger -> String -> IO ()
+logWarn = flip putLog $ LogWarn
+

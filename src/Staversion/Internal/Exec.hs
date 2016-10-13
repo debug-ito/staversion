@@ -26,6 +26,7 @@ import Staversion.Internal.Command
     Command(..)
   )
 import Staversion.Internal.Format (formatResultsCabal)
+import Staversion.Internal.Log (logDebug, logWarn)
 import Staversion.Internal.Query
   ( Query(..), Result(..), PackageSource(..),
     resultVersionsFromList, ResultVersions,
@@ -39,18 +40,26 @@ main = do
 
 processCommand :: Command -> IO [Result]
 processCommand comm = fmap concat $ mapM processQueriesIn $ commSources comm where
+  logger = commLogger comm
   processQueriesIn source = do
+    logDebug logger ("Retrieve package source " ++ show source)
     e_build_plan <- loadBuildPlan comm source
+    logBuildPlanResult e_build_plan
     return $ map (makeResult source e_build_plan) $ commQueries comm
   makeResult source e_build_plan query = case e_build_plan of
     Left error_msg -> Result { resultIn = source, resultFor = query, resultVersions = Left error_msg }
     Right build_plan -> Result { resultIn = source, resultFor = query,
                                  resultVersions = Right $ searchVersions build_plan query
                                }
+  logBuildPlanResult (Right _) = logDebug logger ("Successfully retrieved build plan.")
+  logBuildPlanResult (Left error_msg) = logWarn logger ("Failed to load build plan: " ++ error_msg)
 
 loadBuildPlan ::  Command -> PackageSource -> IO (Either ErrorMsg BuildPlan)
-loadBuildPlan comm source@(SourceStackage resolver) = catchJust handleIOError (Right <$> loadBuildPlanYAML yaml_file) (return . Left) where
+loadBuildPlan comm source@(SourceStackage resolver) = catchJust handleIOError (Right <$> doLoad) (return . Left) where
   yaml_file = commBuildPlanDir comm </> resolver <.> "yaml"
+  doLoad = do
+    logDebug (commLogger comm) ("Read " ++ yaml_file ++ " for build plan.")
+    loadBuildPlanYAML yaml_file
   handleIOError :: IOException -> Maybe ErrorMsg
   handleIOError e | IOE.isDoesNotExistError e = Just $ makeErrorMsg e (yaml_file ++ " not found.")
                   | IOE.isPermissionError e = Just $ makeErrorMsg e ("you cannot open " ++ yaml_file ++ ".")
