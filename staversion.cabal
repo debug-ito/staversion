@@ -10,7 +10,12 @@ category:               Development
 cabal-version:          >= 1.10
 build-type:             Simple
 extra-source-files:     README.md, ChangeLog.md,
-                        test/data/*.yaml
+                        test/data/conpact_build_plan.yaml,
+                        -- Cabal's wild-card (*) doesn't match periods (.)
+                        test/data/lts-7.0_conpact.yaml,
+                        test/data/lts-4.2.yaml,
+                        test/data/lts-2.22_conpact.yaml
+                        
 homepage:               https://github.com/debug-ito/staversion
 bug-reports:            https://github.com/debug-ito/staversion/issues
 
