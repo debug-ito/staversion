@@ -37,18 +37,26 @@ groupAllPreservingOrderBy sameGroup = map snd  . foldr f [] where
 
 formatGroupedResultsCabal :: [Result] -> Builder
 formatGroupedResultsCabal [] = mempty
-formatGroupedResultsCabal results@(head_ret : _) = header <> (concatLines $ map single_result_output results) where
+formatGroupedResultsCabal results@(head_ret : _) = header <> (concatLines $ single_result_output =<< results) where
   header = "------ " <> (fromText $ sourceDesc $ resultIn head_ret) <> "\n"
   single_result_output ret = case resultVersions ret of
-    Left _ -> error_result ret
+    Left _ -> [Left $ error_result ret]
     Right versions -> formatVersionsCabal (resultFor ret) versions
   error_result ret = case resultFor ret of
     QueryName query_name -> "-- " <> fromText query_name <> " ERROR"
-  concatLines builder_lines = (mconcat $ intersperse ",\n" builder_lines) <> "\n\n"
+  concatLines ebuilder_lines = (mconcat $ intersperse "\n" $ map (either id id) $ tailCommas ebuilder_lines) <> "\n\n"
+  tailCommas = fst . foldr f ([], False) where
+    -- flag: True if it has already encountered the last Right element in the list.
+    f eb (ret, flag) = let (next_e, next_flag) = getNext ret flag eb
+                       in (next_e:ret, next_flag)
+    getNext [] flag e@(Left _) = (e, flag)
+    getNext _ flag (Left b) = (Left (b <> ","), flag)
+    getNext _ False e@(Right _) = (e, True)
+    getNext _ True (Right b) = (Right (b <> ","), True)
 
-formatVersionsCabal :: Query -> ResultVersions -> Builder
-formatVersionsCabal (QueryName _) rvers = mconcat $ map format $ resultVersionsToList rvers where
+formatVersionsCabal :: Query -> ResultVersions -> [Either Builder Builder]
+formatVersionsCabal (QueryName _) rvers = map format $ resultVersionsToList rvers where
   format (name, mver) = case mver of
-    Nothing -> "-- " <> fromText name <> " N/A"
-    Just ver -> fromText name <> " ==" <> (fromString $ showVersion ver)
+    Nothing -> Left $ "-- " <> fromText name <> " N/A"
+    Just ver -> Right $ fromText name <> " ==" <> (fromString $ showVersion ver)
 
