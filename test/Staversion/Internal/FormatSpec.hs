@@ -56,9 +56,29 @@ spec = describe "formatResultsCabal" $ do
                      <> "\n"
                    )
     formatResultsCabal input `shouldBe` expected
+  it "should not put comma at the last non-N/A entry even if it is followed by N/A entries"  $ do
+    let input = [ simpleResult "s" "hoge" [1,0,0],
+                  simpleResult "s" "not-found-1" [],
+                  simpleResult "s" "foobar" [2,0,0],
+                  simpleResult "s" "not-found-2" [],
+                  simpleResult "s" "not-found-3" []
+                ]
+        expected = ( "------ s\n"
+                     <> "hoge ==1.0.0,\n"
+                     <> "-- not-found-1 N/A,\n"
+                     <> "foobar ==2.0.0\n"
+                     <> "-- not-found-2 N/A,\n"
+                     <> "-- not-found-3 N/A\n"
+                     <> "\n"
+                   )
+    formatResultsCabal input `shouldBe` expected
 
 simpleResult :: Resolver -> PackageName -> [Int] -> Result
 simpleResult res name vs = Result { resultIn = SourceStackage res,
                                     resultFor = QueryName name,
-                                    resultVersions = Right $ rvers [(name, Just $ ver vs)]
+                                    resultVersions = Right $ rvers [(name, mversion)]
                                   }
+  where
+    mversion = case vs of
+      [] -> Nothing
+      _ -> Just $ ver vs
