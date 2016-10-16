@@ -27,15 +27,15 @@ library
                         Staversion.Internal.Exec,
                         Staversion.Internal.Format
   other-modules:        Paths_staversion
-  build-depends:        base >=4.6,
-                        unordered-containers,
-                        aeson,
-                        text,
-                        bytestring,
-                        yaml >=0.8.3,
-                        filepath,
-                        directory,
-                        optparse-applicative
+  build-depends:        base >=4.6 && <9999.99,
+                        unordered-containers >=0 && <9999.99,
+                        aeson >=0 && <9999.99,
+                        text >=0 && <9999.99,
+                        bytestring >=0 && <9999.99,
+                        yaml >=0.8.3 && <9999.99,
+                        filepath >=0 && <9999.99,
+                        directory >=0 && <9999.99,
+                        optparse-applicative >=0 && <9999.99
 
 executable staversion
   default-language:     Haskell2010
@@ -60,7 +60,7 @@ test-suite spec
                         Staversion.Internal.FormatSpec,
                         Staversion.Internal.TestUtil
   build-depends:        base, staversion, text, filepath,
-                        hspec
+                        hspec >=0 && <9999.99
                         
 source-repository head
   type:                 git
