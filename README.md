@@ -1,5 +1,7 @@
 # staversion
 
+![travis status](https://api.travis-ci.org/debug-ito/staversion.png)
+
 staversion is a command-line tool to look for version numbers for Haskell packages in specific stackage resolvers. It answers to questions like "What version is the package X in stackage lts-Y.ZZ?" It aims to make it easier to write `build-depends` section in YOUR_PACKAGE.cabal.
 
     $ staversion --resolver lts-4.2 conduit
