@@ -29,6 +29,7 @@ Currently staversion reads build plan YAML files that are stored locally in your
 
 - Fetch build plan YAML files from github.com
 - Cache build plans in some local storage (SQLite?)
+- Expand major version resolvers (lts-X) into full resolvers (lts-X.YY)
 - Search for the latest version numbers hosted in hackage.
 - Read `build-depends` sections .cabal files for package name queries.
 - Show version number ranges supported by the given resolvers.
