@@ -21,6 +21,7 @@ import qualified Data.HashMap.Strict as HM
 import Data.Maybe (listToMaybe)
 import Data.Monoid ((<>))
 import Data.Text (Text, unpack)
+import Data.Traversable (Traversable(traverse))
 import Data.Version (Version, parseVersion)
 import qualified Data.Yaml as Yaml
 import Text.Read (readMaybe)
