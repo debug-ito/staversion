@@ -5,7 +5,7 @@ maintainer:             Toshio Ito <debug.ito@gmail.com>
 license:                BSD3
 license-file:           LICENSE
 synopsis:               What version is the package X in stackage lts-Y.ZZ?
-description:            A command line tool to answer questions like "What version is the package X in stackage lts-Y.ZZ?" See README.md.
+description:            A command-line tool to look for version numbers for Haskell packages in specific stackage resolvers. See README.md
 category:               Development
 cabal-version:          >= 1.10
 build-type:             Simple
