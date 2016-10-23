@@ -8,6 +8,7 @@ module Staversion.Internal.BuildPlan.Stackage
        ( ExactResolver(..),
          PartialResolver(..),
          parseResolverString,
+         formatResolverString,
          disambiguate,
          fetchBuildPlanYAML
        ) where
@@ -30,6 +31,9 @@ data PartialResolver = PartialExact ExactResolver
 
 parseResolverString :: Resolver -> Maybe PartialResolver
 parseResolverString = undefined
+
+formatResolverString :: PartialResolver -> Resolver
+formatResolverString = undefined
 
 -- | Disambigute a 'PartialResolver' by quering the Internet.
 disambiguate :: PartialResolver -> IO ExactResolver

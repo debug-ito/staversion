@@ -67,7 +67,8 @@ test-suite spec
                         Staversion.Internal.FormatSpec,
                         Staversion.Internal.TestUtil
   build-depends:        base, staversion, text, filepath,
-                        hspec >=2.1.7 && <2.4
+                        hspec >=2.1.7 && <2.4,
+                        QuickCheck
                         
 source-repository head
   type:                 git

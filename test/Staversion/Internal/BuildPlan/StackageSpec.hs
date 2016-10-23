@@ -1,17 +1,33 @@
 module Staversion.Internal.BuildPlan.StackageSpec (main,spec) where
 
+import Control.Applicative ((<$>), (<*>), pure)
 import Test.Hspec
+import Test.QuickCheck (Arbitrary(..), oneof, property)
 
 import Staversion.Internal.BuildPlan.Stackage
-  ( parseResolverString,
+  ( parseResolverString, formatResolverString,
     PartialResolver(..), ExactResolver(..)
   )
+
+instance Arbitrary ExactResolver where
+  arbitrary = oneof [ ExactLTS <$> arbitrary <*> arbitrary,
+                      ExactNightly <$> arbitrary <*> arbitrary <*> arbitrary
+                    ]
+
+instance Arbitrary PartialResolver where
+  arbitrary = oneof [ PartialExact <$> arbitrary,
+                      pure PartialLTSLatest,
+                      PartialLTSMajor <$> arbitrary,
+                      pure PartialNightlyLatest
+                    ]
 
 main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = parse_spec
+spec = do
+  parse_spec
+  format_spec
 
 parse_spec :: Spec
 parse_spec = describe "parseResolverString" $ do
@@ -27,4 +43,8 @@ parse_spec = describe "parseResolverString" $ do
   ex "nightly-2016" Nothing
   where
     ex input expected = specify input $ parseResolverString input `shouldBe` expected
-  
+
+format_spec :: Spec
+format_spec = describe "formatResolverString" $ do
+  it "should generate parsable string" $ property $ \presolver ->
+    (parseResolverString $ formatResolverString presolver) == Just presolver
