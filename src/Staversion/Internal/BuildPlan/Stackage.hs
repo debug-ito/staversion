@@ -20,6 +20,7 @@ import Data.Maybe (listToMaybe)
 import Data.List (sortBy)
 import qualified Data.Text.Lazy as TL
 import qualified Text.ParserCombinators.ReadP as P
+import Text.Printf (printf)
 import Text.Read.Lex (readDecP)
 
 import Staversion.Internal.Query (Resolver)
@@ -60,7 +61,12 @@ parseResolverString = getResult . P.readP_to_S parser where
     return $ PartialExact $ ExactNightly year month day
 
 formatResolverString :: PartialResolver -> Resolver
-formatResolverString = undefined
+formatResolverString pr = case pr of
+  PartialExact (ExactLTS major minor) -> "lts-" ++ show major ++ "." ++ show minor
+  PartialExact (ExactNightly year month day) -> printf "nightly-%04d-%02d-%02d" year month day
+  PartialLTSLatest -> "lts"
+  PartialLTSMajor major -> "lts-" ++ show major
+  PartialNightlyLatest -> "nightly"
 
 -- | Disambigute a 'PartialResolver' by quering the Internet.
 disambiguate :: PartialResolver -> IO ExactResolver
