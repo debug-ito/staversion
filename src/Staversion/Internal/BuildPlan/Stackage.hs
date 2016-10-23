@@ -20,6 +20,7 @@ import Data.Maybe (listToMaybe)
 import Data.List (sortBy)
 import qualified Data.Text.Lazy as TL
 import qualified Text.ParserCombinators.ReadP as P
+import Text.Read.Lex (readDecP)
 
 import Staversion.Internal.Query (Resolver)
 
@@ -38,24 +39,24 @@ data PartialResolver = PartialExact ExactResolver
 parseResolverString :: Resolver -> Maybe PartialResolver
 parseResolverString = getResult . P.readP_to_S parser where
   getResult = fmap fst . listToMaybe . sortBy (compare `on` (length . snd))
-  p_read = P.readS_to_P reads
+  decimal = readDecP
   parser = lts <|> nightly
   lts = P.string "lts" *> ( lts_exact <|> lts_major <|> pure PartialLTSLatest )
   lts_exact = do
     void $ P.char '-'
-    major <- p_read
+    major <- decimal
     void $ P.char '.'
-    minor <- p_read
+    minor <- decimal
     return $ PartialExact $ ExactLTS major minor
-  lts_major = P.char '-' *> ( PartialLTSMajor <$> p_read )
+  lts_major = P.char '-' *> ( PartialLTSMajor <$> decimal )
   nightly = P.string "nightly" *> ( nightly_exact <|> pure PartialNightlyLatest )
   nightly_exact = do
     void $ P.char '-'
-    year <- p_read
+    year <- decimal
     void $ P.char '-'
-    month <- p_read
+    month <- decimal
     void $ P.char '-'
-    day <- p_read
+    day <- decimal
     return $ PartialExact $ ExactNightly year month day
 
 formatResolverString :: PartialResolver -> Resolver
