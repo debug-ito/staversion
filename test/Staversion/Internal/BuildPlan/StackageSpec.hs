@@ -52,3 +52,5 @@ format_spec :: Spec
 format_spec = describe "formatResolverString" $ do
   it "should generate parsable string" $ property $ \presolver ->
     (parseResolverString $ formatResolverString presolver) == Just presolver
+  it "should pad nightly month/day with 0" $ do
+    formatResolverString (PartialExact $ ExactNightly 2010 1 8) `shouldBe` "nightly-2010-01-08"
