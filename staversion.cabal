@@ -14,7 +14,8 @@ extra-source-files:     README.md, ChangeLog.md,
                         -- Cabal's wild-card (*) doesn't match periods (.)
                         test/data/lts-7.0_conpact.yaml,
                         test/data/lts-4.2.yaml,
-                        test/data/lts-2.22_conpact.yaml
+                        test/data/lts-2.22_conpact.yaml,
+                        test/data/snapshots.json
                         
 homepage:               https://github.com/debug-ito/staversion
 bug-reports:            https://github.com/debug-ito/staversion/issues
