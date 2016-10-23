@@ -39,8 +39,9 @@ parse_spec = describe "parseResolverString" $ do
   ex "nightly" (Just $ PartialNightlyLatest)
   ex "hoge" Nothing
   ex "lts-5." (Just $ PartialLTSMajor 5)
-  ex "lts-" (Just $ PartialLTSLatest)
+  ex "lts-" Nothing
   ex "nightly-2016" Nothing
+  ex "nightly-2016-10-" Nothing
   where
     ex input expected = specify input $ parseResolverString input `shouldBe` expected
 
