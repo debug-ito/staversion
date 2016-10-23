@@ -41,7 +41,7 @@ parseResolverString = getResult . P.readP_to_S parser where
   getResult = fmap fst . listToMaybe . sortBy (compare `on` (length . snd))
   decimal = readDecP
   parser = lts <|> nightly
-  lts = P.string "lts" *> ( lts_exact <|> lts_major <|> pure PartialLTSLatest )
+  lts = P.string "lts" *> ( lts_exact <|> lts_major <|> (P.eof *> pure PartialLTSLatest) )
   lts_exact = do
     void $ P.char '-'
     major <- decimal
@@ -49,7 +49,7 @@ parseResolverString = getResult . P.readP_to_S parser where
     minor <- decimal
     return $ PartialExact $ ExactLTS major minor
   lts_major = P.char '-' *> ( PartialLTSMajor <$> decimal )
-  nightly = P.string "nightly" *> ( nightly_exact <|> pure PartialNightlyLatest )
+  nightly = P.string "nightly" *> ( nightly_exact <|> (P.eof *> pure PartialNightlyLatest) )
   nightly_exact = do
     void $ P.char '-'
     year <- decimal
