@@ -9,7 +9,8 @@ module Staversion.Internal.BuildPlan.Stackage
          PartialResolver(..),
          parseResolverString,
          formatResolverString,
-         disambiguate,
+         fetchDisambiguator,
+         parseDisambiguator,
          fetchBuildPlanYAML
        ) where
 
@@ -68,9 +69,16 @@ formatResolverString pr = case pr of
   PartialLTSMajor major -> "lts-" ++ show major
   PartialNightlyLatest -> "nightly"
 
--- | Disambigute a 'PartialResolver' by quering the Internet.
-disambiguate :: PartialResolver -> IO ExactResolver
-disambiguate = undefined
+type Disambiguator = PartialResolver -> ExactResolver
+
+-- | Fetch the 'Disambiguator' from the Internet.
+fetchDisambiguator :: IO Disambiguator
+fetchDisambiguator = undefined
+
+
+parseDisambiguator :: TL.Text -- ^ disambiguation JSON text.
+                   -> Maybe Disambiguator
+parseDisambiguator = undefined
 
 -- | Fetch build plan YAML data from the Internet.
 fetchBuildPlanYAML :: ExactResolver -> IO TL.Text
