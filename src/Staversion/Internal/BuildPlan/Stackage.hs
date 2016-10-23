@@ -16,11 +16,16 @@ module Staversion.Internal.BuildPlan.Stackage
        ) where
 
 import Control.Monad (void)
-import Control.Applicative ((<|>), (*>))
+import Control.Applicative ((<|>), (*>), (<$>), (<*>), empty)
+import Data.Aeson (FromJSON(..), Value(..))
+import qualified Data.Aeson as Aeson
+import qualified Data.ByteString.Lazy as BSL
 import Data.Function (on)
+import qualified Data.HashMap.Strict as HM
+import qualified Data.Map as M
 import Data.Maybe (listToMaybe)
 import Data.List (sortBy)
-import qualified Data.Text.Lazy as TL
+import Data.Text (unpack)
 import qualified Text.ParserCombinators.ReadP as P
 import Text.Printf (printf)
 import Text.Read.Lex (readDecP)
@@ -77,10 +82,22 @@ fetchDisambiguator :: IO Disambiguator
 fetchDisambiguator = undefined
 
 
-parseDisambiguator :: TL.Text -- ^ disambiguation JSON text.
+newtype DisamMap = DisamMap { unDisamMap :: M.Map PartialResolver ExactResolver }
+
+instance FromJSON DisamMap where
+  parseJSON (Object o) = fmap (DisamMap . M.fromList) $ mapM parsePair $ HM.toList o where
+    parsePair (k,v) = (,) <$> parseKey k <*> parseValue v
+    parseKey key = maybe empty return $ parseResolverString $ unpack key
+    parseValue v = (expectExact . parseResolverString) =<< parseJSON v
+    expectExact (Just (PartialExact e)) = return e
+    expectExact _ = empty
+  parseJSON _ = empty
+
+parseDisambiguator :: BSL.ByteString -- ^ disambiguation JSON text.
                    -> Maybe Disambiguator
-parseDisambiguator = undefined
+parseDisambiguator input = toDisam <$> Aeson.decode input where
+  toDisam dis_map key = M.lookup key (unDisamMap dis_map)
 
 -- | Fetch build plan YAML data from the Internet.
-fetchBuildPlanYAML :: ExactResolver -> IO TL.Text
+fetchBuildPlanYAML :: ExactResolver -> IO BSL.ByteString
 fetchBuildPlanYAML = undefined
