@@ -15,6 +15,9 @@ module Staversion.Internal.BuildPlan.Stackage
 
 import Control.Monad (void)
 import Control.Applicative ((<|>), (*>))
+import Data.Function (on)
+import Data.Maybe (listToMaybe)
+import Data.List (sortBy)
 import qualified Data.Text.Lazy as TL
 import qualified Text.ParserCombinators.ReadP as P
 
@@ -34,8 +37,7 @@ data PartialResolver = PartialExact ExactResolver
 
 parseResolverString :: Resolver -> Maybe PartialResolver
 parseResolverString = getResult . P.readP_to_S parser where
-  getResult [] = Nothing
-  getResult ((ret, _) : _) = Just ret
+  getResult = fmap fst . listToMaybe . sortBy (compare `on` (length . snd))
   p_read = P.readS_to_P reads
   parser = lts <|> nightly
   lts = P.string "lts" *> ( lts_exact <|> lts_major <|> pure PartialLTSLatest )
