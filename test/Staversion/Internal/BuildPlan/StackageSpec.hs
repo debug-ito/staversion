@@ -2,22 +2,25 @@ module Staversion.Internal.BuildPlan.StackageSpec (main,spec) where
 
 import Control.Applicative ((<$>), (<*>), pure)
 import Test.Hspec
-import Test.QuickCheck (Arbitrary(..), oneof, property)
+import Test.QuickCheck (Arbitrary(..), oneof, property, Gen, suchThat)
 
 import Staversion.Internal.BuildPlan.Stackage
   ( parseResolverString, formatResolverString,
     PartialResolver(..), ExactResolver(..)
   )
 
+nonNega :: (Num a, Ord a, Arbitrary a) => Gen a
+nonNega = suchThat arbitrary (>= 0) 
+
 instance Arbitrary ExactResolver where
-  arbitrary = oneof [ ExactLTS <$> arbitrary <*> arbitrary,
-                      ExactNightly <$> arbitrary <*> arbitrary <*> arbitrary
+  arbitrary = oneof [ ExactLTS <$> nonNega <*> nonNega,
+                      ExactNightly <$> nonNega <*> nonNega <*> nonNega
                     ]
 
 instance Arbitrary PartialResolver where
   arbitrary = oneof [ PartialExact <$> arbitrary,
                       pure PartialLTSLatest,
-                      PartialLTSMajor <$> arbitrary,
+                      PartialLTSMajor <$> nonNega,
                       pure PartialNightlyLatest
                     ]
 
