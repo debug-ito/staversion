@@ -96,6 +96,7 @@ instance FromJSON DisamMap where
 parseDisambiguator :: BSL.ByteString -- ^ disambiguation JSON text.
                    -> Maybe Disambiguator
 parseDisambiguator input = toDisam <$> Aeson.decode input where
+  toDisam _ (PartialExact e) = Just e
   toDisam dis_map key = M.lookup key (unDisamMap dis_map)
 
 -- | Fetch build plan YAML data from the Internet.
