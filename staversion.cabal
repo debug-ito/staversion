@@ -26,6 +26,7 @@ library
   default-extensions:   OverloadedStrings
   -- other-extensions:     
   exposed-modules:      Staversion.Internal.BuildPlan,
+                        Staversion.Internal.BuildPlan.Stackage,
                         Staversion.Internal.Query,
                         Staversion.Internal.Command,
                         Staversion.Internal.Log,
