@@ -62,6 +62,7 @@ test-suite spec
   default-extensions:   OverloadedStrings
   -- other-extensions:     
   other-modules:        Staversion.Internal.BuildPlanSpec,
+                        Staversion.Internal.BuildPlan.StackageSpec,
                         Staversion.Internal.ExecSpec,
                         Staversion.Internal.FormatSpec,
                         Staversion.Internal.TestUtil

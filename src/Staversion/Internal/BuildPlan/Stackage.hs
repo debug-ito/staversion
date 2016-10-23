@@ -25,7 +25,7 @@ data ExactResolver = ExactLTS Int Int  -- ^ lts-(major).(minor)
 data PartialResolver = PartialExact ExactResolver
                      | PartialLTSLatest -- ^ lts (latest)
                      | PartialLTSMajor Int -- ^ lts-(major)
-                     | PartialNigthlyLatest -- ^ nightly (latest)
+                     | PartialNightlyLatest -- ^ nightly (latest)
                      deriving (Show,Eq,Ord)
 
 parseResolverString :: Resolver -> Maybe PartialResolver
