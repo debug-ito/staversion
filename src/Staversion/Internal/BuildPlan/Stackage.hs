@@ -4,6 +4,9 @@
 -- Maintainer: Toshio Ito <debug.ito@gmail.com>
 --
 -- __This is an internal module. End-users should not use it.__
+--
+-- This module is meant to be exposed only to
+-- "Staversion.Internal.BuildPlan" and test modules.
 module Staversion.Internal.BuildPlan.Stackage
        ( ExactResolver(..),
          PartialResolver(..),
@@ -30,7 +33,6 @@ import Network.HTTP.Client
   ( parseRequest, Manager,
     httpLbs, responseBody
   )
-import Network.HTTP.Client.TLS (tlsManagerSettings)
 import System.IO.Error (ioError, userError)
 import qualified Text.ParserCombinators.ReadP as P
 import Text.Printf (printf)

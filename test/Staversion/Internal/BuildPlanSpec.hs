@@ -5,9 +5,9 @@ import Data.Version (Version(..))
 import System.FilePath ((</>), (<.>))
 import Test.Hspec
 
+import Staversion.Internal.Query (PackageName)
 import Staversion.Internal.BuildPlan
-  ( PackageName,
-    BuildPlan, 
+  ( BuildPlan, 
     loadBuildPlanYAML, 
     packageVersion,
     parseVersionText

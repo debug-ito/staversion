@@ -10,16 +10,13 @@ module Staversion.Internal.Exec
        ) where
 
 import Control.Applicative ((<$>))
-import Control.Exception (catchJust, IOException)
 import Data.Function (on)
 import Data.List (groupBy)
 import Data.Text (unpack)
 import qualified Data.Text.Lazy.IO as TLIO
-import System.FilePath ((</>), (<.>))
-import qualified System.IO.Error as IOE
 
 import Staversion.Internal.BuildPlan
-  ( BuildPlan, loadBuildPlanYAML, packageVersion
+  ( BuildPlan, packageVersion, newBuildPlanManager, loadBuildPlan
   )
 import Staversion.Internal.Command
   ( parseCommandArgs,
@@ -39,11 +36,14 @@ main = do
   (TLIO.putStr . formatResultsCabal) =<< (processCommand comm)
 
 processCommand :: Command -> IO [Result]
-processCommand comm = fmap concat $ mapM processQueriesIn $ commSources comm where
+processCommand comm = impl where
+  impl = do
+    bp_man <- newBuildPlanManager (commBuildPlanDir comm) (commLogger comm) False
+    fmap concat $ mapM (processQueriesIn bp_man) $ commSources comm
   logger = commLogger comm
-  processQueriesIn source = do
+  processQueriesIn bp_man source = do
     logDebug logger ("Retrieve package source " ++ show source)
-    e_build_plan <- loadBuildPlan comm source
+    e_build_plan <- loadBuildPlan bp_man source
     logBuildPlanResult e_build_plan
     return $ map (makeResult source e_build_plan) $ commQueries comm
   makeResult source e_build_plan query = case e_build_plan of
@@ -53,19 +53,6 @@ processCommand comm = fmap concat $ mapM processQueriesIn $ commSources comm whe
                                }
   logBuildPlanResult (Right _) = logDebug logger ("Successfully retrieved build plan.")
   logBuildPlanResult (Left error_msg) = logWarn logger ("Failed to load build plan: " ++ error_msg)
-
-loadBuildPlan ::  Command -> PackageSource -> IO (Either ErrorMsg BuildPlan)
-loadBuildPlan comm source@(SourceStackage resolver) = catchJust handleIOError (Right <$> doLoad) (return . Left) where
-  yaml_file = commBuildPlanDir comm </> resolver <.> "yaml"
-  doLoad = do
-    logDebug (commLogger comm) ("Read " ++ yaml_file ++ " for build plan.")
-    loadBuildPlanYAML yaml_file
-  handleIOError :: IOException -> Maybe ErrorMsg
-  handleIOError e | IOE.isDoesNotExistError e = Just $ makeErrorMsg e (yaml_file ++ " not found.")
-                  | IOE.isPermissionError e = Just $ makeErrorMsg e ("you cannot open " ++ yaml_file ++ ".")
-                  | otherwise = Just $ makeErrorMsg e ("some error.")
-  makeErrorMsg exception body = "Loading build plan for package source " ++ show source ++ " failed: " ++ body ++ "\n" ++ show exception
-
 
 searchVersions :: BuildPlan -> Query -> ResultVersions
 searchVersions build_plan (QueryName package_name) =

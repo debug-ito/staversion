@@ -5,29 +5,47 @@
 --
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.BuildPlan
-       ( PackageName,
+       ( -- * Entry APIs
          BuildPlan,
-         loadBuildPlanYAML,
          packageVersion,
+         BuildPlanManager,
+         newBuildPlanManager,
+         loadBuildPlan,
+         -- * Low-level APIs
+         loadBuildPlanYAML,
          parseVersionText
        ) where
 
 import Control.Applicative (empty, (<$>), (<*>))
-import Control.Exception (throwIO)
+import Control.Exception (throwIO, catchJust, IOException)
 import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.HashMap.Strict as HM
+import Data.IORef (IORef, newIORef)
 import Data.Maybe (listToMaybe)
 import Data.Monoid ((<>))
 import Data.Text (Text, unpack)
 import Data.Traversable (Traversable(traverse))
 import Data.Version (Version, parseVersion)
 import qualified Data.Yaml as Yaml
+import Network.HTTP.Client (Manager, newManager, managerSetProxy, proxyEnvironment)
+import Network.HTTP.Client.TLS (tlsManagerSettings)
+import System.FilePath ((</>), (<.>))
+import qualified System.IO.Error as IOE
 import Text.Read (readMaybe)
 import Text.ParserCombinators.ReadP (readP_to_S)
 
-import Staversion.Internal.Query (PackageName)
+import Staversion.Internal.Log
+  ( Logger, logDebug
+  )
+import Staversion.Internal.Query
+ ( PackageName, PackageSource(..),
+   ErrorMsg
+ )
+import Staversion.Internal.BuildPlan.Stackage
+  ( Disambiguator
+  )
 
 -- | A data structure that keeps a map between package names and their
 -- versions.
@@ -49,6 +67,43 @@ instance FromJSON BuildPlan where
     versionParser = maybe empty return . parseVersionText
   parseJSON _ = empty
 
+-- | Stateful manager for 'BuildPlan's.
+data BuildPlanManager =
+  BuildPlanManager { manBuildPlanDir :: FilePath,
+                     -- ^ path to the directory where build plans are hold.
+                     manHttpManager :: Maybe Manager,
+                     -- ^ low-level HTTP connection manager. If 'Nothing', it won't fetch build plans over the network.
+                     manDisambiguator :: IORef (Maybe Disambiguator),
+                     -- ^ cache of resolver disambigutor
+                     manLogger :: Logger
+                   }
+
+newBuildPlanManager :: FilePath -- ^ path to the directory where build plans are hold.
+                    -> Logger
+                    -> Bool -- ^ If 'True', it queries the Internet for build plans. Otherwise, it won't.
+                    -> IO BuildPlanManager
+newBuildPlanManager plan_dir logger enable_network = do
+  mman <- if enable_network
+          then fmap Just $ newManager $ managerSetProxy (proxyEnvironment Nothing) $ tlsManagerSettings
+          else return Nothing
+  disam <- newIORef Nothing
+  return $ BuildPlanManager { manBuildPlanDir = plan_dir,
+                              manHttpManager = mman,
+                              manDisambiguator = disam,
+                              manLogger = logger
+                            }
+
+loadBuildPlan :: BuildPlanManager -> PackageSource -> IO (Either ErrorMsg BuildPlan)
+loadBuildPlan man source@(SourceStackage resolver) = catchJust handleIOError (Right <$> doLoad) (return . Left) where
+  yaml_file = manBuildPlanDir man </> resolver <.> "yaml"
+  doLoad = do
+    logDebug (manLogger man) ("Read " ++ yaml_file ++ " for build plan.")
+    loadBuildPlanYAML yaml_file
+  handleIOError :: IOException -> Maybe ErrorMsg
+  handleIOError e | IOE.isDoesNotExistError e = Just $ makeErrorMsg e (yaml_file ++ " not found.")
+                  | IOE.isPermissionError e = Just $ makeErrorMsg e ("you cannot open " ++ yaml_file ++ ".")
+                  | otherwise = Just $ makeErrorMsg e ("some error.")
+  makeErrorMsg exception body = "Loading build plan for package source " ++ show source ++ " failed: " ++ body ++ "\n" ++ show exception
 
 -- | Load a 'BuildPlan' from a file.
 loadBuildPlanYAML :: FilePath -> IO BuildPlan
