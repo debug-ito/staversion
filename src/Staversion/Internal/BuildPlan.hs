@@ -37,11 +37,11 @@ import Text.Read (readMaybe)
 import Text.ParserCombinators.ReadP (readP_to_S)
 
 import Staversion.Internal.Log
-  ( Logger, logDebug
+  ( Logger, logDebug, logWarn
   )
 import Staversion.Internal.Query
  ( PackageName, PackageSource(..),
-   ErrorMsg
+   ErrorMsg, Resolver
  )
 import Staversion.Internal.BuildPlan.Stackage
   ( Disambiguator
@@ -93,8 +93,25 @@ newBuildPlanManager plan_dir logger enable_network = do
                               manLogger = logger
                             }
 
+
+loggedElse :: Logger
+           -> IO (Either ErrorMsg a) -- ^ first action tried.
+           -> IO (Either ErrorMsg a) -- ^ the action executed if the first action returns 'Left'.
+           -> IO (Either ErrorMsg a)
+loggedElse logger first second = do
+  eret <- first
+  case eret of
+   Right _ -> return eret
+   Left e -> logWarn logger e >> second
+
 loadBuildPlan :: BuildPlanManager -> PackageSource -> IO (Either ErrorMsg BuildPlan)
-loadBuildPlan man source@(SourceStackage resolver) = catchJust handleIOError (Right <$> doLoad) (return . Left) where
+loadBuildPlan man (SourceStackage resolver) =
+  loadBuildPlan_stackageLocalFile man resolver `loggedElse'` loadBuildPlan_stackageNetwork man resolver
+  where
+    loggedElse' = loggedElse $ manLogger man
+
+loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> IO (Either ErrorMsg BuildPlan)
+loadBuildPlan_stackageLocalFile man resolver = catchJust handleIOError (Right <$> doLoad) (return . Left) where
   yaml_file = manBuildPlanDir man </> resolver <.> "yaml"
   doLoad = do
     logDebug (manLogger man) ("Read " ++ yaml_file ++ " for build plan.")
@@ -103,7 +120,14 @@ loadBuildPlan man source@(SourceStackage resolver) = catchJust handleIOError (Ri
   handleIOError e | IOE.isDoesNotExistError e = Just $ makeErrorMsg e (yaml_file ++ " not found.")
                   | IOE.isPermissionError e = Just $ makeErrorMsg e ("you cannot open " ++ yaml_file ++ ".")
                   | otherwise = Just $ makeErrorMsg e ("some error.")
-  makeErrorMsg exception body = "Loading build plan for package source " ++ show source ++ " failed: " ++ body ++ "\n" ++ show exception
+  makeErrorMsg exception body = "Loading build plan for package resolver '" ++ resolver ++ "' failed: " ++ body ++ "\n" ++ show exception
+
+loadBuildPlan_stackageNetwork :: BuildPlanManager -> Resolver -> IO (Either ErrorMsg BuildPlan)
+loadBuildPlan_stackageNetwork man resolver = impl where
+  impl = case manHttpManager man of
+    Nothing -> return $ Left ("It cannot access network.")
+    Just man -> impl_network man
+  impl_network man = undefined
 
 -- | Load a 'BuildPlan' from a file.
 loadBuildPlanYAML :: FilePath -> IO BuildPlan
