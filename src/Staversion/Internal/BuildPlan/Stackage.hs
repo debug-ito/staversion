@@ -19,7 +19,7 @@ module Staversion.Internal.BuildPlan.Stackage
        ) where
 
 import Control.Monad (void)
-import Control.Applicative ((<|>), (*>), (<$>), (<*>), empty)
+import Control.Applicative ((<|>), (*>), (<$>), (<*>), empty, pure)
 import Data.Aeson (FromJSON(..), Value(..))
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as BSL
