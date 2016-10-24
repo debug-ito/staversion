@@ -36,8 +36,10 @@ data Command =
             -- ^ the logger
             commSources :: [PackageSource],
             -- ^ package sources to search
-            commQueries :: [Query]
+            commQueries :: [Query],
             -- ^ package queries
+            commAllowNetwork :: Bool
+            -- ^ if 'True', it accesses the Internet to query build plans etc.
           } deriving (Show,Eq)
 
 -- | Default values for 'Command'.
@@ -52,7 +54,7 @@ defCommand = DefCommand <$> def_build_plan_dir where
 
 
 commandParser :: DefCommand -> Opt.Parser Command
-commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> queries where
+commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> queries <*> network where
   logger = makeLogger <$> is_verbose
   makeLogger True = defaultLogger { loggerThreshold = Just LogDebug }
   makeLogger False = defaultLogger
@@ -80,6 +82,10 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> q
             $ mconcat [ Opt.help "Name of package whose version you want to check.",
                         Opt.metavar "PACKAGE_NAME"
                       ]
+  network = not <$> no_network
+  no_network = Opt.switch $ mconcat [ Opt.long "no-network",
+                                      Opt.help "Forbid network access."
+                                    ]
 
 programDescription :: Opt.Parser a -> Opt.ParserInfo a
 programDescription parser =

@@ -38,7 +38,7 @@ main = do
 processCommand :: Command -> IO [Result]
 processCommand comm = impl where
   impl = do
-    bp_man <- newBuildPlanManager (commBuildPlanDir comm) (commLogger comm) False
+    bp_man <- newBuildPlanManager (commBuildPlanDir comm) (commLogger comm) (commAllowNetwork comm)
     fmap concat $ mapM (processQueriesIn bp_man) $ commSources comm
   logger = commLogger comm
   processQueriesIn bp_man source = do

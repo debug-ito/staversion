@@ -77,5 +77,6 @@ baseCommand :: Command
 baseCommand = Command { commBuildPlanDir = "test" </> "data",
                         commLogger = defaultLogger { loggerThreshold = Nothing },
                         commSources = [],
-                        commQueries = []
+                        commQueries = [],
+                        commAllowNetwork = False
                       }
