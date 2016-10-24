@@ -110,7 +110,11 @@ parseDisambiguator input = toDisam <$> Aeson.decode input where
 
 -- | Fetch build plan YAML data from the Internet.
 fetchBuildPlanYAML :: ExactResolver -> IO BSL.ByteString
-fetchBuildPlanYAML = undefined
+fetchBuildPlanYAML resolver = fetchURL $ url where
+  resolver_str = formatResolverString $ PartialExact $ resolver
+  url = case resolver of
+    ExactLTS _ _ -> "https://raw.githubusercontent.com/fpco/lts-haskell/master/" ++ resolver_str ++ ".yaml"
+    ExactNightly _ _ _ -> "https://raw.githubusercontent.com/fpco/stackage-nightly/master/" ++ resolver_str ++ ".yaml"
 
 fetchURL :: String -> IO BSL.ByteString
 fetchURL url = do
