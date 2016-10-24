@@ -1,6 +1,8 @@
 module Staversion.Internal.ExecSpec (main,spec) where
 
 import Data.Version (Version(Version))
+import Data.IORef (readIORef)
+import Data.List (isInfixOf)
 import System.FilePath ((</>))
 import Test.Hspec
 
@@ -15,7 +17,7 @@ import Staversion.Internal.Query
     resultVersionsFromList,
     ErrorMsg
   )
-import Staversion.Internal.Log (defaultLogger, Logger(loggerThreshold), LogLevel(LogError))
+import Staversion.Internal.Log (defaultLogger, mockLogger, Logger(loggerThreshold), LogLevel(..))
 
 import Staversion.Internal.TestUtil (ver, rvers)
 
@@ -31,11 +33,25 @@ spec = describe "processCommand" $ do
     singleCase (SourceStackage "conpact_build_plan") (QueryName "unknown")
       (Right $ rvers [("unknown", Nothing)])
   specify "QueryName, SourceStackage, source not found" $ do
-    singleCase' (SourceStackage "unknown") (QueryName "drawille") $ \got -> case got of
+    (logger, logs) <- mockLogger
+    let src = SourceStackage "unknown"
+        query = QueryName "drawille"
+        comm = baseCommand { commSources = [src],
+                             commQueries = [query],
+                             commLogger = logger { loggerThreshold = Just LogInfo }
+                           }
+    [got_ret] <- processCommand comm
+    resultIn got_ret `shouldBe` src
+    resultFor got_ret `shouldBe` query
+    case resultVersions got_ret of
       Right _ -> expectationFailure "it should fail"
-      Left msg -> do
-        msg `shouldContain` "unknown.yaml"
-        msg `shouldContain` "not found"
+      Left _ -> return ()
+    got_logs <- readIORef logs
+    let match :: (LogLevel, String) -> Bool
+        match (level, msg) = (level >= LogWarn)
+                             && ("unknown.yaml" `isInfixOf` msg)
+                             && ("not found" `isInfixOf` msg)
+    (length $ filter match got_logs) `shouldBe` 1
   specify "QueryName, SourceStackage, full-mesh" $ do
     let src2 = SourceStackage "lts-2.22_conpact"
         src7 = SourceStackage "lts-7.0_conpact"
