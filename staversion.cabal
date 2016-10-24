@@ -44,7 +44,9 @@ library
                         directory >=1.2.0 && <1.3,
                         optparse-applicative >=0.11.0 && <0.14,
                         containers,
-                        aeson
+                        aeson,
+                        http-client >=0.4.18,
+                        http-client-tls
 
 executable staversion
   default-language:     Haskell2010

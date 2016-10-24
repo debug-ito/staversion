@@ -26,6 +26,12 @@ import qualified Data.Map as M
 import Data.Maybe (listToMaybe)
 import Data.List (sortBy)
 import Data.Text (unpack)
+import Network.HTTP.Client
+  ( parseRequest, managerSetProxy, newManager, proxyEnvironment,
+    httpLbs, responseBody
+  )
+import Network.HTTP.Client.TLS (tlsManagerSettings)
+import System.IO.Error (ioError, userError)
 import qualified Text.ParserCombinators.ReadP as P
 import Text.Printf (printf)
 import Text.Read.Lex (readDecP)
@@ -79,7 +85,10 @@ type Disambiguator = PartialResolver -> Maybe ExactResolver
 
 -- | Fetch the 'Disambiguator' from the Internet.
 fetchDisambiguator :: IO Disambiguator
-fetchDisambiguator = undefined
+fetchDisambiguator = (toExcep . parseDisambiguator) =<< fetchURL disambiguator_url where
+  disambiguator_url = "https://www.stackage.org/download/snapshots.json"
+  toExcep (Just d) = return d
+  toExcep Nothing = ioError $ userError ("Failed to parse disambiguator from" ++ disambiguator_url)
 
 
 newtype DisamMap = DisamMap { unDisamMap :: M.Map PartialResolver ExactResolver }
@@ -102,3 +111,9 @@ parseDisambiguator input = toDisam <$> Aeson.decode input where
 -- | Fetch build plan YAML data from the Internet.
 fetchBuildPlanYAML :: ExactResolver -> IO BSL.ByteString
 fetchBuildPlanYAML = undefined
+
+fetchURL :: String -> IO BSL.ByteString
+fetchURL url = do
+  req <- parseRequest url
+  man <- newManager $ managerSetProxy (proxyEnvironment Nothing) $ tlsManagerSettings
+  responseBody <$> httpLbs req man
