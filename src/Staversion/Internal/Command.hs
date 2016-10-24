@@ -40,7 +40,7 @@ data Command =
             -- ^ package queries
             commAllowNetwork :: Bool
             -- ^ if 'True', it accesses the Internet to query build plans etc.
-          } deriving (Show,Eq)
+          } deriving (Show)
 
 -- | Default values for 'Command'.
 data DefCommand = DefCommand { defBuildPlanDir :: FilePath
