@@ -27,7 +27,7 @@ import Data.Maybe (listToMaybe)
 import Data.List (sortBy)
 import Data.Text (unpack)
 import Network.HTTP.Client
-  ( parseRequest, managerSetProxy, newManager, proxyEnvironment,
+  ( parseRequest, Manager,
     httpLbs, responseBody
   )
 import Network.HTTP.Client.TLS (tlsManagerSettings)
@@ -84,8 +84,8 @@ formatResolverString pr = case pr of
 type Disambiguator = PartialResolver -> Maybe ExactResolver
 
 -- | Fetch the 'Disambiguator' from the Internet.
-fetchDisambiguator :: IO Disambiguator
-fetchDisambiguator = (toExcep . parseDisambiguator) =<< fetchURL disambiguator_url where
+fetchDisambiguator :: Manager -> IO Disambiguator
+fetchDisambiguator man = (toExcep . parseDisambiguator) =<< fetchURL man disambiguator_url where
   disambiguator_url = "https://www.stackage.org/download/snapshots.json"
   toExcep (Just d) = return d
   toExcep Nothing = ioError $ userError ("Failed to parse disambiguator from" ++ disambiguator_url)
@@ -109,15 +109,14 @@ parseDisambiguator input = toDisam <$> Aeson.decode input where
   toDisam dis_map key = M.lookup key (unDisamMap dis_map)
 
 -- | Fetch build plan YAML data from the Internet.
-fetchBuildPlanYAML :: ExactResolver -> IO BSL.ByteString
-fetchBuildPlanYAML resolver = fetchURL $ url where
+fetchBuildPlanYAML :: Manager -> ExactResolver -> IO BSL.ByteString
+fetchBuildPlanYAML man resolver = fetchURL man url where
   resolver_str = formatResolverString $ PartialExact $ resolver
   url = case resolver of
     ExactLTS _ _ -> "https://raw.githubusercontent.com/fpco/lts-haskell/master/" ++ resolver_str ++ ".yaml"
     ExactNightly _ _ _ -> "https://raw.githubusercontent.com/fpco/stackage-nightly/master/" ++ resolver_str ++ ".yaml"
 
-fetchURL :: String -> IO BSL.ByteString
-fetchURL url = do
+fetchURL :: Manager -> String -> IO BSL.ByteString
+fetchURL man url = do
   req <- parseRequest url
-  man <- newManager $ managerSetProxy (proxyEnvironment Nothing) $ tlsManagerSettings
   responseBody <$> httpLbs req man
