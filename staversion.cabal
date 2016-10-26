@@ -89,7 +89,7 @@ test-suite network-test
   if !flag(network-test)
     buildable:          False
   -- other-extensions:     
-  -- other-modules:     
+  other-modules:        Staversion.Internal.TestUtil
   build-depends:        base, staversion, http-client, http-client-tls, bytestring,
                         hspec
 
