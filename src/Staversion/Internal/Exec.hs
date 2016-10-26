@@ -23,7 +23,7 @@ import Staversion.Internal.Command
     Command(..)
   )
 import Staversion.Internal.Format (formatResultsCabal)
-import Staversion.Internal.Log (logDebug, logWarn)
+import Staversion.Internal.Log (logDebug, logError)
 import Staversion.Internal.Query
   ( Query(..), Result(..), PackageSource(..),
     resultVersionsFromList, ResultVersions,
@@ -52,7 +52,7 @@ processCommand comm = impl where
                                  resultVersions = Right $ searchVersions build_plan query
                                }
   logBuildPlanResult (Right _) = logDebug logger ("Successfully retrieved build plan.")
-  logBuildPlanResult (Left error_msg) = logWarn logger ("Failed to load build plan: " ++ error_msg)
+  logBuildPlanResult (Left error_msg) = logError logger ("Failed to load build plan: " ++ error_msg)
 
 searchVersions :: BuildPlan -> Query -> ResultVersions
 searchVersions build_plan (QueryName package_name) =

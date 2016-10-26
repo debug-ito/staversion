@@ -12,6 +12,7 @@ module Staversion.Internal.Log
          logDebug,
          logInfo,
          logWarn,
+         logError,
          -- * For tests
          mockLogger
        ) where
@@ -59,6 +60,9 @@ logInfo = flip putLog $ LogInfo
 
 logWarn :: Logger -> String -> IO ()
 logWarn = flip putLog $ LogWarn
+
+logError :: Logger -> String -> IO ()
+logError = flip putLog $ LogError
 
 -- | FOR TEST: the IORef is the history of logged messages.
 mockLogger :: IO (Logger, IORef [(LogLevel, String)])
