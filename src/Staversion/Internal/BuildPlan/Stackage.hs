@@ -8,11 +8,14 @@
 -- This module is meant to be exposed only to
 -- "Staversion.Internal.BuildPlan" and test modules.
 module Staversion.Internal.BuildPlan.Stackage
-       ( ExactResolver(..),
+       ( -- * High level API
+         loadBuildPlanYAMLForResolver,
+         ExactResolver(..),
          PartialResolver(..),
          parseResolverString,
-         formatResolverString,
          Disambiguator,
+         -- * Low level API
+         formatResolverString,
          fetchDisambiguator,
          parseDisambiguator,
          fetchBuildPlanYAML
@@ -38,7 +41,7 @@ import qualified Text.ParserCombinators.ReadP as P
 import Text.Printf (printf)
 import Text.Read.Lex (readDecP)
 
-import Staversion.Internal.Query (Resolver)
+import Staversion.Internal.Query (Resolver, ErrorMsg)
 
 -- | Non-ambiguous fully-resolved resolver for stackage.
 data ExactResolver = ExactLTS Int Int  -- ^ lts-(major).(minor)
@@ -122,3 +125,27 @@ fetchURL :: Manager -> String -> IO BSL.ByteString
 fetchURL man url = do
   req <- parseRequest url
   responseBody <$> httpLbs req man
+
+loadBuildPlanYAMLForResolver :: Manager
+                             -> Maybe Disambiguator -- ^ the caller may pass a 'Disambiguator'.
+                             -> PartialResolver
+                             -> IO ((Either ErrorMsg BSL.ByteString), Maybe Disambiguator)
+                             -- ^ In sucess, it returns YAML
+                             -- 'BSL.ByteString'. It may also return a
+                             -- 'Disambiguator' it loaded.
+loadBuildPlanYAMLForResolver man m_disam presolver = impl where
+  impl = case presolver of
+    PartialExact exact -> processExact exact m_disam
+    _ -> do
+      (m_exact, got_disam) <- tryDisambiguate
+      case m_exact of
+       Nothing -> return $ (Left ("Could not disambiguate: " ++ show presolver), Just got_disam)
+       Just exact -> processExact exact (Just got_disam)
+  tryDisambiguate = do
+    got_disam <- case m_disam of
+      Just d -> return d
+      Nothing -> fetchDisambiguator man
+    return $ (got_disam presolver, got_disam)
+  processExact exact ret_disam = (,) <$> (Right <$> fetchBuildPlanYAML man exact) <*> pure ret_disam
+    
+  
