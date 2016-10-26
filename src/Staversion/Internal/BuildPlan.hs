@@ -93,7 +93,6 @@ newBuildPlanManager plan_dir logger enable_network = do
                               manLogger = logger
                             }
 
-
 loggedElse :: Logger
            -> IO (Either ErrorMsg a) -- ^ first action tried.
            -> IO (Either ErrorMsg a) -- ^ the action executed if the first action returns 'Left'.
@@ -125,7 +124,7 @@ loadBuildPlan_stackageLocalFile man resolver = catchJust handleIOError (Right <$
 loadBuildPlan_stackageNetwork :: BuildPlanManager -> Resolver -> IO (Either ErrorMsg BuildPlan)
 loadBuildPlan_stackageNetwork man resolver = impl where
   impl = case manHttpManager man of
-    Nothing -> return $ Left ("It cannot access network.")
+    Nothing -> return $ Left ("It is not allowed to access network.")
     Just man -> impl_network man
   impl_network man = undefined
 
