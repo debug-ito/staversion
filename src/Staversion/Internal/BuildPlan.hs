@@ -21,8 +21,9 @@ import Control.Exception (throwIO, catchJust, IOException)
 import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BSL
 import qualified Data.HashMap.Strict as HM
-import Data.IORef (IORef, newIORef)
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Maybe (listToMaybe)
 import Data.Monoid ((<>))
 import Data.Text (Text, unpack)
@@ -44,7 +45,9 @@ import Staversion.Internal.Query
    ErrorMsg, Resolver
  )
 import Staversion.Internal.BuildPlan.Stackage
-  ( Disambiguator
+  ( Disambiguator,
+    loadBuildPlanYAMLForResolver,
+    parseResolverString
   )
 
 -- | A data structure that keeps a map between package names and their
@@ -110,7 +113,7 @@ loadBuildPlan man (SourceStackage resolver) =
     loggedElse' = loggedElse $ manLogger man
 
 loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> IO (Either ErrorMsg BuildPlan)
-loadBuildPlan_stackageLocalFile man resolver = catchJust handleIOError (Right <$> doLoad) (return . Left) where
+loadBuildPlan_stackageLocalFile man resolver = catchJust handleIOError doLoad (return . Left) where
   yaml_file = manBuildPlanDir man </> resolver <.> "yaml"
   doLoad = do
     logDebug (manLogger man) ("Read " ++ yaml_file ++ " for build plan.")
@@ -122,16 +125,24 @@ loadBuildPlan_stackageLocalFile man resolver = catchJust handleIOError (Right <$
   makeErrorMsg exception body = "Loading build plan for package resolver '" ++ resolver ++ "' failed: " ++ body ++ "\n" ++ show exception
 
 loadBuildPlan_stackageNetwork :: BuildPlanManager -> Resolver -> IO (Either ErrorMsg BuildPlan)
-loadBuildPlan_stackageNetwork man resolver = impl where
-  impl = case manHttpManager man of
-    Nothing -> return $ Left ("It is not allowed to access network.")
-    Just man -> impl_network man
-  impl_network man = undefined
+loadBuildPlan_stackageNetwork man resolver = either (return . Left) (uncurry impl_network) $ checkArgs where
+  checkArgs = do
+    http_man <- maybe (Left ("It is not allowed to access network.")) Right $ manHttpManager man
+    presolver <- maybe (Left ("Unknown resolver: " ++ resolver)) Right $ parseResolverString resolver
+    return (http_man, presolver)
+  impl_network http_man presolver = do
+    m_disam <- readIORef $ manDisambiguator man
+    (eret, got_disam) <- loadBuildPlanYAMLForResolver http_man m_disam presolver
+    writeIORef (manDisambiguator man) got_disam
+    return $ (parseBuildPlanYAML . BSL.toStrict) =<< eret
+
+parseBuildPlanYAML :: BS.ByteString -> Either ErrorMsg BuildPlan
+parseBuildPlanYAML = either (Left . toErrorMsg) Right  . Yaml.decodeEither' where
+  toErrorMsg parse_exception = "Error while parsing BuildPlan YAML: " ++ show parse_exception
 
 -- | Load a 'BuildPlan' from a file.
-loadBuildPlanYAML :: FilePath -> IO BuildPlan
-loadBuildPlanYAML yaml_file = (toException . Yaml.decodeEither') =<< BS.readFile yaml_file where -- TODO: make it memory-efficient!
-  toException = either (throwIO) return
+loadBuildPlanYAML :: FilePath -> IO (Either ErrorMsg BuildPlan)
+loadBuildPlanYAML yaml_file = parseBuildPlanYAML <$> BS.readFile yaml_file where -- TODO: make it memory-efficient!
 
 packageVersion :: BuildPlan -> PackageName -> Maybe Version
 packageVersion (BuildPlan bp_map) name = HM.lookup name bp_map
