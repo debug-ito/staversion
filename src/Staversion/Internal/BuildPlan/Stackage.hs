@@ -23,6 +23,7 @@ module Staversion.Internal.BuildPlan.Stackage
 
 import Control.Monad (void)
 import Control.Applicative ((<|>), (*>), (<$>), (<*>), empty, pure)
+import qualified Control.Exception as Exception (handle)
 import Data.Aeson (FromJSON(..), Value(..))
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as BSL
@@ -34,7 +35,8 @@ import Data.List (sortBy)
 import Data.Text (unpack)
 import Network.HTTP.Client
   ( parseRequest, Manager,
-    httpLbs, responseBody
+    httpLbs, responseBody,
+    HttpException
   )
 import System.IO.Error (ioError, userError)
 import qualified Text.ParserCombinators.ReadP as P
@@ -133,14 +135,18 @@ loadBuildPlanYAMLForResolver :: Manager
                              -- ^ In sucess, it returns YAML
                              -- 'BSL.ByteString'. It may also return a
                              -- 'Disambiguator' it loaded.
-loadBuildPlanYAMLForResolver man m_disam presolver = impl where
+loadBuildPlanYAMLForResolver man m_disam presolver = handleNetworkException m_disam impl where
+  handleNetworkException ret_disam = Exception.handle theHandler
+    where
+      theHandler :: HttpException -> IO ((Either ErrorMsg a), Maybe Disambiguator)
+      theHandler e = return $ (Left ("Network error: " ++ show e), ret_disam)
   impl = case presolver of
     PartialExact exact -> processExact exact m_disam
     _ -> do
       (m_exact, got_disam) <- tryDisambiguate
-      case m_exact of
-       Nothing -> return $ (Left ("Could not disambiguate: " ++ show presolver), Just got_disam)
-       Just exact -> processExact exact (Just got_disam)
+      handleNetworkException (Just got_disam) $ case m_exact of
+        Nothing -> return $ (Left ("Could not disambiguate: " ++ show presolver), Just got_disam)
+        Just exact -> processExact exact (Just got_disam)
   tryDisambiguate = do
     got_disam <- case m_disam of
       Just d -> return d
