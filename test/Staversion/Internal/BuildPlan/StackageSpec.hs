@@ -5,7 +5,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import System.FilePath ((</>), (<.>))
 import Test.Hspec
-import Test.QuickCheck (Arbitrary(..), oneof, property, Gen, suchThat)
+import Test.QuickCheck (Arbitrary(..), oneof, property, Gen)
 
 import Staversion.Internal.BuildPlan.Stackage
   ( parseResolverString, formatResolverString,
@@ -13,18 +13,15 @@ import Staversion.Internal.BuildPlan.Stackage
     Disambiguator, parseDisambiguator
   )
 
-nonNega :: (Num a, Ord a, Arbitrary a) => Gen a
-nonNega = suchThat arbitrary (>= 0) 
-
 instance Arbitrary ExactResolver where
-  arbitrary = oneof [ ExactLTS <$> nonNega <*> nonNega,
-                      ExactNightly <$> nonNega <*> nonNega <*> nonNega
+  arbitrary = oneof [ ExactLTS <$> arbitrary <*> arbitrary,
+                      ExactNightly <$> arbitrary <*> arbitrary <*> arbitrary
                     ]
 
 instance Arbitrary PartialResolver where
   arbitrary = oneof [ PartialExact <$> arbitrary,
                       pure PartialLTSLatest,
-                      PartialLTSMajor <$> nonNega,
+                      PartialLTSMajor <$> arbitrary,
                       pure PartialNightlyLatest
                     ]
 

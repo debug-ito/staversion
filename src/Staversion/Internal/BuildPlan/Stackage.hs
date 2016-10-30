@@ -44,14 +44,14 @@ import Text.Read.Lex (readDecP)
 import Staversion.Internal.Query (Resolver, ErrorMsg)
 
 -- | Non-ambiguous fully-resolved resolver for stackage.
-data ExactResolver = ExactLTS Int Int  -- ^ lts-(major).(minor)
-                   | ExactNightly Int Int Int -- ^ nightly-(year)-(month)-(day)
+data ExactResolver = ExactLTS Word Word  -- ^ lts-(major).(minor)
+                   | ExactNightly Word Word Word -- ^ nightly-(year)-(month)-(day)
                    deriving (Show,Eq,Ord)
 
 -- | Potentially partial resolver for stackage.
 data PartialResolver = PartialExact ExactResolver
                      | PartialLTSLatest -- ^ lts (latest)
-                     | PartialLTSMajor Int -- ^ lts-(major)
+                     | PartialLTSMajor Word -- ^ lts-(major)
                      | PartialNightlyLatest -- ^ nightly (latest)
                      deriving (Show,Eq,Ord)
 
