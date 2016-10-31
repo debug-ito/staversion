@@ -33,6 +33,7 @@ import qualified Data.Map as M
 import Data.Maybe (listToMaybe)
 import Data.List (sortBy)
 import Data.Text (unpack)
+import Data.Word (Word)
 import Network.HTTP.Client
   ( parseRequest, Manager,
     httpLbs, responseBody,
