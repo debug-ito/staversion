@@ -34,16 +34,12 @@ import Data.Maybe (listToMaybe)
 import Data.List (sortBy)
 import Data.Text (unpack)
 import Data.Word (Word)
-import Network.HTTP.Client
-  ( parseRequest, Manager,
-    httpLbs, responseBody,
-    HttpException
-  )
 import System.IO.Error (ioError, userError)
 import qualified Text.ParserCombinators.ReadP as P
 import Text.Printf (printf)
 import Text.Read.Lex (readDecP)
 
+import Staversion.Internal.HTTP (Manager, fetchURL, HttpException)
 import Staversion.Internal.Query (Resolver, ErrorMsg)
 
 -- | Non-ambiguous fully-resolved resolver for stackage.
@@ -123,11 +119,6 @@ fetchBuildPlanYAML man resolver = fetchURL man url where
   url = case resolver of
     ExactLTS _ _ -> "https://raw.githubusercontent.com/fpco/lts-haskell/master/" ++ resolver_str ++ ".yaml"
     ExactNightly _ _ _ -> "https://raw.githubusercontent.com/fpco/stackage-nightly/master/" ++ resolver_str ++ ".yaml"
-
-fetchURL :: Manager -> String -> IO BSL.ByteString
-fetchURL man url = do
-  req <- parseRequest url
-  responseBody <$> httpLbs req man
 
 loadBuildPlanYAMLForResolver :: Manager
                              -> Maybe Disambiguator -- ^ the caller may pass a 'Disambiguator'.

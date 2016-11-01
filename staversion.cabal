@@ -25,7 +25,7 @@ library
   hs-source-dirs:       src
   ghc-options:          -Wall -fno-warn-unused-imports
   default-extensions:   OverloadedStrings
-  -- other-extensions:     
+  other-extensions:     CPP
   exposed-modules:      Staversion.Internal.BuildPlan,
                         Staversion.Internal.BuildPlan.Stackage,
                         Staversion.Internal.Query,
@@ -33,7 +33,8 @@ library
                         Staversion.Internal.Log,
                         Staversion.Internal.Exec,
                         Staversion.Internal.Format
-  other-modules:        Paths_staversion
+  other-modules:        Paths_staversion,
+                        Staversion.Internal.HTTP
   build-depends:        base >=4.6 && <4.10,
                         unordered-containers >=0.2.3 && <0.3,
                         aeson >=0.8.0 && <1.1,
@@ -46,7 +47,8 @@ library
                         containers,
                         aeson,
                         http-client >=0.4.18,
-                        http-client-tls
+                        http-client-tls,
+                        http-types
 
 executable staversion
   default-language:     Haskell2010

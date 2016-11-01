@@ -30,8 +30,6 @@ import Data.Text (Text, unpack)
 import Data.Traversable (Traversable(traverse))
 import Data.Version (Version, parseVersion)
 import qualified Data.Yaml as Yaml
-import Network.HTTP.Client (Manager, newManager, managerSetProxy, proxyEnvironment)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
 import System.FilePath ((</>), (<.>))
 import qualified System.IO.Error as IOE
 import Text.Read (readMaybe)
@@ -40,6 +38,7 @@ import Text.ParserCombinators.ReadP (readP_to_S)
 import Staversion.Internal.Log
   ( Logger, logDebug, logWarn
   )
+import Staversion.Internal.HTTP (niceHTTPManager, Manager)
 import Staversion.Internal.Query
  ( PackageName, PackageSource(..),
    ErrorMsg, Resolver
@@ -87,7 +86,7 @@ newBuildPlanManager :: FilePath -- ^ path to the directory where build plans are
                     -> IO BuildPlanManager
 newBuildPlanManager plan_dir logger enable_network = do
   mman <- if enable_network
-          then fmap Just $ newManager $ managerSetProxy (proxyEnvironment Nothing) $ tlsManagerSettings
+          then Just <$> niceHTTPManager
           else return Nothing
   disam <- newIORef Nothing
   return $ BuildPlanManager { manBuildPlanDir = plan_dir,
