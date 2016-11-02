@@ -13,7 +13,9 @@ module Staversion.Internal.BuildPlan
          loadBuildPlan,
          -- * Low-level APIs
          loadBuildPlanYAML,
-         parseVersionText
+         parseVersionText,
+         -- * For tests
+         _setDisambiguator
        ) where
 
 import Control.Applicative (empty, (<$>), (<*>))
@@ -151,3 +153,6 @@ packageVersion (BuildPlan bp_map) name = HM.lookup name bp_map
 parseVersionText :: Text -> Maybe Version
 parseVersionText = extractResult . (readP_to_S parseVersion) . unpack where
   extractResult = listToMaybe . map fst . filter (\pair -> snd pair == "")
+
+_setDisambiguator :: BuildPlanManager -> Maybe Disambiguator -> IO ()
+_setDisambiguator bp_man = writeIORef (manDisambiguator bp_man)

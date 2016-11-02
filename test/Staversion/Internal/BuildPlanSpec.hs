@@ -5,12 +5,21 @@ import Data.Version (Version(..))
 import System.FilePath ((</>), (<.>))
 import Test.Hspec
 
-import Staversion.Internal.Query (PackageName)
+import Staversion.Internal.Log (defaultLogger, loggerThreshold)
+import Staversion.Internal.Query (PackageName, PackageSource(..))
 import Staversion.Internal.BuildPlan
   ( BuildPlan, 
     loadBuildPlanYAML, 
     packageVersion,
-    parseVersionText
+    parseVersionText,
+    BuildPlanManager,
+    newBuildPlanManager,
+    _setDisambiguator,
+    loadBuildPlan
+  )
+import Staversion.Internal.BuildPlan.Stackage
+  ( Disambiguator,
+    PartialResolver(..), ExactResolver(..)
   )
 
 main :: IO ()
@@ -20,6 +29,7 @@ spec :: Spec
 spec = do
   parseVersionText_spec
   packageVersion_spec
+  loadBuildPlan_spec
 
 parseVersionText_spec :: Spec
 parseVersionText_spec = describe "parseVersionText" $ do
@@ -56,3 +66,22 @@ loadVersion :: PackageName -> IO BuildPlan -> IO (Maybe Version)
 loadVersion package_name loader = do
   plan <- loader
   return $ packageVersion plan package_name
+
+
+mockBuildPlanManager :: Disambiguator -> IO BuildPlanManager
+mockBuildPlanManager disam = do
+  bp_man <- newBuildPlanManager build_plan_dir logger False
+  _setDisambiguator bp_man (Just disam)
+  return bp_man
+  where
+    build_plan_dir = "test" </> "data"
+    logger = defaultLogger { loggerThreshold = Nothing }
+
+loadBuildPlan_spec :: Spec
+loadBuildPlan_spec = describe "loadBuildPlan" $ do
+  it "reads local file after disambiguation" $ do
+    let disam (PartialLTSLatest) = Just $ ExactLTS 4 2
+        disam _ = Nothing
+    bp_man <- mockBuildPlanManager disam
+    bp <- either (\e -> error ("Error: " ++ e)) return =<< loadBuildPlan bp_man (SourceStackage "lts")
+    packageVersion bp "base" `shouldBe` (Just $ Version [4,8,2,0] [])
