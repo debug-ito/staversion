@@ -7,7 +7,7 @@
 -- "Network.HTTP.Client".
 --
 -- __This is an internal module. End-users should not use it.__
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP, DeriveDataTypeable #-}
 module Staversion.Internal.HTTP
        ( Manager,
          OurHttpException,
@@ -15,6 +15,7 @@ module Staversion.Internal.HTTP
          fetchURL
        ) where
 
+import Control.Applicative ((<$>))
 import Control.Exception (throwIO, Exception)
 import Data.Typeable (Typeable)
 import qualified Data.ByteString.Lazy as BSL
