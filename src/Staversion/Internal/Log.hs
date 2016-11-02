@@ -14,7 +14,7 @@ module Staversion.Internal.Log
          logWarn,
          logError,
          -- * For tests
-         mockLogger
+         _mockLogger
        ) where
 
 import Control.Monad (when)
@@ -65,8 +65,8 @@ logError :: Logger -> String -> IO ()
 logError = flip putLog $ LogError
 
 -- | FOR TEST: the IORef is the history of logged messages.
-mockLogger :: IO (Logger, IORef [(LogLevel, String)])
-mockLogger = do
+_mockLogger :: IO (Logger, IORef [(LogLevel, String)])
+_mockLogger = do
   history <- newIORef []
   let puts level msg = modifyIORef history (++ [(level, msg)])
   return $ (defaultLogger { loggerPutLogRaw = puts }, history)

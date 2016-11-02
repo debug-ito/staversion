@@ -17,7 +17,7 @@ import Staversion.Internal.Query
     resultVersionsFromList,
     ErrorMsg
   )
-import Staversion.Internal.Log (defaultLogger, mockLogger, Logger(loggerThreshold), LogLevel(..))
+import Staversion.Internal.Log (defaultLogger, _mockLogger, Logger(loggerThreshold), LogLevel(..))
 
 import Staversion.Internal.TestUtil (ver, rvers)
 
@@ -33,7 +33,7 @@ spec = describe "processCommand" $ do
     singleCase (SourceStackage "conpact_build_plan") (QueryName "unknown")
       (Right $ rvers [("unknown", Nothing)])
   specify "QueryName, SourceStackage, source not found" $ do
-    (logger, logs) <- mockLogger
+    (logger, logs) <- _mockLogger
     let src = SourceStackage "unknown"
         query = QueryName "drawille"
         comm = baseCommand { commSources = [src],
