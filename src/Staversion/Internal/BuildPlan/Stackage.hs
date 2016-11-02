@@ -39,7 +39,7 @@ import qualified Text.ParserCombinators.ReadP as P
 import Text.Printf (printf)
 import Text.Read.Lex (readDecP)
 
-import Staversion.Internal.HTTP (Manager, fetchURL, HttpException)
+import Staversion.Internal.HTTP (Manager, fetchURL, OurHttpException)
 import Staversion.Internal.Query (Resolver, ErrorMsg)
 
 -- | Non-ambiguous fully-resolved resolver for stackage.
@@ -130,7 +130,7 @@ loadBuildPlanYAMLForResolver :: Manager
 loadBuildPlanYAMLForResolver man m_disam presolver = handleNetworkException m_disam impl where
   handleNetworkException ret_disam = Exception.handle theHandler
     where
-      theHandler :: HttpException -> IO ((Either ErrorMsg a), Maybe Disambiguator)
+      theHandler :: OurHttpException -> IO ((Either ErrorMsg a), Maybe Disambiguator)
       theHandler e = return $ (Left ("Network error: " ++ show e), ret_disam)
   impl = case presolver of
     PartialExact exact -> processExact exact m_disam
