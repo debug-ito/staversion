@@ -13,12 +13,12 @@ module Staversion.Internal.BuildPlan.Stackage
          ExactResolver(..),
          PartialResolver(..),
          parseResolverString,
-         Disambiguator,
-         -- * Low level API
          formatResolverString,
+         Disambiguator,
          fetchDisambiguator,
-         parseDisambiguator,
-         fetchBuildPlanYAML
+         fetchBuildPlanYAML,
+         -- * Low level API
+         parseDisambiguator
        ) where
 
 import Control.Monad (void)
@@ -34,6 +34,7 @@ import Data.Maybe (listToMaybe)
 import Data.List (sortBy)
 import Data.Text (unpack)
 import Data.Word (Word)
+import Data.IORef (IORef)
 import System.IO.Error (ioError, userError)
 import qualified Text.ParserCombinators.ReadP as P
 import Text.Printf (printf)
@@ -145,5 +146,4 @@ loadBuildPlanYAMLForResolver man m_disam presolver = handleNetworkException m_di
       Nothing -> fetchDisambiguator man
     return $ (got_disam presolver, got_disam)
   processExact exact ret_disam = (,) <$> (Right <$> fetchBuildPlanYAML man exact) <*> pure ret_disam
-    
-  
+
