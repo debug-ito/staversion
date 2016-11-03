@@ -34,3 +34,4 @@ latestVersion = undefined
 
 fetchPreferredVersions :: Manager -> IO (Either ErrorMsg RegisteredVersions)
 fetchPreferredVersions = undefined
+

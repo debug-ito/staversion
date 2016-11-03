@@ -15,7 +15,8 @@ extra-source-files:     README.md, ChangeLog.md,
                         test/data/lts-7.0_conpact.yaml,
                         test/data/lts-4.2.yaml,
                         test/data/lts-2.22_conpact.yaml,
-                        test/data/snapshots.json
+                        test/data/snapshots.json,
+                        test/data/aeson_preferred.json
                         
 homepage:               https://github.com/debug-ito/staversion
 bug-reports:            https://github.com/debug-ito/staversion/issues
@@ -28,14 +29,14 @@ library
   other-extensions:     CPP, DeriveDataTypeable
   exposed-modules:      Staversion.Internal.BuildPlan,
                         Staversion.Internal.BuildPlan.Stackage,
+                        Staversion.Internal.BuildPlan.Hackage,
                         Staversion.Internal.Query,
                         Staversion.Internal.Command,
                         Staversion.Internal.Log,
                         Staversion.Internal.Exec,
                         Staversion.Internal.Format
   other-modules:        Paths_staversion,
-                        Staversion.Internal.HTTP,
-                        Staversion.Internal.BuildPlan.Hackage
+                        Staversion.Internal.HTTP
   build-depends:        base >=4.6 && <4.10,
                         unordered-containers >=0.2.3 && <0.3,
                         aeson >=0.8.0 && <1.1,
@@ -72,6 +73,7 @@ test-suite spec
   -- other-extensions:     
   other-modules:        Staversion.Internal.BuildPlanSpec,
                         Staversion.Internal.BuildPlan.StackageSpec,
+                        Staversion.Internal.BuildPlan.HackageSpec,
                         Staversion.Internal.ExecSpec,
                         Staversion.Internal.FormatSpec,
                         Staversion.Internal.TestUtil
