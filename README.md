@@ -24,17 +24,15 @@ staversion is a command-line tool to look for version numbers for Haskell packag
     conduit ==1.2.7,
     base ==4.9.0.0
 
-Currently staversion reads build plan YAML files that are stored locally in your computer.
+staversion first reads build plan YAML files that are stored locally in your computer, then it tries to fetch them over network.
 
 
 ## TODO
 
-- Fetch build plan YAML files from github.com
-- Cache build plans in some local storage (SQLite?)
-- Expand major version resolvers (lts-X) into full resolvers (lts-X.YY)
 - Search for the latest version numbers hosted in hackage.
 - Read `build-depends` sections .cabal files for package name queries.
 - Show version number ranges supported by the given resolvers.
+- Cache build plans in some local storage (SQLite?)
 
 ## Author
 
