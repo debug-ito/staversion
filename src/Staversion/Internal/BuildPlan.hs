@@ -154,7 +154,7 @@ tryDisambiguate bp_man presolver = impl where
      Just d -> return d
      Nothing -> do
        http_man <- maybeToLoadM "It is not allowed to access network." $ manHttpManager bp_man
-       got_d <- liftIO $ fetchDisambiguator http_man
+       got_d <- ExceptT $ fetchDisambiguator http_man
        liftIO $ writeIORef (manDisambiguator bp_man) $ Just got_d
        return got_d
   

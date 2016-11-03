@@ -88,12 +88,10 @@ formatResolverString pr = case pr of
 type Disambiguator = PartialResolver -> Maybe ExactResolver
 
 -- | Fetch the 'Disambiguator' from the Internet.
-fetchDisambiguator :: Manager -> IO Disambiguator
-fetchDisambiguator man = (toExcep . parseDisambiguator) =<< fetchURL man disambiguator_url where
+fetchDisambiguator :: Manager -> IO (Either ErrorMsg Disambiguator)
+fetchDisambiguator man = (return . toEither . parseDisambiguator) =<< fetchURL man disambiguator_url where
   disambiguator_url = "https://www.stackage.org/download/snapshots.json"
-  toExcep (Just d) = return d
-  toExcep Nothing = ioError $ userError ("Failed to parse disambiguator from" ++ disambiguator_url)
-
+  toEither = maybe (Left ("Failed to parse disambiguator from" ++ disambiguator_url)) Right
 
 newtype DisamMap = DisamMap { unDisamMap :: M.Map PartialResolver ExactResolver }
 

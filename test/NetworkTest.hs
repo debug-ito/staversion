@@ -33,8 +33,10 @@ spec_Stackage:: Spec
 spec_Stackage = describe "BuildPlan.Stackage" $ beforeAll makeManager $ do
   describe "fetchDisambiguator" $ do
     it "fetches valid disambiguator" $ \man -> do
-      dis <- fetchDisambiguator man
-      dis (PartialLTSMajor 2) `shouldBe` Just (ExactLTS 2 22)
+      e_dis <- fetchDisambiguator man
+      case e_dis of
+       Left err -> expectationFailure ("should not be Left: " ++ err)
+       Right dis -> dis (PartialLTSMajor 2) `shouldBe` Just (ExactLTS 2 22)
   describe "fetchBuildPlanYAML" $ do
     it "fetches a LTS build plan" $ \man -> do
       raw_yaml <- fetchBuildPlanYAML man (ExactLTS 2 22)
