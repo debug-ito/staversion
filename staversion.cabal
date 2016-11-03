@@ -34,7 +34,8 @@ library
                         Staversion.Internal.Exec,
                         Staversion.Internal.Format
   other-modules:        Paths_staversion,
-                        Staversion.Internal.HTTP
+                        Staversion.Internal.HTTP,
+                        Staversion.Internal.BuildPlan.Hackage
   build-depends:        base >=4.6 && <4.10,
                         unordered-containers >=0.2.3 && <0.3,
                         aeson >=0.8.0 && <1.1,

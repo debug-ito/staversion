@@ -47,6 +47,9 @@ import Staversion.Internal.Query
  ( PackageName, PackageSource(..),
    ErrorMsg, Resolver
  )
+import Staversion.Internal.BuildPlan.Hackage
+  ( RegisteredVersions, latestVersion
+  )
 import Staversion.Internal.BuildPlan.Stackage
   ( Disambiguator,
     fetchDisambiguator,
@@ -187,3 +190,9 @@ parseVersionText = extractResult . (readP_to_S parseVersion) . unpack where
 
 _setDisambiguator :: BuildPlanManager -> Maybe Disambiguator -> IO ()
 _setDisambiguator bp_man = writeIORef (manDisambiguator bp_man)
+
+registeredVersionToBuildPlan :: PackageName -> RegisteredVersions -> BuildPlan
+registeredVersionToBuildPlan name rvers = BuildPlan $ HM.fromList $ pairs where
+  pairs = case latestVersion rvers of
+    Nothing -> []
+    Just v -> [(name, v)]
