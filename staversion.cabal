@@ -49,7 +49,8 @@ library
                         http-client >=0.4.18,
                         http-client-tls,
                         http-types,
-                        transformers
+                        transformers,
+                        transformers-compat
 
 executable staversion
   default-language:     Haskell2010
