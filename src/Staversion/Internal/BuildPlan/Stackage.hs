@@ -9,7 +9,6 @@
 -- "Staversion.Internal.BuildPlan" and test modules.
 module Staversion.Internal.BuildPlan.Stackage
        ( -- * High level API
-         loadBuildPlanYAMLForResolver,
          ExactResolver(..),
          PartialResolver(..),
          parseResolverString,
@@ -120,30 +119,4 @@ fetchBuildPlanYAML man resolver = fetchURL man url where
   url = case resolver of
     ExactLTS _ _ -> "https://raw.githubusercontent.com/fpco/lts-haskell/master/" ++ resolver_str ++ ".yaml"
     ExactNightly _ _ _ -> "https://raw.githubusercontent.com/fpco/stackage-nightly/master/" ++ resolver_str ++ ".yaml"
-
-loadBuildPlanYAMLForResolver :: Manager
-                             -> Maybe Disambiguator -- ^ the caller may pass a 'Disambiguator'.
-                             -> PartialResolver
-                             -> IO ((Either ErrorMsg BSL.ByteString), Maybe Disambiguator)
-                             -- ^ In sucess, it returns YAML
-                             -- 'BSL.ByteString'. It may also return a
-                             -- 'Disambiguator' it loaded.
-loadBuildPlanYAMLForResolver man m_disam presolver = handleNetworkException m_disam impl where
-  handleNetworkException ret_disam = Exception.handle theHandler
-    where
-      theHandler :: OurHttpException -> IO ((Either ErrorMsg a), Maybe Disambiguator)
-      theHandler e = return $ (Left ("Network error: " ++ show e), ret_disam)
-  impl = case presolver of
-    PartialExact exact -> processExact exact m_disam
-    _ -> do
-      (m_exact, got_disam) <- tryDisambiguate
-      handleNetworkException (Just got_disam) $ case m_exact of
-        Nothing -> return $ (Left ("Could not disambiguate: " ++ show presolver), Just got_disam)
-        Just exact -> processExact exact (Just got_disam)
-  tryDisambiguate = do
-    got_disam <- case m_disam of
-      Just d -> return d
-      Nothing -> fetchDisambiguator man
-    return $ (got_disam presolver, got_disam)
-  processExact exact ret_disam = (,) <$> (Right <$> fetchBuildPlanYAML man exact) <*> pure ret_disam
 
