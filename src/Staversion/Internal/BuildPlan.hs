@@ -154,13 +154,17 @@ tryDisambiguate bp_man presolver = impl where
      Just d -> return d
      Nothing -> do
        http_man <- maybeToLoadM "It is not allowed to access network." $ manHttpManager bp_man
+       logDebug' "Fetch resolver disambiguator from network..."
        got_d <- ExceptT $ fetchDisambiguator http_man
+       logDebug' "Successfully fetched resolver disambiguator."
        liftIO $ writeIORef (manDisambiguator bp_man) $ Just got_d
        return got_d
+  logDebug' = liftIO . logDebug (manLogger bp_man)
   
 loadBuildPlan_stackageNetwork :: BuildPlanManager -> ExactResolver -> LoadM BuildPlan
 loadBuildPlan_stackageNetwork man e_resolver = do
   http_man <- maybeToLoadM "It is not allowed to access network." $ manHttpManager man
+  liftIO $ logDebug (manLogger man) ("Fetch build plan from network: resolver = " ++ show e_resolver)
   yaml_data <- httpExceptionToLoadM ("Downloading build plan failed: " ++ show e_resolver) $ liftIO $ fetchBuildPlanYAML http_man e_resolver
   ExceptT $ return $ parseBuildPlanYAML $ BSL.toStrict yaml_data
 
