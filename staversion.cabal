@@ -48,7 +48,8 @@ library
                         aeson,
                         http-client >=0.4.18,
                         http-client-tls,
-                        http-types
+                        http-types,
+                        transformers
 
 executable staversion
   default-language:     Haskell2010

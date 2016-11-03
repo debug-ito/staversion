@@ -20,6 +20,7 @@ module Staversion.Internal.BuildPlan
 
 import Control.Applicative (empty, (<$>), (<*>))
 import Control.Exception (throwIO, catchJust, IOException)
+import Control.Monad.Trans.Except (runExceptT, ExceptT(..))
 import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
@@ -97,24 +98,25 @@ newBuildPlanManager plan_dir logger enable_network = do
                               manLogger = logger
                             }
 
+type LoadM = ExceptT ErrorMsg IO
+
 loggedElse :: Logger
-           -> IO (Either ErrorMsg a) -- ^ first action tried.
-           -> IO (Either ErrorMsg a) -- ^ the action executed if the first action returns 'Left'.
-           -> IO (Either ErrorMsg a)
-loggedElse logger first second = do
-  eret <- first
+           -> LoadM a -- ^ first action tried.
+           -> LoadM a -- ^ the action executed if the first action returns 'Left'.
+           -> LoadM a
+loggedElse logger first second = ExceptT $ do
+  eret <- runExceptT first
   case eret of
    Right _ -> return eret
-   Left e -> logWarn logger e >> second
+   Left e -> logWarn logger e >> runExceptT second
 
 loadBuildPlan :: BuildPlanManager -> PackageSource -> IO (Either ErrorMsg BuildPlan)
-loadBuildPlan man (SourceStackage resolver) =
-  loadBuildPlan_stackageLocalFile man resolver `loggedElse'` loadBuildPlan_stackageNetwork man resolver
-  where
-    loggedElse' = loggedElse $ manLogger man
+loadBuildPlan man (SourceStackage resolver) = runExceptT impl where
+  impl = loadBuildPlan_stackageLocalFile man resolver `loggedElse'` loadBuildPlan_stackageNetwork man resolver
+  loggedElse' = loggedElse $ manLogger man
 
-loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> IO (Either ErrorMsg BuildPlan)
-loadBuildPlan_stackageLocalFile man resolver = catchJust handleIOError doLoad (return . Left) where
+loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM BuildPlan
+loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where
   yaml_file = manBuildPlanDir man </> resolver <.> "yaml"
   doLoad = do
     logDebug (manLogger man) ("Read " ++ yaml_file ++ " for build plan.")
@@ -125,8 +127,9 @@ loadBuildPlan_stackageLocalFile man resolver = catchJust handleIOError doLoad (r
                   | otherwise = Just $ makeErrorMsg e ("some error.")
   makeErrorMsg exception body = "Loading build plan for package resolver '" ++ resolver ++ "' failed: " ++ body ++ "\n" ++ show exception
 
-loadBuildPlan_stackageNetwork :: BuildPlanManager -> Resolver -> IO (Either ErrorMsg BuildPlan)
-loadBuildPlan_stackageNetwork man resolver = either (return . Left) (uncurry impl_network) $ checkArgs where
+
+loadBuildPlan_stackageNetwork :: BuildPlanManager -> Resolver -> LoadM BuildPlan
+loadBuildPlan_stackageNetwork man resolver = ExceptT $ either (return . Left) (uncurry impl_network) $ checkArgs where
   checkArgs = do
     http_man <- maybe (Left ("It is not allowed to access network.")) Right $ manHttpManager man
     presolver <- maybe (Left ("Unknown resolver: " ++ resolver)) Right $ parseResolverString resolver
