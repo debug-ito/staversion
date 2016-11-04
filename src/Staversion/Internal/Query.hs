@@ -28,6 +28,7 @@ type Resolver = String
 
 -- | Source of packages.
 data PackageSource = SourceStackage Resolver -- ^ stackage.
+                   | SourceHackage -- ^ hackage (latest)
                    deriving (Show,Eq,Ord)
 
 -- | Query for package version(s).

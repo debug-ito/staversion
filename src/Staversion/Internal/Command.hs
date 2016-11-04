@@ -9,7 +9,7 @@ module Staversion.Internal.Command
          parseCommandArgs
        ) where
 
-import Control.Applicative ((<$>), (<*>), optional, some)
+import Control.Applicative ((<$>), (<*>), optional, some, (<|>))
 import Data.Monoid (mconcat)
 import Data.Text (pack)
 import Data.Version (showVersion)
@@ -64,19 +64,23 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> q
                                     ]
   build_plan_dir = Opt.strOption
                    $ mconcat [ Opt.long "build-plan-dir",
-                               Opt.help ( "Directory where build plan YAML files are stored. Default: "
-                                          ++ defBuildPlanDir def_comm
-                                        ),
+                               Opt.help "Directory where build plan YAML files are stored.",
                                Opt.metavar "DIR",
-                               Opt.value (defBuildPlanDir def_comm)
+                               Opt.value (defBuildPlanDir def_comm),
+                               Opt.showDefault
                              ]
-  sources = some $ SourceStackage <$> resolver
-  resolver = Opt.strOption
+  sources = some $ resolver <|> hackage
+  resolver = fmap SourceStackage $ Opt.strOption
              $ mconcat [ Opt.long "resolver",
                          Opt.short 'r',
                          Opt.help "Stackage resolver to search. e.g. \"lts-6.15\"",
                          Opt.metavar "RESOLVER_NAME"
                        ]
+  hackage = Opt.flag' SourceHackage
+            $ mconcat [ Opt.long "hackage",
+                        Opt.short 'H',
+                        Opt.help "Search hackage.org for the latest version."
+                      ]
   queries = some $ QueryName <$> package
   package = fmap pack $ Opt.strArgument
             $ mconcat [ Opt.help "Name of package whose version you want to check.",
