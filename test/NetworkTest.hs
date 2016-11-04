@@ -1,5 +1,6 @@
 module Main (main,spec) where
 
+import Control.Applicative ((<$>))
 import qualified Data.ByteString.Lazy as BSL
 import Network.HTTP.Client (newManager, Manager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
@@ -13,6 +14,7 @@ import Staversion.Internal.BuildPlan
     loadBuildPlan,
     packageVersion
   )
+import Staversion.Internal.BuildPlan.Hackage (fetchPreferredVersions, latestVersion)
 import Staversion.Internal.BuildPlan.Stackage
   ( fetchDisambiguator,
     fetchBuildPlanYAML,
@@ -28,6 +30,7 @@ spec :: Spec
 spec = do
   spec_Stackage
   spec_BuildPlan
+  spec_Hackage
 
 spec_Stackage:: Spec
 spec_Stackage = describe "BuildPlan.Stackage" $ beforeAll makeManager $ do
@@ -60,3 +63,13 @@ spec_BuildPlan = describe "BuildPlan" $ do
       packageVersion bp "base" `shouldBe` Just (ver [4,8,2,0])
       packageVersion bp "bytestring" `shouldBe` Just (ver [0,10,6,0])
       packageVersion bp "conduit" `shouldBe` Just (ver [1,2,6,6])
+
+spec_Hackage :: Spec
+spec_Hackage = describe "BuildPlan.Hackage" $ do
+  describe "fetchPreferredVersions" $ do
+    it "fetches a non-empty latestVersion" $ do
+      man <- makeManager
+      ret <- fmap latestVersion <$> fetchPreferredVersions man "http-client"
+      case ret of
+       Right (Just v) -> v `shouldSatisfy` (>= ver [0,5,3,3])
+       _ -> expectationFailure ("Unexpected return: " ++ show ret)

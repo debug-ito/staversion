@@ -14,14 +14,16 @@ module Staversion.Internal.BuildPlan.Hackage
        ) where
 
 import Control.Applicative ((<$>), empty)
+import qualified Control.Exception as Exception
 import Data.Aeson (FromJSON(..), Value(..), (.:), eitherDecode)
 import qualified Data.ByteString.Lazy as BSL
 import Data.List (sort, reverse)
+import Data.Text (unpack)
 import Data.Version (Version)
 
 import Staversion.Internal.BuildPlan.Version (unVersionJSON)
-import Staversion.Internal.Query (ErrorMsg)
-import Staversion.Internal.HTTP (Manager)
+import Staversion.Internal.Query (ErrorMsg, PackageName)
+import Staversion.Internal.HTTP (Manager, fetchURL, OurHttpException)
 
 data RegisteredVersions = RegisteredVersions { regPreferredVersions :: [Version]
                                                -- ^ Sorted list of preferred versions of the package.
@@ -41,6 +43,9 @@ latestVersion rvers = case regPreferredVersions rvers of
   [] -> Nothing
   (v : _) -> Just v
 
-fetchPreferredVersions :: Manager -> IO (Either ErrorMsg RegisteredVersions)
-fetchPreferredVersions = undefined
-
+fetchPreferredVersions :: Manager -> PackageName -> IO (Either ErrorMsg RegisteredVersions)
+fetchPreferredVersions man text_name = Exception.handle handler $ parsePreferredVersionsJSON <$> fetchURL man url where
+  name = unpack text_name
+  url = "http://hackage.haskell.org/package/" ++ name ++ "/preferred.json"
+  handler :: OurHttpException -> IO (Either ErrorMsg a)
+  handler e = return $ Left ("HTTP error while fetching versions of " ++ name ++ " in hackage: " ++ show e)
