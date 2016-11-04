@@ -13,9 +13,13 @@ module Staversion.Internal.BuildPlan.Hackage
          parsePreferredVersionsJSON
        ) where
 
+import Control.Applicative ((<$>), empty)
+import Data.Aeson (FromJSON(..), Value(..), (.:), eitherDecode)
 import qualified Data.ByteString.Lazy as BSL
+import Data.List (sort, reverse)
 import Data.Version (Version)
 
+import Staversion.Internal.BuildPlan.Version (unVersionJSON)
 import Staversion.Internal.Query (ErrorMsg)
 import Staversion.Internal.HTTP (Manager)
 
@@ -25,12 +29,17 @@ data RegisteredVersions = RegisteredVersions { regPreferredVersions :: [Version]
                                              }
                           deriving (Show,Eq,Ord)
 
+instance FromJSON RegisteredVersions where
+  parseJSON (Object o) = (RegisteredVersions . reverse . sort . map unVersionJSON) <$> (o .: "normal-version")
+  parseJSON _ = empty
 
 parsePreferredVersionsJSON :: BSL.ByteString -> Either ErrorMsg RegisteredVersions
-parsePreferredVersionsJSON = undefined
+parsePreferredVersionsJSON = either (\e -> Left ("Decoding preferred versions error: " ++ e)) Right . eitherDecode
 
 latestVersion :: RegisteredVersions -> Maybe Version
-latestVersion = undefined
+latestVersion rvers = case regPreferredVersions rvers of
+  [] -> Nothing
+  (v : _) -> Just v
 
 fetchPreferredVersions :: Manager -> IO (Either ErrorMsg RegisteredVersions)
 fetchPreferredVersions = undefined
