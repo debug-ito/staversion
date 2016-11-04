@@ -13,7 +13,6 @@ module Staversion.Internal.BuildPlan
          loadBuildPlan,
          -- * Low-level APIs
          loadBuildPlanYAML,
-         parseVersionText,
          -- * For tests
          _setDisambiguator
        ) where
@@ -28,16 +27,14 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.HashMap.Strict as HM
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.Maybe (listToMaybe)
 import Data.Monoid ((<>))
-import Data.Text (Text, unpack)
+import Data.Text (Text)
 import Data.Traversable (Traversable(traverse))
-import Data.Version (Version, parseVersion)
+import Data.Version (Version)
 import qualified Data.Yaml as Yaml
 import System.FilePath ((</>), (<.>))
 import qualified System.IO.Error as IOE
 import Text.Read (readMaybe)
-import Text.ParserCombinators.ReadP (readP_to_S)
 
 import Staversion.Internal.Log
   ( Logger, logDebug, logWarn
@@ -58,6 +55,7 @@ import Staversion.Internal.BuildPlan.Stackage
     PartialResolver(..), ExactResolver,
     fetchBuildPlanYAML
   )
+import Staversion.Internal.BuildPlan.Version (unVersionJSON)
 
 -- | A data structure that keeps a map between package names and their
 -- versions.
@@ -68,15 +66,14 @@ instance FromJSON BuildPlan where
     core_packages = parseSysInfo =<< (object .: "system-info")
     parseSysInfo (Object o) = parseCorePackages =<< (o .: "core-packages")
     parseSysInfo _ = empty
-    parseCorePackages (Object o) = traverse (\v -> versionParser =<< parseJSON v) o
+    parseCorePackages (Object o) = traverse (\v -> unVersionJSON <$> parseJSON v) o
     parseCorePackages _ = empty
 
     other_packages = parsePackages =<< (object .: "packages")
     parsePackages (Object o) = traverse parsePackageObject o
     parsePackages _ = empty
-    parsePackageObject (Object o) = versionParser =<< (o .: "version")
+    parsePackageObject (Object o) = unVersionJSON <$> (o .: "version")
     parsePackageObject _ = empty
-    versionParser = maybe empty return . parseVersionText
   parseJSON _ = empty
 
 -- | Stateful manager for 'BuildPlan's.
@@ -181,12 +178,6 @@ loadBuildPlanYAML yaml_file = parseBuildPlanYAML <$> BS.readFile yaml_file where
 
 packageVersion :: BuildPlan -> PackageName -> Maybe Version
 packageVersion (BuildPlan bp_map) name = HM.lookup name bp_map
-
--- | Parse a version text. There must not be any trailing characters
--- after a valid version text.
-parseVersionText :: Text -> Maybe Version
-parseVersionText = extractResult . (readP_to_S parseVersion) . unpack where
-  extractResult = listToMaybe . map fst . filter (\pair -> snd pair == "")
 
 _setDisambiguator :: BuildPlanManager -> Maybe Disambiguator -> IO ()
 _setDisambiguator bp_man = writeIORef (manDisambiguator bp_man)

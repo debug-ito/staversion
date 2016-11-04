@@ -30,6 +30,7 @@ library
   exposed-modules:      Staversion.Internal.BuildPlan,
                         Staversion.Internal.BuildPlan.Stackage,
                         Staversion.Internal.BuildPlan.Hackage,
+                        Staversion.Internal.BuildPlan.Version,
                         Staversion.Internal.Query,
                         Staversion.Internal.Command,
                         Staversion.Internal.Log,
@@ -74,6 +75,7 @@ test-suite spec
   other-modules:        Staversion.Internal.BuildPlanSpec,
                         Staversion.Internal.BuildPlan.StackageSpec,
                         Staversion.Internal.BuildPlan.HackageSpec,
+                        Staversion.Internal.BuildPlan.VersionSpec,
                         Staversion.Internal.ExecSpec,
                         Staversion.Internal.FormatSpec,
                         Staversion.Internal.TestUtil
