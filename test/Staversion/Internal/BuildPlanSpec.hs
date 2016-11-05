@@ -73,5 +73,5 @@ loadBuildPlan_spec = describe "loadBuildPlan" $ do
     let disam (PartialLTSLatest) = Just $ ExactLTS 4 2
         disam _ = Nothing
     bp_man <- mockBuildPlanManager disam
-    bp <- either (\e -> error ("Error: " ++ e)) return =<< loadBuildPlan bp_man (SourceStackage "lts")
+    bp <- either (\e -> error ("Error: " ++ e)) return =<< loadBuildPlan bp_man [] (SourceStackage "lts")
     packageVersion bp "base" `shouldBe` (Just $ Version [4,8,2,0] [])

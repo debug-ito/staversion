@@ -122,14 +122,16 @@ httpExceptionToLoadM context action = ExceptT $ (runExceptT action) `catch` hand
   handler :: OurHttpException -> IO (Either ErrorMsg a)
   handler e = return $ Left (context ++ ": " ++ show e)
 
-loadBuildPlan :: BuildPlanManager -> PackageSource -> IO (Either ErrorMsg BuildPlan)
-loadBuildPlan man (SourceStackage resolver) = runExceptT impl where
+loadBuildPlan :: BuildPlanManager
+              -> [PackageName] -- ^ package names whose versions the user is interested in.
+              -> PackageSource -> IO (Either ErrorMsg BuildPlan)
+loadBuildPlan man _ (SourceStackage resolver) = runExceptT impl where
   impl = loadBuildPlan_stackageLocalFile man resolver `loggedElse'` do
     e_resolver <- tryDisambiguate man =<< getPresolver
     loadBuildPlan_stackageLocalFile man (formatResolverString $ PartialExact e_resolver) `loggedElse'` loadBuildPlan_stackageNetwork man e_resolver
   getPresolver = maybeToLoadM ("Invalid resolver format for stackage.org: " ++ resolver) $ parseResolverString resolver
   loggedElse' = loggedElse $ manLogger man
-loadBuildPlan _ SourceHackage = undefined
+loadBuildPlan _ _ SourceHackage = undefined
 
 loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM BuildPlan
 loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where

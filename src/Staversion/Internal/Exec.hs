@@ -43,7 +43,7 @@ processCommand comm = impl where
   logger = commLogger comm
   processQueriesIn bp_man source = do
     logDebug logger ("Retrieve package source " ++ show source)
-    e_build_plan <- loadBuildPlan bp_man source
+    e_build_plan <- loadBuildPlan bp_man queriedPackageNames source
     logBuildPlanResult e_build_plan
     return $ map (makeResult source e_build_plan) $ commQueries comm
   makeResult source e_build_plan query = case e_build_plan of
@@ -53,6 +53,7 @@ processCommand comm = impl where
                                }
   logBuildPlanResult (Right _) = logDebug logger ("Successfully retrieved build plan.")
   logBuildPlanResult (Left error_msg) = logError logger ("Failed to load build plan: " ++ error_msg)
+  queriedPackageNames = undefined -- TODO
 
 searchVersions :: BuildPlan -> Query -> ResultVersions
 searchVersions build_plan (QueryName package_name) =
