@@ -4,6 +4,7 @@
 -- Maintainer: Toshio Ito <debug.ito@gmail.com>
 --
 -- __This is an internal module. End-users should not use it.__
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Staversion.Internal.BuildPlan
        ( -- * Entry APIs
          BuildPlan,
@@ -21,13 +22,14 @@ import Control.Applicative (empty, (<$>), (<*>))
 import Control.Exception (throwIO, catchJust, IOException, catch)
 import Control.Monad.Trans.Except (runExceptT, ExceptT(..))
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad (mapM)
 import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.HashMap.Strict as HM
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.Monoid ((<>))
+import Data.Monoid ((<>), mconcat)
 import Data.Text (Text)
 import Data.Traversable (Traversable(traverse))
 import Data.Version (Version)
@@ -45,7 +47,8 @@ import Staversion.Internal.Query
    ErrorMsg, Resolver
  )
 import Staversion.Internal.BuildPlan.Hackage
-  ( RegisteredVersions, latestVersion
+  ( RegisteredVersions, latestVersion,
+    fetchPreferredVersions
   )
 import Staversion.Internal.BuildPlan.Stackage
   ( Disambiguator,
@@ -59,7 +62,7 @@ import Staversion.Internal.BuildPlan.Version (unVersionJSON)
 
 -- | A data structure that keeps a map between package names and their
 -- versions.
-newtype BuildPlan = BuildPlan (HM.HashMap PackageName Version)
+newtype BuildPlan = BuildPlan (HM.HashMap PackageName Version) deriving (Monoid)
 
 instance FromJSON BuildPlan where
   parseJSON (Object object) = (\p1 p2 -> BuildPlan $ p1 <> p2) <$> core_packages <*> other_packages where
@@ -117,6 +120,9 @@ loggedElse logger first second = ExceptT $ do
 maybeToLoadM :: ErrorMsg -> Maybe a -> LoadM a
 maybeToLoadM msg = ExceptT . return . maybe (Left msg) Right
 
+httpManagerM :: BuildPlanManager -> LoadM Manager
+httpManagerM = maybeToLoadM "It is not allowed to access network." . manHttpManager
+
 httpExceptionToLoadM :: String -> LoadM a -> LoadM a
 httpExceptionToLoadM context action = ExceptT $ (runExceptT action) `catch` handler where
   handler :: OurHttpException -> IO (Either ErrorMsg a)
@@ -131,7 +137,10 @@ loadBuildPlan man _ (SourceStackage resolver) = runExceptT impl where
     loadBuildPlan_stackageLocalFile man (formatResolverString $ PartialExact e_resolver) `loggedElse'` loadBuildPlan_stackageNetwork man e_resolver
   getPresolver = maybeToLoadM ("Invalid resolver format for stackage.org: " ++ resolver) $ parseResolverString resolver
   loggedElse' = loggedElse $ manLogger man
-loadBuildPlan _ _ SourceHackage = undefined
+loadBuildPlan man names SourceHackage = runExceptT impl where
+  impl = do
+    http_man <- httpManagerM man
+    (mconcat . zipWith registeredVersionToBuildPlan names) <$> (mapM (ExceptT . fetchPreferredVersions http_man) $ names)
 
 loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM BuildPlan
 loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where
@@ -156,7 +165,7 @@ tryDisambiguate bp_man presolver = impl where
     case m_disam of
      Just d -> return d
      Nothing -> do
-       http_man <- maybeToLoadM "It is not allowed to access network." $ manHttpManager bp_man
+       http_man <- httpManagerM bp_man
        logDebug' "Fetch resolver disambiguator from network..."
        got_d <- ExceptT $ fetchDisambiguator http_man
        logDebug' "Successfully fetched resolver disambiguator."
@@ -166,7 +175,7 @@ tryDisambiguate bp_man presolver = impl where
   
 loadBuildPlan_stackageNetwork :: BuildPlanManager -> ExactResolver -> LoadM BuildPlan
 loadBuildPlan_stackageNetwork man e_resolver = do
-  http_man <- maybeToLoadM "It is not allowed to access network." $ manHttpManager man
+  http_man <- httpManagerM man
   liftIO $ logDebug (manLogger man) ("Fetch build plan from network: resolver = " ++ show e_resolver)
   yaml_data <- httpExceptionToLoadM ("Downloading build plan failed: " ++ show e_resolver) $ liftIO $ fetchBuildPlanYAML http_man e_resolver
   ExceptT $ return $ parseBuildPlanYAML $ BSL.toStrict yaml_data

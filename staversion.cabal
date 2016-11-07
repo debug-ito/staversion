@@ -26,7 +26,7 @@ library
   hs-source-dirs:       src
   ghc-options:          -Wall -fno-warn-unused-imports
   default-extensions:   OverloadedStrings
-  other-extensions:     CPP, DeriveDataTypeable
+  other-extensions:     CPP, DeriveDataTypeable, GeneralizedNewtypeDeriving
   exposed-modules:      Staversion.Internal.BuildPlan,
                         Staversion.Internal.BuildPlan.Stackage,
                         Staversion.Internal.BuildPlan.Hackage,
