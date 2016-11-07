@@ -21,7 +21,7 @@ import Staversion.Internal.BuildPlan.Stackage
     PartialResolver(..), ExactResolver(..)
   )
 import Staversion.Internal.Log (defaultLogger, Logger(loggerThreshold))
-import Staversion.Internal.Query (PackageSource(..))
+import Staversion.Internal.Query (PackageSource(..), ErrorMsg)
 
 main :: IO ()
 main = hspec spec
@@ -51,18 +51,31 @@ spec_Stackage = describe "BuildPlan.Stackage" $ beforeAll makeManager $ do
 makeManager :: IO Manager
 makeManager = newManager tlsManagerSettings
 
+quietLogger :: Logger
+quietLogger = defaultLogger { loggerThreshold = Nothing }
+
+expectRight :: String -> Either ErrorMsg a -> IO a
+expectRight msg_head = either (\err -> error $ msg_head ++ err) return
+
+isJustAnd :: Maybe a -> (a -> Bool) -> Bool
+isJustAnd m p = maybe False p m
+
 spec_BuildPlan :: Spec
 spec_BuildPlan = describe "BuildPlan" $ do
   describe "loadBuildPlan from Stackage" $ do
     it "disambiguates LTS version and fetches a valid BuildPlan" $ do
-      let logger = defaultLogger { loggerThreshold = Nothing }
-      bp_man <- newBuildPlanManager "." logger True
-      bp <- loadBuildPlan bp_man (SourceStackage "lts-5") >>= \ret -> case ret of
-        Right bp -> return bp
-        Left error_msg -> error ("loadBuildPlan failed: " ++ error_msg)
+      bp_man <- newBuildPlanManager "." quietLogger True
+      bp <- expectRight "loadBuildPlan failed: " =<< loadBuildPlan bp_man [] (SourceStackage "lts-5")
       packageVersion bp "base" `shouldBe` Just (ver [4,8,2,0])
       packageVersion bp "bytestring" `shouldBe` Just (ver [0,10,6,0])
       packageVersion bp "conduit" `shouldBe` Just (ver [1,2,6,6])
+  describe "loadBuildPlan from Hackage" $ do
+    it "fetches BuildPlan for queried packages" $ do
+      bp_man <- newBuildPlanManager "." quietLogger True
+      bp <- expectRight "loadBuildPlan failed: " =<< loadBuildPlan bp_man ["base", "lens", "transformers"] SourceHackage
+      packageVersion bp "base" `shouldSatisfy` (`isJustAnd` (>= ver [4,9,0,0]))
+      packageVersion bp "lens" `shouldSatisfy` (`isJustAnd` (>= ver [4,15,1]))
+      packageVersion bp "transformers" `shouldSatisfy` (`isJustAnd` (>= ver [0,5,2,0]))
 
 spec_Hackage :: Spec
 spec_Hackage = describe "BuildPlan.Hackage" $ do
