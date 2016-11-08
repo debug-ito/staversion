@@ -11,7 +11,7 @@ module Staversion.Internal.Exec
 
 import Control.Applicative ((<$>))
 import Data.Function (on)
-import Data.List (groupBy)
+import Data.List (groupBy, nub)
 import Data.Text (unpack)
 import qualified Data.Text.Lazy.IO as TLIO
 
@@ -25,7 +25,7 @@ import Staversion.Internal.Command
 import Staversion.Internal.Format (formatResultsCabal)
 import Staversion.Internal.Log (logDebug, logError)
 import Staversion.Internal.Query
-  ( Query(..), Result(..), PackageSource(..),
+  ( Query(..), Result(..), PackageSource(..), PackageName,
     resultVersionsFromList, ResultVersions,
     ErrorMsg
   )
@@ -42,8 +42,9 @@ processCommand comm = impl where
     fmap concat $ mapM (processQueriesIn bp_man) $ commSources comm
   logger = commLogger comm
   processQueriesIn bp_man source = do
+    queried_names <- fmap (nub . concat) $ mapM getQueriedPackageNames $ commQueries comm
     logDebug logger ("Retrieve package source " ++ show source)
-    e_build_plan <- loadBuildPlan bp_man queriedPackageNames source
+    e_build_plan <- loadBuildPlan bp_man queried_names source
     logBuildPlanResult e_build_plan
     return $ map (makeResult source e_build_plan) $ commQueries comm
   makeResult source e_build_plan query = case e_build_plan of
@@ -53,8 +54,10 @@ processCommand comm = impl where
                                }
   logBuildPlanResult (Right _) = logDebug logger ("Successfully retrieved build plan.")
   logBuildPlanResult (Left error_msg) = logError logger ("Failed to load build plan: " ++ error_msg)
-  queriedPackageNames = undefined -- TODO
 
 searchVersions :: BuildPlan -> Query -> ResultVersions
 searchVersions build_plan (QueryName package_name) =
   resultVersionsFromList [(package_name, packageVersion build_plan package_name)]
+
+getQueriedPackageNames :: Query -> IO [PackageName]
+getQueriedPackageNames (QueryName n) = return [n]
