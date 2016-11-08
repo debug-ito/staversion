@@ -57,3 +57,4 @@ resultVersionsToList (ResultVersions m) = HM.toList m
 -- | description of a 'PackageSource'.
 sourceDesc :: PackageSource -> Text
 sourceDesc (SourceStackage r) = pack r
+sourceDesc SourceHackage = "hackage"
