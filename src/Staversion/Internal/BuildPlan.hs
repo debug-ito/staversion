@@ -29,7 +29,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.HashMap.Strict as HM
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.Monoid ((<>), mconcat)
+import Data.Monoid (Monoid, (<>), mconcat)
 import Data.Text (Text)
 import Data.Traversable (Traversable(traverse))
 import Data.Version (Version)
