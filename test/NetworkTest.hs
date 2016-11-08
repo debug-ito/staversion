@@ -20,8 +20,13 @@ import Staversion.Internal.BuildPlan.Stackage
     fetchBuildPlanYAML,
     PartialResolver(..), ExactResolver(..)
   )
+import Staversion.Internal.Command (Command(..))
+import Staversion.Internal.Exec (processCommand)
 import Staversion.Internal.Log (defaultLogger, Logger(loggerThreshold))
-import Staversion.Internal.Query (PackageSource(..), ErrorMsg)
+import Staversion.Internal.Query
+ ( PackageSource(..), ErrorMsg, Query(..), Result(..),
+   resultVersionsToList
+ )
 
 main :: IO ()
 main = hspec spec
@@ -31,6 +36,7 @@ spec = do
   spec_Stackage
   spec_BuildPlan
   spec_Hackage
+  spec_Exec
 
 spec_Stackage:: Spec
 spec_Stackage = describe "BuildPlan.Stackage" $ beforeAll makeManager $ do
@@ -86,3 +92,21 @@ spec_Hackage = describe "BuildPlan.Hackage" $ do
       case ret of
        Right (Just v) -> v `shouldSatisfy` (>= ver [0,5,3,3])
        _ -> expectationFailure ("Unexpected return: " ++ show ret)
+
+spec_Exec :: Spec
+spec_Exec = describe "Exec" $ describe "processCommand" $ do
+  specify "search hackage" $ do
+    let comm = Command { commBuildPlanDir = ".",
+                         commLogger = quietLogger,
+                         commSources = [SourceHackage],
+                         commQueries = [QueryName "base"],
+                         commAllowNetwork = True
+                       }
+    [ret] <- processCommand comm
+    resultIn ret `shouldBe` SourceHackage
+    resultFor ret `shouldBe` QueryName "base"
+    [(got_name, Just got_version)] <- resultVersionsToList <$> expectRight "processCommand error" (resultVersions ret)
+    got_name `shouldBe` "base"
+    got_version `shouldSatisfy` (>= ver [4,9,0,0]) 
+    
+    
