@@ -30,7 +30,7 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.HashMap.Strict as HM
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Monoid (Monoid, (<>), mconcat)
-import Data.Text (Text)
+import Data.Text (Text, unpack)
 import Data.Traversable (Traversable(traverse))
 import Data.Version (Version)
 import qualified Data.Yaml as Yaml
@@ -140,7 +140,11 @@ loadBuildPlan man _ (SourceStackage resolver) = runExceptT impl where
 loadBuildPlan man names SourceHackage = runExceptT impl where
   impl = do
     http_man <- httpManagerM man
-    (mconcat . zipWith registeredVersionToBuildPlan names) <$> (mapM (ExceptT . fetchPreferredVersions http_man) $ names)
+    (mconcat . zipWith registeredVersionToBuildPlan names) <$> mapM (doFetch http_man) names
+  logDebug' msg = liftIO $ logDebug (manLogger man) msg
+  doFetch http_man name = do
+    logDebug' ("Ask hackage for the latest version of " ++ unpack name)
+    ExceptT $ fetchPreferredVersions http_man name
 
 loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM BuildPlan
 loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where
