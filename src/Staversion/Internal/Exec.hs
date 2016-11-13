@@ -6,7 +6,9 @@
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.Exec
        ( main,
-         processCommand
+         processCommand,
+         -- * Only for testing
+         _processCommandWithCustomBuildPlanManager
        ) where
 
 import Control.Applicative ((<$>))
@@ -16,7 +18,8 @@ import Data.Text (unpack)
 import qualified Data.Text.Lazy.IO as TLIO
 
 import Staversion.Internal.BuildPlan
-  ( BuildPlan, packageVersion, newBuildPlanManager, loadBuildPlan
+  ( BuildPlan, packageVersion, newBuildPlanManager, loadBuildPlan,
+    BuildPlanManager
   )
 import Staversion.Internal.Command
   ( parseCommandArgs,
@@ -36,9 +39,12 @@ main = do
   (TLIO.putStr . formatResultsCabal) =<< (processCommand comm)
 
 processCommand :: Command -> IO [Result]
-processCommand comm = impl where
+processCommand = _processCommandWithCustomBuildPlanManager return
+
+_processCommandWithCustomBuildPlanManager :: (BuildPlanManager -> IO BuildPlanManager) -> Command -> IO [Result]
+_processCommandWithCustomBuildPlanManager customBPM comm = impl where
   impl = do
-    bp_man <- newBuildPlanManager (commBuildPlanDir comm) (commLogger comm) (commAllowNetwork comm)
+    bp_man <- customBPM =<< newBuildPlanManager (commBuildPlanDir comm) (commLogger comm) (commAllowNetwork comm)
     fmap concat $ mapM (processQueriesIn bp_man) $ commSources comm
   logger = commLogger comm
   processQueriesIn bp_man source = do

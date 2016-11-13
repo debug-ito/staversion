@@ -15,7 +15,7 @@ module Staversion.Internal.BuildPlan
          -- * Low-level APIs
          loadBuildPlanYAML,
          -- * For tests
-         _setDisambiguator
+         _setLTSDisambiguator
        ) where
 
 import Control.Applicative (empty, (<$>), (<*>))
@@ -33,6 +33,7 @@ import Data.Monoid (Monoid, (<>), mconcat)
 import Data.Text (Text, unpack)
 import Data.Traversable (Traversable(traverse))
 import Data.Version (Version)
+import Data.Word (Word)
 import qualified Data.Yaml as Yaml
 import System.FilePath ((</>), (<.>))
 import qualified System.IO.Error as IOE
@@ -55,7 +56,7 @@ import Staversion.Internal.BuildPlan.Stackage
     fetchDisambiguator,
     parseResolverString,
     formatResolverString,
-    PartialResolver(..), ExactResolver,
+    PartialResolver(..), ExactResolver(..),
     fetchBuildPlanYAML
   )
 import Staversion.Internal.BuildPlan.Version (unVersionJSON)
@@ -195,11 +196,19 @@ loadBuildPlanYAML yaml_file = parseBuildPlanYAML <$> BS.readFile yaml_file where
 packageVersion :: BuildPlan -> PackageName -> Maybe Version
 packageVersion (BuildPlan bp_map) name = HM.lookup name bp_map
 
-_setDisambiguator :: BuildPlanManager -> Maybe Disambiguator -> IO ()
-_setDisambiguator bp_man = writeIORef (manDisambiguator bp_man)
-
 registeredVersionToBuildPlan :: PackageName -> RegisteredVersions -> BuildPlan
 registeredVersionToBuildPlan name rvers = BuildPlan $ HM.fromList $ pairs where
   pairs = case latestVersion rvers of
     Nothing -> []
     Just v -> [(name, v)]
+
+_setDisambiguator :: BuildPlanManager -> Maybe Disambiguator -> IO ()
+_setDisambiguator bp_man = writeIORef (manDisambiguator bp_man)
+
+_setLTSDisambiguator :: BuildPlanManager
+                     -> Word -- ^ disambiguated LTS major version
+                     -> Word -- ^ disambiguated LTS minor version
+                     -> IO ()
+_setLTSDisambiguator bp_man lts_major lts_minor = _setDisambiguator bp_man $ Just disam where
+  disam PartialLTSLatest = Just $ ExactLTS lts_major lts_minor
+  disam _ = Nothing

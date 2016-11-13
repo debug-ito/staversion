@@ -2,6 +2,7 @@ module Staversion.Internal.BuildPlanSpec (main,spec) where
 
 import Data.Text (Text, pack)
 import Data.Version (Version(..))
+import Data.Word (Word)
 import System.FilePath ((</>), (<.>))
 import Test.Hspec
 
@@ -13,12 +14,8 @@ import Staversion.Internal.BuildPlan
     packageVersion,
     BuildPlanManager,
     newBuildPlanManager,
-    _setDisambiguator,
+    _setLTSDisambiguator,
     loadBuildPlan
-  )
-import Staversion.Internal.BuildPlan.Stackage
-  ( Disambiguator,
-    PartialResolver(..), ExactResolver(..)
   )
 
 main :: IO ()
@@ -58,10 +55,10 @@ loadVersion package_name loader = do
   return $ packageVersion plan package_name
 
 
-mockBuildPlanManager :: Disambiguator -> IO BuildPlanManager
-mockBuildPlanManager disam = do
+mockBuildPlanManager :: Word -> Word -> IO BuildPlanManager
+mockBuildPlanManager lts_major lts_minor = do
   bp_man <- newBuildPlanManager build_plan_dir logger False
-  _setDisambiguator bp_man (Just disam)
+  _setLTSDisambiguator bp_man lts_major lts_minor
   return bp_man
   where
     build_plan_dir = "test" </> "data"
@@ -70,8 +67,6 @@ mockBuildPlanManager disam = do
 loadBuildPlan_spec :: Spec
 loadBuildPlan_spec = describe "loadBuildPlan" $ do
   it "reads local file after disambiguation" $ do
-    let disam (PartialLTSLatest) = Just $ ExactLTS 4 2
-        disam _ = Nothing
-    bp_man <- mockBuildPlanManager disam
+    bp_man <- mockBuildPlanManager 4 2
     bp <- either (\e -> error ("Error: " ++ e)) return =<< loadBuildPlan bp_man [] (SourceStackage "lts")
     packageVersion bp "base" `shouldBe` (Just $ Version [4,8,2,0] [])

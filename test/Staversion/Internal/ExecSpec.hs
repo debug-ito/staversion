@@ -6,8 +6,12 @@ import Data.List (isInfixOf)
 import System.FilePath ((</>))
 import Test.Hspec
 
+import Staversion.Internal.BuildPlan (_setLTSDisambiguator)
 import Staversion.Internal.Command (Command(..))
-import Staversion.Internal.Exec (processCommand)
+import Staversion.Internal.Exec
+  ( processCommand,
+    _processCommandWithCustomBuildPlanManager
+  )
 import Staversion.Internal.Query
   ( PackageName,
     Query(..),
@@ -24,7 +28,12 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = describe "processCommand" $ do
+spec = do
+  spec_processCommand_basic
+  spec_processCommand_disambiguates
+
+spec_processCommand_basic :: Spec
+spec_processCommand_basic = describe "processCommand" $ do
   specify "QueryName, SourceStackage, hit" $ do
     singleCase (SourceStackage "conpact_build_plan") (QueryName "drawille")
       (Right $ simpleResultBody "drawille" [0,1,0,6])
@@ -96,3 +105,18 @@ baseCommand = Command { commBuildPlanDir = "test" </> "data",
                         commQueries = [],
                         commAllowNetwork = False
                       }
+
+spec_processCommand_disambiguates :: Spec
+spec_processCommand_disambiguates = describe "processCommand" $ do
+  it "disambiguates a partial resolver and sets resultReallyIn field" $ do
+    let comm = baseCommand { commSources = [SourceStackage "lts"],
+                             commQueries = [QueryName "conduit"]
+                           }
+        withMockDisam bp_man = do
+          _setLTSDisambiguator bp_man 4 2
+          return bp_man
+    [got_ret] <- _processCommandWithCustomBuildPlanManager withMockDisam comm
+    resultIn got_ret `shouldBe` SourceStackage "lts"
+    resultReallyIn got_ret `shouldBe` (Just $ SourceStackage "lts-4.2")
+    resultFor got_ret `shouldBe` QueryName "conduit"
+    resultBody got_ret `shouldBe` Right (simpleResultBody "conduit" [1,2,6,1])
