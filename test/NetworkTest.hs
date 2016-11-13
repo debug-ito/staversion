@@ -1,6 +1,7 @@
 module Main (main,spec) where
 
 import Control.Applicative ((<$>))
+import Control.Monad (forM_)
 import qualified Data.ByteString.Lazy as BSL
 import Data.Word (Word)
 import Network.HTTP.Client (newManager, Manager)
@@ -47,7 +48,10 @@ spec_Stackage = describe "BuildPlan.Stackage" $ beforeAll makeManager $ do
       e_dis <- fetchDisambiguator man
       case e_dis of
        Left err -> expectationFailure ("should not be Left: " ++ err)
-       Right dis -> dis (PartialLTSMajor 2) `shouldBe` Just (ExactLTS 2 22)
+       Right dis -> forM_ [(0,7), (1,15), (2,22), (3,22), (4,2), (5,18), (6,24), (7,8)] $ \(major, minor_min) -> do
+         case dis (PartialLTSMajor major) of
+          Just eresolver -> (PartialExact eresolver) `shouldBeAboveLTSMinorResolver` (major,minor_min)
+          Nothing -> expectationFailure "Unexpected disambiguation error."
   describe "fetchBuildPlanYAML" $ do
     it "fetches a LTS build plan" $ \man -> do
       raw_yaml <- fetchBuildPlanYAML man (ExactLTS 2 22)
@@ -68,26 +72,29 @@ expectRight msg_head = either (\err -> error $ msg_head ++ err) return
 isJustAnd :: Maybe a -> (a -> Bool) -> Bool
 isJustAnd m p = maybe False p m
 
+shouldBeAboveLTSMinorResolver :: PartialResolver -> (Word,Word) -> IO ()
+shouldBeAboveLTSMinorResolver (PartialExact (ExactLTS got_major got_minor)) (lts_major, lts_minor_min) = do
+  got_major `shouldBe` lts_major
+  got_minor `shouldSatisfy` (>= lts_minor_min)
+shouldBeAboveLTSMinorResolver pr _ = expectationFailure ("Unexpected PartialResolver: " ++ show pr)
+
 shouldBeAboveLTSMinor :: PackageSource -> (Word, Word) -> IO ()
-shouldBeAboveLTSMinor (SourceStackage resolver) (lts_major, lts_minor_min) =
+shouldBeAboveLTSMinor (SourceStackage resolver) expected_lts =
   case parseResolverString resolver of
-   Just (PartialExact (ExactLTS got_major got_minor)) -> do
-     got_major `shouldBe` lts_major
-     got_minor `shouldSatisfy` (>= lts_minor_min)
+   Just presolver -> presolver `shouldBeAboveLTSMinorResolver` expected_lts
    ret_parse -> expectationFailure ("Unexpected parse result: " ++ show ret_parse)
 shouldBeAboveLTSMinor source _ = expectationFailure ("Unexpected PackageSource: " ++ show source)
 
 spec_BuildPlan :: Spec
 spec_BuildPlan = describe "BuildPlan" $ do
-
   describe "loadBuildPlan from Stackage" $ do
     it "disambiguates LTS version and fetches a valid BuildPlan" $ do
       bp_man <- newBuildPlanManager "." quietLogger True
       (bp, got_source) <- expectRight "loadBuildPlan failed: " =<< loadBuildPlan bp_man [] (SourceStackage "lts-5")
       got_source `shouldBeAboveLTSMinor` (5,18)
-      packageVersion bp "base" `shouldBe` Just (ver [4,8,2,0])
-      packageVersion bp "bytestring" `shouldBe` Just (ver [0,10,6,0])
-      packageVersion bp "conduit" `shouldBe` Just (ver [1,2,6,6])
+      packageVersion bp "base" `shouldSatisfy` (`isJustAnd` (>= ver [4,8,2,0]))
+      packageVersion bp "bytestring" `shouldSatisfy` (`isJustAnd` (>= ver [0,10,6,0]))
+      packageVersion bp "conduit" `shouldSatisfy` (`isJustAnd` (>= ver [1,2,6,6]))
   describe "loadBuildPlan from Hackage" $ do
     it "fetches BuildPlan for queried packages" $ do
       bp_man <- newBuildPlanManager "." quietLogger True
