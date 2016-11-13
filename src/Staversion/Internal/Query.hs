@@ -12,9 +12,6 @@ module Staversion.Internal.Query
          ErrorMsg,
          Result(..),
          ResultBody(..),
-         ResultVersions,
-         resultVersionsFromList,
-         resultVersionsToList,
          sourceDesc
        ) where
 

@@ -9,7 +9,7 @@ import Staversion.Internal.Query
     Resolver, PackageName, ResultBody(..)
   )
 
-import Staversion.Internal.TestUtil (ver, rvers, simpleResultBody)
+import Staversion.Internal.TestUtil (ver, simpleResultBody)
        
 
 

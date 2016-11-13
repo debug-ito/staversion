@@ -1,17 +1,18 @@
 module Staversion.Internal.TestUtil
-       ( ver, rvers, simpleResultBody
+       ( ver, simpleResultBody
        ) where
 
 import Data.Version (Version(..))
-import Staversion.Internal.Query ( PackageName, ResultVersions, resultVersionsFromList,
+import Staversion.Internal.Query ( PackageName,
                                    ResultBody(..)
                                  )
 
 ver :: [Int] -> Version
 ver vs = Version vs []
 
-rvers :: [(PackageName, Maybe Version)] -> ResultVersions
-rvers = resultVersionsFromList
+-- rvers :: [(PackageName, Maybe Version)] -> ResultVersions
+-- rvers = resultVersionsFromList
+-- rvers = undefined
 
 simpleResultBody :: PackageName -> [Int] -> ResultBody
 simpleResultBody name vs = SimpleResultBody name mversion where

@@ -13,14 +13,12 @@ import Staversion.Internal.Query
     Query(..),
     PackageSource(..),
     Result(..),
-    ResultVersions,
-    resultVersionsFromList,
     ErrorMsg,
     ResultBody(..)
   )
 import Staversion.Internal.Log (defaultLogger, _mockLogger, Logger(loggerThreshold), LogLevel(..))
 
-import Staversion.Internal.TestUtil (ver, rvers, simpleResultBody)
+import Staversion.Internal.TestUtil (ver, simpleResultBody)
 
 main :: IO ()
 main = hspec spec

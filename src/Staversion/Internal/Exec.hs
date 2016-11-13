@@ -27,7 +27,6 @@ import Staversion.Internal.Log (logDebug, logError)
 import Staversion.Internal.Query
   ( Query(..), Result(..), PackageSource(..), PackageName,
     ResultBody(..),
-    resultVersionsFromList, ResultVersions,
     ErrorMsg
   )
 
