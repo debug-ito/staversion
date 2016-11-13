@@ -18,7 +18,8 @@ import Staversion.Internal.BuildPlan.Hackage (fetchPreferredVersions, latestVers
 import Staversion.Internal.BuildPlan.Stackage
   ( fetchDisambiguator,
     fetchBuildPlanYAML,
-    PartialResolver(..), ExactResolver(..)
+    PartialResolver(..), ExactResolver(..),
+    parseResolverString
   )
 import Staversion.Internal.Command (Command(..))
 import Staversion.Internal.Exec (processCommand)
@@ -95,7 +96,31 @@ spec_Hackage = describe "BuildPlan.Hackage" $ do
 
 spec_Exec :: Spec
 spec_Exec = describe "Exec" $ describe "processCommand" $ do
-  specify "search hackage" $ do
+  it "should fill resultReallyIn field if necesssary" $ do
+    let comm = Command { commBuildPlanDir = ".",
+                         commLogger = quietLogger,
+                         commSources = [SourceStackage "lts-3"],
+                         commQueries = [QueryName "base"],
+                         commAllowNetwork = True
+                       }
+    [ret] <- processCommand comm
+    resultIn ret `shouldBe` SourceStackage "lts-3"
+    resultFor ret `shouldBe` QueryName "base"
+    case resultBody ret of
+     Right (SimpleResultBody got_name (Just got_version)) -> do
+       got_name `shouldBe` "base"
+       got_version `shouldSatisfy` (>= ver [4,8,1,0])
+     body -> expectationFailure ("Unexpected body: " ++ show body)
+    resolver <- case resultReallyIn ret of
+      Just (SourceStackage r) -> return r
+      ret_really_in -> error ("Unexpected resultReallyIn: " ++ show ret_really_in)
+    case parseResolverString resolver of
+     Just (PartialExact (ExactLTS major minor)) -> do
+       major `shouldBe` 3
+       minor `shouldSatisfy` (>= 22)
+     ret_parse -> expectationFailure ("Unexpected parse result: " ++ show ret_parse)
+
+  it "should search hackage" $ do
     let comm = Command { commBuildPlanDir = ".",
                          commLogger = quietLogger,
                          commSources = [SourceHackage],
