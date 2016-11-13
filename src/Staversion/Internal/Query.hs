@@ -11,6 +11,7 @@ module Staversion.Internal.Query
          Query(..),
          ErrorMsg,
          Result(..),
+         ResultBody(..),
          ResultVersions,
          resultVersionsFromList,
          resultVersionsToList,
@@ -40,9 +41,13 @@ type ErrorMsg = String
 -- | Result for a query.
 data Result = Result { resultIn :: PackageSource,
                        resultFor :: Query,
-                       resultVersions :: Either ErrorMsg ResultVersions
+                       resultReallyIn :: Maybe PackageSource,
+                       -- ^ the true PackageSource resolved (or redirected) from 'resultIn', if any.
+                       resultBody :: Either ErrorMsg ResultBody
                      } deriving (Show,Eq)
 
+data ResultBody = SimpleResultBody PackageName (Maybe Version)
+                  deriving (Show,Eq)
 
 -- | The obtained version map.
 newtype ResultVersions = ResultVersions (HM.HashMap PackageName (Maybe Version))

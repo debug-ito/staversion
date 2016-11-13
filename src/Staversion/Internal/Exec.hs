@@ -26,6 +26,7 @@ import Staversion.Internal.Format (formatResultsCabal)
 import Staversion.Internal.Log (logDebug, logError)
 import Staversion.Internal.Query
   ( Query(..), Result(..), PackageSource(..), PackageName,
+    ResultBody(..),
     resultVersionsFromList, ResultVersions,
     ErrorMsg
   )
@@ -48,16 +49,18 @@ processCommand comm = impl where
     logBuildPlanResult e_build_plan
     return $ map (makeResult source e_build_plan) $ commQueries comm
   makeResult source e_build_plan query = case e_build_plan of
-    Left error_msg -> Result { resultIn = source, resultFor = query, resultVersions = Left error_msg }
-    Right build_plan -> Result { resultIn = source, resultFor = query,
-                                 resultVersions = Right $ searchVersions build_plan query
+    Left error_msg -> Result { resultIn = source, resultReallyIn = Nothing,
+                               resultFor = query, resultBody = Left error_msg
+                             }
+    Right build_plan -> Result { resultIn = source, resultReallyIn = Nothing,
+                                 resultFor = query,
+                                 resultBody = Right $ searchVersions build_plan query
                                }
   logBuildPlanResult (Right _) = logDebug logger ("Successfully retrieved build plan.")
   logBuildPlanResult (Left error_msg) = logError logger ("Failed to load build plan: " ++ error_msg)
 
-searchVersions :: BuildPlan -> Query -> ResultVersions
-searchVersions build_plan (QueryName package_name) =
-  resultVersionsFromList [(package_name, packageVersion build_plan package_name)]
+searchVersions :: BuildPlan -> Query -> ResultBody
+searchVersions build_plan (QueryName package_name) = SimpleResultBody package_name $ packageVersion build_plan package_name
 
 getQueriedPackageNames :: Query -> IO [PackageName]
 getQueriedPackageNames (QueryName n) = return [n]

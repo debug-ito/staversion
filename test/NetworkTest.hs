@@ -25,7 +25,8 @@ import Staversion.Internal.Exec (processCommand)
 import Staversion.Internal.Log (defaultLogger, Logger(loggerThreshold))
 import Staversion.Internal.Query
  ( PackageSource(..), ErrorMsg, Query(..), Result(..),
-   resultVersionsToList
+   resultVersionsToList,
+   ResultBody(..)
  )
 
 main :: IO ()
@@ -105,8 +106,13 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
     [ret] <- processCommand comm
     resultIn ret `shouldBe` SourceHackage
     resultFor ret `shouldBe` QueryName "base"
-    [(got_name, Just got_version)] <- resultVersionsToList <$> expectRight "processCommand error" (resultVersions ret)
-    got_name `shouldBe` "base"
-    got_version `shouldSatisfy` (>= ver [4,9,0,0]) 
+    resultReallyIn ret `shouldBe` Nothing
+    case resultBody ret of
+     Right (SimpleResultBody got_name (Just got_version)) -> do
+       got_name `shouldBe` "base"
+       got_version `shouldSatisfy` (>= ver [4,9,0,0])
+     body -> expectationFailure ("Unexpected body: " ++ show body)
+    
+    
     
     

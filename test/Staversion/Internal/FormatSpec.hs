@@ -6,10 +6,10 @@ import Test.Hspec
 import Staversion.Internal.Format (formatResultsCabal)
 import Staversion.Internal.Query
   ( Result(..), PackageSource(..), Query(..),
-    Resolver, PackageName
+    Resolver, PackageName, ResultBody(..)
   )
 
-import Staversion.Internal.TestUtil (ver, rvers)
+import Staversion.Internal.TestUtil (ver, rvers, simpleResultBody)
        
 
 
@@ -21,9 +21,9 @@ spec = describe "formatResultsCabal" $ do
   it "should return empty text for empty list" $ do
     formatResultsCabal [] `shouldBe` ""
   it "should format a Result in a Cabal way" $ do
-    let input = [ Result { resultIn = SourceStackage "lts-6.10",
+    let input = [ Result { resultIn = SourceStackage "lts-6.10", resultReallyIn = Nothing,
                            resultFor = QueryName "hoge",
-                           resultVersions = Right $ rvers [("hoge", Just $ ver [3,4,5])]
+                           resultBody = Right $ simpleResultBody "hoge" [3,4,5]
                          }
                 ]
         expected = ( "------ lts-6.10\n"
@@ -74,11 +74,7 @@ spec = describe "formatResultsCabal" $ do
     formatResultsCabal input `shouldBe` expected
 
 simpleResult :: Resolver -> PackageName -> [Int] -> Result
-simpleResult res name vs = Result { resultIn = SourceStackage res,
+simpleResult res name vs = Result { resultIn = SourceStackage res, resultReallyIn = Nothing,
                                     resultFor = QueryName name,
-                                    resultVersions = Right $ rvers [(name, mversion)]
+                                    resultBody = Right $ simpleResultBody name vs
                                   }
-  where
-    mversion = case vs of
-      [] -> Nothing
-      _ -> Just $ ver vs

@@ -18,8 +18,7 @@ import Data.Version (showVersion)
 import Staversion.Internal.Query
   ( Result(..), Query(..),
     sourceDesc,
-    ResultVersions,
-    resultVersionsToList
+    ResultBody(..)
   )
 
 -- | format 'Result's like it's in build-depends in .cabal files.
@@ -39,9 +38,9 @@ formatGroupedResultsCabal :: [Result] -> Builder
 formatGroupedResultsCabal [] = mempty
 formatGroupedResultsCabal results@(head_ret : _) = header <> (concatLines $ single_result_output =<< results) where
   header = "------ " <> (fromText $ sourceDesc $ resultIn head_ret) <> "\n"
-  single_result_output ret = case resultVersions ret of
+  single_result_output ret = case resultBody ret of
     Left _ -> [Left $ error_result ret]
-    Right versions -> formatVersionsCabal (resultFor ret) versions
+    Right ret_body -> formatVersionsCabal (resultFor ret) ret_body
   error_result ret = case resultFor ret of
     QueryName query_name -> "-- " <> fromText query_name <> " ERROR"
   concatLines ebuilder_lines = (mconcat $ intersperse "\n" $ map (either id id) $ tailCommas ebuilder_lines) <> "\n\n"
@@ -54,9 +53,9 @@ formatGroupedResultsCabal results@(head_ret : _) = header <> (concatLines $ sing
     getNext _ False e@(Right _) = (e, True)
     getNext _ True (Right b) = (Right (b <> ","), True)
 
-formatVersionsCabal :: Query -> ResultVersions -> [Either Builder Builder]
-formatVersionsCabal (QueryName _) rvers = map format $ resultVersionsToList rvers where
-  format (name, mver) = case mver of
+formatVersionsCabal :: Query -> ResultBody -> [Either Builder Builder]
+formatVersionsCabal _ (SimpleResultBody name mver) = [formatted] where
+  formatted = case mver of
     Nothing -> Left $ "-- " <> fromText name <> " N/A"
     Just ver -> Right $ fromText name <> " ==" <> (fromString $ showVersion ver)
 

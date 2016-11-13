@@ -15,11 +15,12 @@ import Staversion.Internal.Query
     Result(..),
     ResultVersions,
     resultVersionsFromList,
-    ErrorMsg
+    ErrorMsg,
+    ResultBody(..)
   )
 import Staversion.Internal.Log (defaultLogger, _mockLogger, Logger(loggerThreshold), LogLevel(..))
 
-import Staversion.Internal.TestUtil (ver, rvers)
+import Staversion.Internal.TestUtil (ver, rvers, simpleResultBody)
 
 main :: IO ()
 main = hspec spec
@@ -28,10 +29,10 @@ spec :: Spec
 spec = describe "processCommand" $ do
   specify "QueryName, SourceStackage, hit" $ do
     singleCase (SourceStackage "conpact_build_plan") (QueryName "drawille")
-      (Right $ rvers [("drawille", Just $ ver [0,1,0,6])])
+      (Right $ simpleResultBody "drawille" [0,1,0,6])
   specify "QueryName, SourceStackage, miss" $ do
     singleCase (SourceStackage "conpact_build_plan") (QueryName "unknown")
-      (Right $ rvers [("unknown", Nothing)])
+      (Right $ SimpleResultBody "unknown" Nothing)
   specify "QueryName, SourceStackage, source not found" $ do
     (logger, logs) <- _mockLogger
     let src = SourceStackage "unknown"
@@ -43,7 +44,7 @@ spec = describe "processCommand" $ do
     [got_ret] <- processCommand comm
     resultIn got_ret `shouldBe` src
     resultFor got_ret `shouldBe` query
-    case resultVersions got_ret of
+    case resultBody got_ret of
       Right _ -> expectationFailure "it should fail"
       Left _ -> return ()
     got_logs <- readIORef logs
@@ -58,32 +59,33 @@ spec = describe "processCommand" $ do
         qc = QueryName "conduit"
         qa = QueryName "aeson"
         comm = baseCommand { commSources = [src2, src7], commQueries = [qc, qa] }
-        expected = [ Result { resultIn = src2, resultFor = qc,
-                              resultVersions = Right $ rvers [("conduit", Just $ ver [1,2,5])]
+        expected = [ Result { resultIn = src2, resultReallyIn = Nothing, resultFor = qc,
+                              resultBody = Right $ simpleResultBody "conduit" [1,2,5]
                             },
-                     Result { resultIn = src2, resultFor = qa,
-                              resultVersions = Right $ rvers [("aeson", Just $ ver [0,8,0,2])]
+                     Result { resultIn = src2, resultReallyIn = Nothing, resultFor = qa,
+                              resultBody = Right $ simpleResultBody "aeson" [0,8,0,2]
                             },
-                     Result { resultIn = src7, resultFor = qc,
-                              resultVersions = Right $ rvers [("conduit", Just $ ver [1,2,7])]
+                     Result { resultIn = src7, resultReallyIn = Nothing, resultFor = qc,
+                              resultBody = Right $ simpleResultBody "conduit" [1,2,7]
                             },
-                     Result { resultIn = src7, resultFor = qa,
-                              resultVersions = Right $ rvers [("aeson", Just $ ver [0,11,2,1])]
+                     Result { resultIn = src7, resultReallyIn = Nothing, resultFor = qa,
+                              resultBody = Right $ simpleResultBody "aeson" [0,11,2,1]
                             }
                    ]
     got <- processCommand comm
     got `shouldBe` expected
         
 
-singleCase :: PackageSource -> Query -> Either ErrorMsg ResultVersions -> IO ()
+singleCase :: PackageSource -> Query -> Either ErrorMsg ResultBody -> IO ()
 singleCase src query exp_ret_vers = singleCase' src query (`shouldBe` exp_ret_vers)
 
-singleCase' :: PackageSource -> Query -> (Either ErrorMsg ResultVersions -> IO a) -> IO a
+singleCase' :: PackageSource -> Query -> (Either ErrorMsg ResultBody -> IO a) -> IO a
 singleCase' src query checker = do
   [got_ret] <- processCommand comm
   resultIn got_ret `shouldBe` src
+  resultReallyIn got_ret `shouldBe` Nothing
   resultFor got_ret `shouldBe` query
-  checker $ resultVersions got_ret
+  checker $ resultBody got_ret
   where
     comm =  baseCommand { commSources = [src],
                           commQueries = [query]
