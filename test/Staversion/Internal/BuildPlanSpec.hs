@@ -68,5 +68,6 @@ loadBuildPlan_spec :: Spec
 loadBuildPlan_spec = describe "loadBuildPlan" $ do
   it "reads local file after disambiguation" $ do
     bp_man <- mockBuildPlanManager 4 2
-    bp <- either (\e -> error ("Error: " ++ e)) return =<< loadBuildPlan bp_man [] (SourceStackage "lts")
+    (bp, got_source) <- either (\e -> error ("Error: " ++ e)) return =<< loadBuildPlan bp_man [] (SourceStackage "lts")
     packageVersion bp "base" `shouldBe` (Just $ Version [4,8,2,0] [])
+    got_source `shouldBe` SourceStackage "lts-4.2"

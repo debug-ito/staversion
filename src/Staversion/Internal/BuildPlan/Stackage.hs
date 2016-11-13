@@ -13,6 +13,7 @@ module Staversion.Internal.BuildPlan.Stackage
          PartialResolver(..),
          parseResolverString,
          formatResolverString,
+         formatExactResolverString,
          Disambiguator,
          fetchDisambiguator,
          fetchBuildPlanYAML,
@@ -84,6 +85,9 @@ formatResolverString pr = case pr of
   PartialLTSLatest -> "lts"
   PartialLTSMajor major -> "lts-" ++ show major
   PartialNightlyLatest -> "nightly"
+
+formatExactResolverString :: ExactResolver -> Resolver
+formatExactResolverString er = formatResolverString $ PartialExact er
 
 type Disambiguator = PartialResolver -> Maybe ExactResolver
 

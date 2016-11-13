@@ -4,7 +4,7 @@
 -- Maintainer: Toshio Ito <debug.ito@gmail.com>
 --
 -- __This is an internal module. End-users should not use it.__
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, TupleSections #-}
 module Staversion.Internal.BuildPlan
        ( -- * Entry APIs
          BuildPlan,
@@ -55,7 +55,7 @@ import Staversion.Internal.BuildPlan.Stackage
   ( Disambiguator,
     fetchDisambiguator,
     parseResolverString,
-    formatResolverString,
+    formatExactResolverString,
     PartialResolver(..), ExactResolver(..),
     fetchBuildPlanYAML
   )
@@ -130,29 +130,34 @@ httpExceptionToLoadM context action = ExceptT $ (runExceptT action) `catch` hand
   handler e = return $ Left (context ++ ": " ++ show e)
 
 loadBuildPlan :: BuildPlanManager
-              -> [PackageName] -- ^ package names whose versions the user is interested in.
-              -> PackageSource -> IO (Either ErrorMsg BuildPlan)
+              -> [PackageName]
+              -- ^ package names whose versions the user is interested in.
+              -> PackageSource
+              -> IO (Either ErrorMsg (BuildPlan, PackageSource))
+              -- ^ the second result is the real (disambiguated) PackageSource.
 loadBuildPlan man _ (SourceStackage resolver) = runExceptT impl where
   impl = loadBuildPlan_stackageLocalFile man resolver `loggedElse'` do
     e_resolver <- tryDisambiguate man =<< getPresolver
-    loadBuildPlan_stackageLocalFile man (formatResolverString $ PartialExact e_resolver) `loggedElse'` loadBuildPlan_stackageNetwork man e_resolver
+    loadBuildPlan_stackageLocalFile man (formatExactResolverString e_resolver) `loggedElse'` loadBuildPlan_stackageNetwork man e_resolver
   getPresolver = maybeToLoadM ("Invalid resolver format for stackage.org: " ++ resolver) $ parseResolverString resolver
   loggedElse' = loggedElse $ manLogger man
 loadBuildPlan man names SourceHackage = runExceptT impl where
   impl = do
     http_man <- httpManagerM man
-    (mconcat . zipWith registeredVersionToBuildPlan names) <$> mapM (doFetch http_man) names
+    build_plan <- (mconcat . zipWith registeredVersionToBuildPlan names) <$> mapM (doFetch http_man) names
+    return (build_plan, SourceHackage)
   logDebug' msg = liftIO $ logDebug (manLogger man) msg
   doFetch http_man name = do
     logDebug' ("Ask hackage for the latest version of " ++ unpack name)
     ExceptT $ fetchPreferredVersions http_man name
 
-loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM BuildPlan
+loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM (BuildPlan, PackageSource)
 loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where
   yaml_file = manBuildPlanDir man </> resolver <.> "yaml"
   doLoad = do
     logDebug (manLogger man) ("Read " ++ yaml_file ++ " for build plan.")
-    loadBuildPlanYAML yaml_file
+    e_build_plan <- loadBuildPlanYAML yaml_file
+    return $ (, SourceStackage resolver) <$> e_build_plan
   handleIOError :: IOException -> Maybe ErrorMsg
   handleIOError e | IOE.isDoesNotExistError e = Just $ makeErrorMsg e (yaml_file ++ " not found.")
                   | IOE.isPermissionError e = Just $ makeErrorMsg e ("you cannot open " ++ yaml_file ++ ".")
@@ -178,12 +183,14 @@ tryDisambiguate bp_man presolver = impl where
        return got_d
   logDebug' = liftIO . logDebug (manLogger bp_man)
   
-loadBuildPlan_stackageNetwork :: BuildPlanManager -> ExactResolver -> LoadM BuildPlan
+loadBuildPlan_stackageNetwork :: BuildPlanManager -> ExactResolver -> LoadM (BuildPlan, PackageSource)
 loadBuildPlan_stackageNetwork man e_resolver = do
   http_man <- httpManagerM man
   liftIO $ logDebug (manLogger man) ("Fetch build plan from network: resolver = " ++ show e_resolver)
   yaml_data <- httpExceptionToLoadM ("Downloading build plan failed: " ++ show e_resolver) $ liftIO $ fetchBuildPlanYAML http_man e_resolver
-  ExceptT $ return $ parseBuildPlanYAML $ BSL.toStrict yaml_data
+  (, real_source) <$> (ExceptT $ return $ parseBuildPlanYAML $ BSL.toStrict yaml_data)
+  where
+    real_source = SourceStackage $ formatExactResolverString e_resolver
 
 parseBuildPlanYAML :: BS.ByteString -> Either ErrorMsg BuildPlan
 parseBuildPlanYAML = either (Left . toErrorMsg) Right  . Yaml.decodeEither' where

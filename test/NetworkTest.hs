@@ -2,6 +2,7 @@ module Main (main,spec) where
 
 import Control.Applicative ((<$>))
 import qualified Data.ByteString.Lazy as BSL
+import Data.Word (Word)
 import Network.HTTP.Client (newManager, Manager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Test.Hspec
@@ -67,19 +68,31 @@ expectRight msg_head = either (\err -> error $ msg_head ++ err) return
 isJustAnd :: Maybe a -> (a -> Bool) -> Bool
 isJustAnd m p = maybe False p m
 
+shouldBeAboveLTSMinor :: PackageSource -> (Word, Word) -> IO ()
+shouldBeAboveLTSMinor (SourceStackage resolver) (lts_major, lts_minor_min) =
+  case parseResolverString resolver of
+   Just (PartialExact (ExactLTS got_major got_minor)) -> do
+     got_major `shouldBe` lts_major
+     got_minor `shouldSatisfy` (>= lts_minor_min)
+   ret_parse -> expectationFailure ("Unexpected parse result: " ++ show ret_parse)
+shouldBeAboveLTSMinor source _ = expectationFailure ("Unexpected PackageSource: " ++ show source)
+
 spec_BuildPlan :: Spec
 spec_BuildPlan = describe "BuildPlan" $ do
+
   describe "loadBuildPlan from Stackage" $ do
     it "disambiguates LTS version and fetches a valid BuildPlan" $ do
       bp_man <- newBuildPlanManager "." quietLogger True
-      bp <- expectRight "loadBuildPlan failed: " =<< loadBuildPlan bp_man [] (SourceStackage "lts-5")
+      (bp, got_source) <- expectRight "loadBuildPlan failed: " =<< loadBuildPlan bp_man [] (SourceStackage "lts-5")
+      got_source `shouldBeAboveLTSMinor` (5,18)
       packageVersion bp "base" `shouldBe` Just (ver [4,8,2,0])
       packageVersion bp "bytestring" `shouldBe` Just (ver [0,10,6,0])
       packageVersion bp "conduit" `shouldBe` Just (ver [1,2,6,6])
   describe "loadBuildPlan from Hackage" $ do
     it "fetches BuildPlan for queried packages" $ do
       bp_man <- newBuildPlanManager "." quietLogger True
-      bp <- expectRight "loadBuildPlan failed: " =<< loadBuildPlan bp_man ["base", "lens", "transformers"] SourceHackage
+      (bp, got_source) <- expectRight "loadBuildPlan failed: " =<< loadBuildPlan bp_man ["base", "lens", "transformers"] SourceHackage
+      got_source `shouldBe` SourceHackage
       packageVersion bp "base" `shouldSatisfy` (`isJustAnd` (>= ver [4,9,0,0]))
       packageVersion bp "lens" `shouldSatisfy` (`isJustAnd` (>= ver [4,15,1]))
       packageVersion bp "transformers" `shouldSatisfy` (`isJustAnd` (>= ver [0,5,2,0]))
@@ -111,14 +124,9 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
        got_name `shouldBe` "base"
        got_version `shouldSatisfy` (>= ver [4,8,1,0])
      body -> expectationFailure ("Unexpected body: " ++ show body)
-    resolver <- case resultReallyIn ret of
-      Just (SourceStackage r) -> return r
-      ret_really_in -> error ("Unexpected resultReallyIn: " ++ show ret_really_in)
-    case parseResolverString resolver of
-     Just (PartialExact (ExactLTS major minor)) -> do
-       major `shouldBe` 3
-       minor `shouldSatisfy` (>= 22)
-     ret_parse -> expectationFailure ("Unexpected parse result: " ++ show ret_parse)
+    case resultReallyIn ret of
+     Just source -> source `shouldBeAboveLTSMinor` (3,22)
+     ret_really_in -> expectationFailure ("Unexpected resultReallyIn: " ++ show ret_really_in)
 
   it "should search hackage" $ do
     let comm = Command { commBuildPlanDir = ".",
