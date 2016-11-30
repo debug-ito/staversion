@@ -70,7 +70,7 @@ cabalFileErrorBlock file = RBLines [Left line] where
 
 formatResultBlock :: ResultBlock -> Builder
 formatResultBlock (RBHead header blocks) = header <> "\n" <> mconcat (map formatResultBlock blocks)
-formatResultBlock (RBLines rlines) = (mconcat $ intersperse "\n" $ map (either id id) $ tailCommas rlines) <> "\n\n" where
+formatResultBlock (RBLines rlines) = (mconcat $ map ((<> "\n") . either id id) $ tailCommas rlines) <> "\n" where
   tailCommas = fst . foldr f ([], False)
                -- flag: True if it has already encountered the last Right element in the list.
   f eb (ret, flag) = let (next_e, next_flag) = getNext ret flag eb
