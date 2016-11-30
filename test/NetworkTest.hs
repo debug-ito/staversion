@@ -14,7 +14,8 @@ import Staversion.Internal.TestUtil (ver)
 import Staversion.Internal.BuildPlan
   ( newBuildPlanManager,
     loadBuildPlan,
-    packageVersion
+    packageVersion,
+    buildPlanSource
   )
 import Staversion.Internal.BuildPlan.Hackage (fetchPreferredVersions, latestVersion)
 import Staversion.Internal.BuildPlan.Stackage
@@ -90,16 +91,16 @@ spec_BuildPlan = describe "BuildPlan" $ do
   describe "loadBuildPlan from Stackage" $ do
     it "disambiguates LTS version and fetches a valid BuildPlan" $ do
       bp_man <- newBuildPlanManager "." quietLogger True
-      (bp, got_source) <- expectRight "loadBuildPlan failed: " =<< loadBuildPlan bp_man [] (SourceStackage "lts-5")
-      got_source `shouldBeAboveLTSMinor` (5,18)
+      bp <- expectRight "loadBuildPlan failed: " =<< loadBuildPlan bp_man [] (SourceStackage "lts-5")
+      buildPlanSource bp `shouldBeAboveLTSMinor` (5,18)
       packageVersion bp "base" `shouldSatisfy` (`isJustAnd` (>= ver [4,8,2,0]))
       packageVersion bp "bytestring" `shouldSatisfy` (`isJustAnd` (>= ver [0,10,6,0]))
       packageVersion bp "conduit" `shouldSatisfy` (`isJustAnd` (>= ver [1,2,6,6]))
   describe "loadBuildPlan from Hackage" $ do
     it "fetches BuildPlan for queried packages" $ do
       bp_man <- newBuildPlanManager "." quietLogger True
-      (bp, got_source) <- expectRight "loadBuildPlan failed: " =<< loadBuildPlan bp_man ["base", "lens", "transformers"] SourceHackage
-      got_source `shouldBe` SourceHackage
+      bp <- expectRight "loadBuildPlan failed: " =<< loadBuildPlan bp_man ["base", "lens", "transformers"] SourceHackage
+      buildPlanSource bp `shouldBe` SourceHackage
       packageVersion bp "base" `shouldSatisfy` (`isJustAnd` (>= ver [4,9,0,0]))
       packageVersion bp "lens" `shouldSatisfy` (`isJustAnd` (>= ver [4,15,1]))
       packageVersion bp "transformers" `shouldSatisfy` (`isJustAnd` (>= ver [0,5,2,0]))

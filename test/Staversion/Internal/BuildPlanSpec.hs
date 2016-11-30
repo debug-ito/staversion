@@ -15,7 +15,8 @@ import Staversion.Internal.BuildPlan
     BuildPlanManager,
     newBuildPlanManager,
     _setLTSDisambiguator,
-    loadBuildPlan
+    loadBuildPlan,
+    buildPlanSource
   )
 
 main :: IO ()
@@ -68,6 +69,6 @@ loadBuildPlan_spec :: Spec
 loadBuildPlan_spec = describe "loadBuildPlan" $ do
   it "reads local file after disambiguation" $ do
     bp_man <- mockBuildPlanManager 4 2
-    (bp, got_source) <- either (\e -> error ("Error: " ++ e)) return =<< loadBuildPlan bp_man [] (SourceStackage "lts")
+    bp <- either (\e -> error ("Error: " ++ e)) return =<< loadBuildPlan bp_man [] (SourceStackage "lts")
     packageVersion bp "base" `shouldBe` (Just $ Version [4,8,2,0] [])
-    got_source `shouldBe` SourceStackage "lts-4.2"
+    buildPlanSource bp `shouldBe` SourceStackage "lts-4.2"
