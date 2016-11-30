@@ -83,6 +83,33 @@ spec = describe "formatResultsCabal" $ do
                      <> "\n"
                    )
     formatResultsCabal input `shouldBe` expected
+  it "should show ERROR if resultBody is Left, resultFor is QueryName" $ do
+    let input = [ Result { resultIn = SourceStackage "lts-4.2", resultReallyIn = Nothing,
+                           resultFor = QueryName "hogehoge",
+                           resultBody = Left "some error"
+                         } ]
+        expected = ( "------ lts-4.2\n"
+                     <> "-- hogehoge ERROR\n"
+                     <> "\n"
+                   )
+    formatResultsCabal input `shouldBe` expected
+  it "should show ERROR if resultBody is Left, resultFor is QueryCabalFile" $ do
+    let input = [ Result { resultIn = SourceStackage "lts-5.3", resultReallyIn = Nothing,
+                           resultFor = QueryCabalFile "foobar.cabal",
+                           resultBody = Left "some error"
+                         },
+                  Result { resultIn = SourceStackage "lts-5.3", resultReallyIn = Nothing,
+                           resultFor = QueryName "hoge",
+                           resultBody = Right $ simpleResultBody "hoge" [5,5]
+                         }
+                ]
+        expected = ( "------ lts-5.3\n"
+                     <> "-- foobar.cabal ERROR,\n"
+                     <> "\n"
+                     <> "hoge ==5.5\n"
+                     <> "\n"
+                   )
+    formatResultsCabal input `shouldBe` expected
 
 simpleResult :: Resolver -> PackageName -> [Int] -> Result
 simpleResult res name vs = Result { resultIn = SourceStackage res, resultReallyIn = Nothing,

@@ -45,7 +45,7 @@ formatGroupedResultsCabal results@(head_ret : _) = header <> (concatLines $ sing
     Right ret_body -> formatVersionsCabal (resultFor ret) ret_body
   error_result ret = case resultFor ret of
     QueryName query_name -> "-- " <> fromText query_name <> " ERROR"
-    QueryCabalFile _ -> undefined -- TODO
+    QueryCabalFile query_cabal_file -> "-- " <> fromString query_cabal_file <> " ERROR"
   concatLines ebuilder_lines = (mconcat $ intersperse "\n" $ map (either id id) $ tailCommas ebuilder_lines) <> "\n\n"
   tailCommas = fst . foldr f ([], False) where
     -- flag: True if it has already encountered the last Right element in the list.
