@@ -69,6 +69,8 @@ _processCommandWithCustomBuildPlanManager customBPM comm = impl where
 
 searchVersions :: BuildPlan -> Query -> ResultBody
 searchVersions build_plan (QueryName package_name) = SimpleResultBody package_name $ packageVersion build_plan package_name
+searchVersions _ (QueryCabalFile _) = undefined -- TODO
 
 getQueriedPackageNames :: Query -> IO [PackageName]
 getQueriedPackageNames (QueryName n) = return [n]
+getQueriedPackageNames (QueryCabalFile _) = undefined -- TODO

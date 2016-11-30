@@ -25,6 +25,7 @@ import Staversion.Internal.Query
   ( Resolver,
     PackageName,
     Query(..),
+    parseQuery,
     PackageSource(..)
   )
 
@@ -81,11 +82,15 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> q
                         Opt.short 'H',
                         Opt.help "Search hackage.org for the latest version."
                       ]
-  queries = some $ QueryName <$> package
-  package = fmap pack $ Opt.strArgument
-            $ mconcat [ Opt.help "Name of package whose version you want to check.",
-                        Opt.metavar "PACKAGE_NAME"
-                      ]
+  queries = some $ parseQuery <$> (query_package <|> query_cabal)
+  query_package = Opt.strArgument
+                  $ mconcat [ Opt.help "Name of package whose version you want to check.",
+                              Opt.metavar "PACKAGE_NAME"
+                            ]
+  query_cabal = Opt.strArgument
+                $ mconcat [ Opt.help ".cabal file name. It checks versions of packages in build-deps lists.",
+                            Opt.metavar "CABAL_FILEPATH"
+                          ]
   network = not <$> no_network
   no_network = Opt.switch $ mconcat [ Opt.long "no-network",
                                       Opt.help "Forbid network access."

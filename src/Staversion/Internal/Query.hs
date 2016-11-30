@@ -8,14 +8,16 @@ module Staversion.Internal.Query
        ( PackageName,
          Resolver,
          PackageSource(..),
+         sourceDesc,
          Query(..),
+         parseQuery,
          ErrorMsg,
          Result(..),
-         ResultBody(..),
-         sourceDesc
+         ResultBody(..)
        ) where
 
 import qualified Data.HashMap.Strict as HM
+import Data.List (isSuffixOf)
 import Data.Text (Text, pack)
 import Data.Version (Version)
 
@@ -31,6 +33,7 @@ data PackageSource = SourceStackage Resolver -- ^ stackage.
 
 -- | Query for package version(s).
 data Query = QueryName PackageName
+           | QueryCabalFile FilePath
            deriving (Show,Eq,Ord)
 
 type ErrorMsg = String
@@ -60,3 +63,8 @@ resultVersionsToList (ResultVersions m) = HM.toList m
 sourceDesc :: PackageSource -> Text
 sourceDesc (SourceStackage r) = pack r
 sourceDesc SourceHackage = "latest in hackage"
+
+parseQuery :: String -> Query
+parseQuery s = if ".cabal" `isSuffixOf` s
+               then QueryCabalFile s
+               else QueryName $ pack s
