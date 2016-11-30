@@ -72,6 +72,17 @@ spec = describe "formatResultsCabal" $ do
                      <> "\n"
                    )
     formatResultsCabal input `shouldBe` expected
+  it "should output resultReallyIn field" $ do
+    let input = [ Result { resultIn = SourceStackage "lts",
+                           resultReallyIn = Just $ SourceStackage "lts-7.4",
+                           resultFor = QueryName "foobar",
+                           resultBody = Right $ simpleResultBody "foobar" [3,4,5]
+                         } ]
+        expected = ( "------ lts (lts-7.4)\n"
+                     <> "foobar ==3.4.5\n"
+                     <> "\n"
+                   )
+    formatResultsCabal input `shouldBe` expected
 
 simpleResult :: Resolver -> PackageName -> [Int] -> Result
 simpleResult res name vs = Result { resultIn = SourceStackage res, resultReallyIn = Nothing,

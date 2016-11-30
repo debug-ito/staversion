@@ -37,7 +37,9 @@ groupAllPreservingOrderBy sameGroup = map snd  . foldr f [] where
 formatGroupedResultsCabal :: [Result] -> Builder
 formatGroupedResultsCabal [] = mempty
 formatGroupedResultsCabal results@(head_ret : _) = header <> (concatLines $ single_result_output =<< results) where
-  header = "------ " <> (fromText $ sourceDesc $ resultIn head_ret) <> "\n"
+  header = "------ " <> (fromText $ sourceDesc $ resultIn head_ret) <> header_real_source <> "\n"
+  header_real_source = maybe "" fromText $ resultReallyIn head_ret >>= \real_source -> do
+    return (" (" <> sourceDesc real_source <> ")")
   single_result_output ret = case resultBody ret of
     Left _ -> [Left $ error_result ret]
     Right ret_body -> formatVersionsCabal (resultFor ret) ret_body
