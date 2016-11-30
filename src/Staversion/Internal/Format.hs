@@ -13,17 +13,18 @@ import Data.List (intersperse)
 import Data.Monoid (mempty, mconcat, (<>))
 import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
-import Data.Version (showVersion)
+import Data.Version (showVersion, Version)
 
 import Staversion.Internal.Query
   ( Result(..), Query(..),
     sourceDesc,
-    ResultBody(..)
+    ResultBody(..),
+    PackageName
   )
 
 -- | format 'Result's like it's in build-depends in .cabal files.
 formatResultsCabal :: [Result] -> TL.Text
-formatResultsCabal = toLazyText . mconcat . map formatGroupedResultsCabal . groupAllPreservingOrderBy ((==) `on` resultIn)
+formatResultsCabal = toLazyText . mconcat . map formatResultBlock . makeSourceBlocks
 
 groupAllPreservingOrderBy :: (a -> a -> Bool) -> [a] -> [[a]]
 groupAllPreservingOrderBy sameGroup = map snd  . foldr f [] where
@@ -34,29 +35,42 @@ groupAllPreservingOrderBy sameGroup = map snd  . foldr f [] where
       then heads ++ ( (cur_item, item : cur_list) : rest )
       else update (heads ++ [cur]) rest
 
-formatGroupedResultsCabal :: [Result] -> Builder
-formatGroupedResultsCabal [] = mempty
-formatGroupedResultsCabal results@(head_ret : _) = header <> (formatResultBlock $ single_result_output =<< results) where
-  header = "------ " <> (fromText $ sourceDesc $ resultIn head_ret) <> header_real_source <> "\n"
-  header_real_source = maybe "" fromText $ resultReallyIn head_ret >>= \real_source -> do
-    return (" (" <> sourceDesc real_source <> ")")
-  single_result_output ret = case resultBody ret of
-    Left _ -> [Left $ error_result ret]
-    Right ret_body -> formatVersionsCabal (resultFor ret) ret_body
-  error_result ret = case resultFor ret of
-    QueryName query_name -> "-- " <> fromText query_name <> " ERROR"
-    QueryCabalFile query_cabal_file -> "-- " <> fromString query_cabal_file <> " ERROR"
-
-formatVersionsCabal :: Query -> ResultBody -> [Either Builder Builder]
-formatVersionsCabal _ (SimpleResultBody name mver) = [formatted] where
-  formatted = case mver of
-    Nothing -> Left $ "-- " <> fromText name <> " N/A"
-    Just ver -> Right $ fromText name <> " ==" <> (fromString $ showVersion ver)
-
 type ResultLine = Either Builder Builder
 
-formatResultBlock :: [ResultLine] -> Builder
-formatResultBlock rlines = (mconcat $ intersperse "\n" $ map (either id id) $ tailCommas rlines) <> "\n\n" where
+data ResultBlock = RBHead Builder [ResultBlock]
+                 | RBLines [ResultLine]
+
+makeSourceBlocks :: [Result] -> [ResultBlock]
+makeSourceBlocks = map sourceBlock . groupAllPreservingOrderBy ((==) `on` resultIn) where
+  sourceBlock [] = RBLines []
+  sourceBlock results@(head_ret : _) = RBHead header $ makeQueryBlocks results where
+    header = "------ " <> (fromText $ sourceDesc $ resultIn head_ret) <> header_real_source
+    header_real_source = maybe "" fromText $ resultReallyIn head_ret >>= \real_source -> do
+      return (" (" <> sourceDesc real_source <> ")")
+
+makeQueryBlocks :: [Result] -> [ResultBlock]
+makeQueryBlocks = uncurry prependLines . foldr f ([], []) where
+  prependLines blocks [] = blocks
+  prependLines blocks rlines = (RBLines rlines) : blocks
+  f ret (blocks, rlines) = case (resultFor ret, resultBody ret) of
+    (_, Right (SimpleResultBody name mver)) -> (blocks, (versionLine name mver) : rlines)
+    ((QueryName name), Left _) -> (blocks, (packageErrorLine name) : rlines)
+    ((QueryCabalFile file), Left _) -> (cabalFileErrorBlock file : prependLines blocks rlines, [])
+
+versionLine :: PackageName -> Maybe Version -> ResultLine
+versionLine name Nothing = Left $ "-- " <> fromText name <> " N/A"
+versionLine name (Just ver) = Right $ fromText name <> " ==" <> (fromString $ showVersion ver)
+
+packageErrorLine :: PackageName -> ResultLine
+packageErrorLine name = Left $ "-- " <> fromText name <> " ERROR"
+
+cabalFileErrorBlock :: FilePath -> ResultBlock
+cabalFileErrorBlock file = RBLines [Left line] where
+  line = "-- " <> fromString file <> " ERROR"
+
+formatResultBlock :: ResultBlock -> Builder
+formatResultBlock (RBHead header blocks) = header <> "\n" <> mconcat (map formatResultBlock blocks)
+formatResultBlock (RBLines rlines) = (mconcat $ intersperse "\n" $ map (either id id) $ tailCommas rlines) <> "\n\n" where
   tailCommas = fst . foldr f ([], False)
                -- flag: True if it has already encountered the last Right element in the list.
   f eb (ret, flag) = let (next_e, next_flag) = getNext ret flag eb
