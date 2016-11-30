@@ -104,7 +104,7 @@ spec = describe "formatResultsCabal" $ do
                          }
                 ]
         expected = ( "------ lts-5.3\n"
-                     <> "-- foobar.cabal ERROR,\n"
+                     <> "-- foobar.cabal ERROR\n"
                      <> "\n"
                      <> "hoge ==5.5\n"
                      <> "\n"
