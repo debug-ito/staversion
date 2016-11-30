@@ -35,6 +35,9 @@ groupAllPreservingOrderBy sameGroup = map snd  . foldr f [] where
       then heads ++ ( (cur_item, item : cur_list) : rest )
       else update (heads ++ [cur]) rest
 
+-- | 'Left' lines and 'Right' lines are handled differently by
+-- 'formatResultBlock'. It puts commas at the right places assuming
+-- 'Left' lines are commented out.
 type ResultLine = Either Builder Builder
 
 data ResultBlock = RBHead Builder [ResultBlock]
