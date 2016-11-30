@@ -7,13 +7,13 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, TupleSections #-}
 module Staversion.Internal.BuildPlan
        ( -- * Entry APIs
-         BuildPlan,
+         BuildPlanMap,
          packageVersion,
          BuildPlanManager,
          newBuildPlanManager,
          loadBuildPlan,
          -- * Low-level APIs
-         loadBuildPlanYAML,
+         loadBuildPlanMapYAML,
          -- * For tests
          _setLTSDisambiguator
        ) where
@@ -63,10 +63,10 @@ import Staversion.Internal.BuildPlan.Version (unVersionJSON)
 
 -- | A data structure that keeps a map between package names and their
 -- versions.
-newtype BuildPlan = BuildPlan (HM.HashMap PackageName Version) deriving (Monoid)
+newtype BuildPlanMap = BuildPlanMap (HM.HashMap PackageName Version) deriving (Monoid)
 
-instance FromJSON BuildPlan where
-  parseJSON (Object object) = (\p1 p2 -> BuildPlan $ p1 <> p2) <$> core_packages <*> other_packages where
+instance FromJSON BuildPlanMap where
+  parseJSON (Object object) = (\p1 p2 -> BuildPlanMap $ p1 <> p2) <$> core_packages <*> other_packages where
     core_packages = parseSysInfo =<< (object .: "system-info")
     parseSysInfo (Object o) = parseCorePackages =<< (o .: "core-packages")
     parseSysInfo _ = empty
@@ -133,7 +133,7 @@ loadBuildPlan :: BuildPlanManager
               -> [PackageName]
               -- ^ package names whose versions the user is interested in.
               -> PackageSource
-              -> IO (Either ErrorMsg (BuildPlan, PackageSource))
+              -> IO (Either ErrorMsg (BuildPlanMap, PackageSource))
               -- ^ the second result is the real (disambiguated) PackageSource.
 loadBuildPlan man _ (SourceStackage resolver) = runExceptT impl where
   impl = loadBuildPlan_stackageLocalFile man resolver `loggedElse'` do
@@ -144,19 +144,19 @@ loadBuildPlan man _ (SourceStackage resolver) = runExceptT impl where
 loadBuildPlan man names SourceHackage = runExceptT impl where
   impl = do
     http_man <- httpManagerM man
-    build_plan <- (mconcat . zipWith registeredVersionToBuildPlan names) <$> mapM (doFetch http_man) names
+    build_plan <- (mconcat . zipWith registeredVersionToBuildPlanMap names) <$> mapM (doFetch http_man) names
     return (build_plan, SourceHackage)
   logDebug' msg = liftIO $ logDebug (manLogger man) msg
   doFetch http_man name = do
     logDebug' ("Ask hackage for the latest version of " ++ unpack name)
     ExceptT $ fetchPreferredVersions http_man name
 
-loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM (BuildPlan, PackageSource)
+loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM (BuildPlanMap, PackageSource)
 loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where
   yaml_file = manBuildPlanDir man </> resolver <.> "yaml"
   doLoad = do
     logDebug (manLogger man) ("Read " ++ yaml_file ++ " for build plan.")
-    e_build_plan <- loadBuildPlanYAML yaml_file
+    e_build_plan <- loadBuildPlanMapYAML yaml_file
     return $ (, SourceStackage resolver) <$> e_build_plan
   handleIOError :: IOException -> Maybe ErrorMsg
   handleIOError e | IOE.isDoesNotExistError e = Just $ makeErrorMsg e (yaml_file ++ " not found.")
@@ -183,28 +183,28 @@ tryDisambiguate bp_man presolver = impl where
        return got_d
   logDebug' = liftIO . logDebug (manLogger bp_man)
   
-loadBuildPlan_stackageNetwork :: BuildPlanManager -> ExactResolver -> LoadM (BuildPlan, PackageSource)
+loadBuildPlan_stackageNetwork :: BuildPlanManager -> ExactResolver -> LoadM (BuildPlanMap, PackageSource)
 loadBuildPlan_stackageNetwork man e_resolver = do
   http_man <- httpManagerM man
   liftIO $ logDebug (manLogger man) ("Fetch build plan from network: resolver = " ++ show e_resolver)
   yaml_data <- httpExceptionToLoadM ("Downloading build plan failed: " ++ show e_resolver) $ liftIO $ fetchBuildPlanYAML http_man e_resolver
-  (, real_source) <$> (ExceptT $ return $ parseBuildPlanYAML $ BSL.toStrict yaml_data)
+  (, real_source) <$> (ExceptT $ return $ parseBuildPlanMapYAML $ BSL.toStrict yaml_data)
   where
     real_source = SourceStackage $ formatExactResolverString e_resolver
 
-parseBuildPlanYAML :: BS.ByteString -> Either ErrorMsg BuildPlan
-parseBuildPlanYAML = either (Left . toErrorMsg) Right  . Yaml.decodeEither' where
-  toErrorMsg parse_exception = "Error while parsing BuildPlan YAML: " ++ show parse_exception
+parseBuildPlanMapYAML :: BS.ByteString -> Either ErrorMsg BuildPlanMap
+parseBuildPlanMapYAML = either (Left . toErrorMsg) Right  . Yaml.decodeEither' where
+  toErrorMsg parse_exception = "Error while parsing BuildPlanMap YAML: " ++ show parse_exception
 
--- | Load a 'BuildPlan' from a file.
-loadBuildPlanYAML :: FilePath -> IO (Either ErrorMsg BuildPlan)
-loadBuildPlanYAML yaml_file = parseBuildPlanYAML <$> BS.readFile yaml_file where -- TODO: make it memory-efficient!
+-- | Load a 'BuildPlanMap' from a file.
+loadBuildPlanMapYAML :: FilePath -> IO (Either ErrorMsg BuildPlanMap)
+loadBuildPlanMapYAML yaml_file = parseBuildPlanMapYAML <$> BS.readFile yaml_file where -- TODO: make it memory-efficient!
 
-packageVersion :: BuildPlan -> PackageName -> Maybe Version
-packageVersion (BuildPlan bp_map) name = HM.lookup name bp_map
+packageVersion :: BuildPlanMap -> PackageName -> Maybe Version
+packageVersion (BuildPlanMap bp_map) name = HM.lookup name bp_map
 
-registeredVersionToBuildPlan :: PackageName -> RegisteredVersions -> BuildPlan
-registeredVersionToBuildPlan name rvers = BuildPlan $ HM.fromList $ pairs where
+registeredVersionToBuildPlanMap :: PackageName -> RegisteredVersions -> BuildPlanMap
+registeredVersionToBuildPlanMap name rvers = BuildPlanMap $ HM.fromList $ pairs where
   pairs = case latestVersion rvers of
     Nothing -> []
     Just v -> [(name, v)]

@@ -9,8 +9,8 @@ import Test.Hspec
 import Staversion.Internal.Log (defaultLogger, loggerThreshold)
 import Staversion.Internal.Query (PackageName, PackageSource(..))
 import Staversion.Internal.BuildPlan
-  ( BuildPlan, 
-    loadBuildPlanYAML, 
+  ( BuildPlanMap, 
+    loadBuildPlanMapYAML, 
     packageVersion,
     BuildPlanManager,
     newBuildPlanManager,
@@ -28,7 +28,7 @@ spec = do
 
 packageVersion_spec :: Spec
 packageVersion_spec = describe "packageVersion" $ do
-  forBuildPlan "conpact_build_plan" $ \loader -> do
+  forBuildPlanMap "conpact_build_plan" $ \loader -> do
     specify "drawille -> 0.1.0.6" $ do
       loadVersion "drawille" loader `shouldReturn` Just (Version [0,1,0,6] [])
     specify "unknown -> Nothing" $ do
@@ -38,18 +38,18 @@ packageVersion_spec = describe "packageVersion" $ do
     specify "base -> 4.8.2.0" $ do
       loadVersion "base" loader `shouldReturn` Just (Version [4,8,2,0] [])
 
-  forBuildPlan "lts-4.2" $ \loader -> do
+  forBuildPlanMap "lts-4.2" $ \loader -> do
     specify "conduit -> 1.2.6.1" $ do
       loadVersion "conduit" loader `shouldReturn` Just (Version [1,2,6,1] [])
     specify "transformers -> 0.4.2.0" $ do
       loadVersion "transformers" loader `shouldReturn` Just (Version [0,4,2,0] [])
 
 
-forBuildPlan :: String -> (IO BuildPlan -> Spec) -> Spec
-forBuildPlan build_plan_base testWith = describe build_plan_base (testWith loader) where
-  loader = either error return =<< loadBuildPlanYAML ("test" </> "data" </> build_plan_base <.> "yaml")
+forBuildPlanMap :: String -> (IO BuildPlanMap -> Spec) -> Spec
+forBuildPlanMap build_plan_base testWith = describe build_plan_base (testWith loader) where
+  loader = either error return =<< loadBuildPlanMapYAML ("test" </> "data" </> build_plan_base <.> "yaml")
 
-loadVersion :: PackageName -> IO BuildPlan -> IO (Maybe Version)
+loadVersion :: PackageName -> IO BuildPlanMap -> IO (Maybe Version)
 loadVersion package_name loader = do
   plan <- loader
   return $ packageVersion plan package_name

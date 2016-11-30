@@ -18,7 +18,7 @@ import Data.Text (unpack)
 import qualified Data.Text.Lazy.IO as TLIO
 
 import Staversion.Internal.BuildPlan
-  ( BuildPlan, packageVersion, newBuildPlanManager, loadBuildPlan,
+  ( BuildPlanMap, packageVersion, newBuildPlanManager, loadBuildPlan,
     BuildPlanManager
   )
 import Staversion.Internal.Command
@@ -65,7 +65,7 @@ _processCommandWithCustomBuildPlanManager customBPM comm = impl where
   logBuildPlanResult (Right _) = logDebug logger ("Successfully retrieved build plan.")
   logBuildPlanResult (Left error_msg) = logError logger ("Failed to load build plan: " ++ error_msg)
 
-searchVersions :: BuildPlan -> Query -> ResultBody
+searchVersions :: BuildPlanMap -> Query -> ResultBody
 searchVersions build_plan (QueryName package_name) = SimpleResultBody package_name $ packageVersion build_plan package_name
 
 getQueriedPackageNames :: Query -> IO [PackageName]
