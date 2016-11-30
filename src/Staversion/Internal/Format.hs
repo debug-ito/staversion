@@ -36,7 +36,7 @@ groupAllPreservingOrderBy sameGroup = map snd  . foldr f [] where
 
 formatGroupedResultsCabal :: [Result] -> Builder
 formatGroupedResultsCabal [] = mempty
-formatGroupedResultsCabal results@(head_ret : _) = header <> (concatLines $ single_result_output =<< results) where
+formatGroupedResultsCabal results@(head_ret : _) = header <> (formatResultBlock $ single_result_output =<< results) where
   header = "------ " <> (fromText $ sourceDesc $ resultIn head_ret) <> header_real_source <> "\n"
   header_real_source = maybe "" fromText $ resultReallyIn head_ret >>= \real_source -> do
     return (" (" <> sourceDesc real_source <> ")")
@@ -46,15 +46,6 @@ formatGroupedResultsCabal results@(head_ret : _) = header <> (concatLines $ sing
   error_result ret = case resultFor ret of
     QueryName query_name -> "-- " <> fromText query_name <> " ERROR"
     QueryCabalFile query_cabal_file -> "-- " <> fromString query_cabal_file <> " ERROR"
-  concatLines ebuilder_lines = (mconcat $ intersperse "\n" $ map (either id id) $ tailCommas ebuilder_lines) <> "\n\n"
-  tailCommas = fst . foldr f ([], False) where
-    -- flag: True if it has already encountered the last Right element in the list.
-    f eb (ret, flag) = let (next_e, next_flag) = getNext ret flag eb
-                       in (next_e:ret, next_flag)
-    getNext [] flag e@(Left _) = (e, flag)
-    getNext _ flag (Left b) = (Left (b <> ","), flag)
-    getNext _ False e@(Right _) = (e, True)
-    getNext _ True (Right b) = (Right (b <> ","), True)
 
 formatVersionsCabal :: Query -> ResultBody -> [Either Builder Builder]
 formatVersionsCabal _ (SimpleResultBody name mver) = [formatted] where
@@ -62,3 +53,15 @@ formatVersionsCabal _ (SimpleResultBody name mver) = [formatted] where
     Nothing -> Left $ "-- " <> fromText name <> " N/A"
     Just ver -> Right $ fromText name <> " ==" <> (fromString $ showVersion ver)
 
+type ResultLine = Either Builder Builder
+
+formatResultBlock :: [ResultLine] -> Builder
+formatResultBlock rlines = (mconcat $ intersperse "\n" $ map (either id id) $ tailCommas rlines) <> "\n\n" where
+  tailCommas = fst . foldr f ([], False)
+               -- flag: True if it has already encountered the last Right element in the list.
+  f eb (ret, flag) = let (next_e, next_flag) = getNext ret flag eb
+                     in (next_e:ret, next_flag)
+  getNext [] flag e@(Left _) = (e, flag)
+  getNext _ flag (Left b) = (Left (b <> ","), flag)
+  getNext _ False e@(Right _) = (e, True)
+  getNext _ True (Right b) = (Right (b <> ","), True)
