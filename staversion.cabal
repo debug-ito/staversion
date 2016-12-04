@@ -16,7 +16,8 @@ extra-source-files:     README.md, ChangeLog.md,
                         test/data/lts-4.2.yaml,
                         test/data/lts-2.22_conpact.yaml,
                         test/data/snapshots.json,
-                        test/data/aeson_preferred.json
+                        test/data/aeson_preferred.json,
+                        test/data/doctest.cabal
                         
 homepage:               https://github.com/debug-ito/staversion
 bug-reports:            https://github.com/debug-ito/staversion/issues
@@ -79,6 +80,7 @@ test-suite spec
                         Staversion.Internal.BuildPlan.VersionSpec,
                         Staversion.Internal.ExecSpec,
                         Staversion.Internal.FormatSpec,
+                        Staversion.Internal.CabalSpec,
                         Staversion.Internal.TestUtil
   build-depends:        base, staversion, text, filepath, bytestring,
                         hspec >=2.1.7 && <2.4,

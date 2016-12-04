@@ -27,6 +27,6 @@ data BuildDepends =
                  depsPackages :: [PackageName]
                } deriving (Show,Eq,Ord)
 
-loadCabalFile :: FilePath -> IO (Either ErrorMsg BuildDepends)
+loadCabalFile :: FilePath -> IO (Either ErrorMsg [BuildDepends])
 loadCabalFile = undefined
 
