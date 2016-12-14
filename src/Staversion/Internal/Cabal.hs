@@ -10,9 +10,10 @@ module Staversion.Internal.Cabal
          BuildDepends(..)
        ) where
 
-import Control.Applicative ((<*), (*>), (<|>), (<*>))
-import Control.Monad (void)
+import Control.Applicative ((<*), (*>), (<|>), (<*>), many, some)
+import Control.Monad (void, mzero)
 import Data.Char (isAlpha, isDigit)
+import Data.List (lookup)
 import Data.Text (pack, Text)
 import qualified Data.Text as T
 import qualified Data.Attoparsec.Text as P
@@ -99,3 +100,19 @@ buildDependsLine = pname `P.sepBy` P.char ',' where
   allowedChar '-' = True
   allowedChar '_' = True
   allowedChar c = isAlpha c || isDigit c
+
+targetBlock :: P.Parser BuildDepends
+targetBlock = do
+  target <- blockHeadLine
+  _ <- many emptyLine
+  fields <- some fieldBlock
+  build_deps_block <- maybe mzero return $ lookup "build-depends" fields
+  packages <- either (const mzero) return $ P.parseOnly (buildDependsLine <* P.skipSpace <* P.endOfInput) build_deps_block
+  return $ BuildDepends { depsTarget = target,
+                          depsPackages = packages
+                        }
+
+cabalParser :: P.Parser [BuildDepends]
+cabalParser = impl where
+  impl = ((:) <$> targetBlock <*> impl) <|> (ignoreLine *> impl) <|> (P.endOfInput *> pure [])
+  ignoreLine = P.takeTill P.isEndOfLine *> finishLine
