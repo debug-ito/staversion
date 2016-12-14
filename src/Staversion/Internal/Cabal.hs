@@ -116,4 +116,4 @@ targetBlock = do
 cabalParser :: P.Parser [BuildDepends]
 cabalParser = impl where
   impl = ((:) <$> targetBlock <*> impl) <|> (ignoreLine *> impl) <|> (P.endOfInput *> pure [])
-  ignoreLine = P.takeTill P.isEndOfLine *> finishLine
+  ignoreLine = P.takeWhile1 (not . P.isEndOfLine) *> finishLine
