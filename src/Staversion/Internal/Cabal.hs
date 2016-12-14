@@ -10,18 +10,13 @@ module Staversion.Internal.Cabal
          BuildDepends(..)
        ) where
 
-import Data.Text (pack)
-import Distribution.Package (Dependency(..), unPackageName)
-import Distribution.PackageDescription
-  (BuildInfo(targetBuildDepends), Library(libBuildInfo), Executable(buildInfo, exeName),
-   TestSuite(testName, testBuildInfo), Benchmark(benchmarkName, benchmarkBuildInfo),
-   PackageDescription(library, executables, testSuites, benchmarks)
-  )
-import Distribution.PackageDescription.Parse (parsePackageDescription, ParseResult(..))
-import Distribution.PackageDescription.Configuration
-  (finalizePackageDescription)
-import Distribution.System (buildPlatform)
-import Distribution.Compiler (unknownCompilerInfo, buildCompilerId, AbiTag(NoAbiTag))
+import Control.Applicative ((<*), (*>), (<|>), (<*>))
+import Control.Monad (void)
+import Data.Char (isAlpha, isDigit)
+import Data.Text (pack, Text)
+import qualified Data.Text as T
+import qualified Data.Attoparsec.Text as P
+import qualified Data.Attoparsec.Combinator as P (lookAhead)
 
 import Staversion.Internal.Query
   ( PackageName, ErrorMsg
@@ -29,9 +24,9 @@ import Staversion.Internal.Query
 
 -- | Build target type.
 data Target = TargetLibrary -- ^ the @library@ target.
-            | TargetExecutable String -- ^ the @executable NAME@ target.
-            | TargetTestSuite String -- ^ the @test-suite NAME@ target.
-            | TargetBenchmark String -- ^ the @benchmark NAME@ target.
+            | TargetExecutable Text -- ^ the @executable NAME@ target.
+            | TargetTestSuite Text -- ^ the @test-suite NAME@ target.
+            | TargetBenchmark Text -- ^ the @benchmark NAME@ target.
             deriving (Show,Eq,Ord)
 
 -- | A block of @build-depends:@.
@@ -41,43 +36,66 @@ data BuildDepends =
                } deriving (Show,Eq,Ord)
 
 loadCabalFile :: FilePath -> IO (Either ErrorMsg [BuildDepends])
-loadCabalFile cabal_filepath = impl where
+loadCabalFile cabal_filepath = undefined
+
+isLineSpace :: Char -> Bool
+isLineSpace ' ' = True
+isLineSpace '\t' = True
+isLineSpace _ = False
+
+indent :: P.Parser Int
+indent = T.length <$> P.takeWhile isLineSpace
+
+finishLine :: P.Parser ()
+finishLine = P.endOfLine <|> P.endOfInput
+
+emptyLine :: P.Parser ()
+emptyLine = true_empty <|> comment_line where
+  true_empty = indent *> finishLine
+  comment_line = indent *> P.string "--" *> P.takeTill P.isEndOfLine *> finishLine
+
+blockHeadLine :: P.Parser Target
+blockHeadLine = indent *> target <* trail <* finishLine where
+  trail = indent
+  target = target_lib <|> target_exe <|> target_test <|> target_bench
+  target_lib = P.asciiCI "library" *> pure TargetLibrary
+  target_exe = TargetExecutable <$> targetNamed "executable"
+  target_test = TargetTestSuite <$> targetNamed "test-suite"
+  target_bench = TargetBenchmark <$> targetNamed "benchmark"
+  targetNamed target_type = P.asciiCI target_type *> P.takeWhile1 isLineSpace *> P.takeWhile1 (not . isLineSpace)
+
+fieldStart :: Maybe Text -- ^ expected field name. If Nothing, it just don't care.
+           -> P.Parser (Text, Int) -- ^ (lower-case field name, indent level)
+fieldStart mexp_name = do
+  level <- indent
+  name <- nameParser <* indent <* P.char ':'
+  return (T.toLower name, level)
+  where
+    nameParser = case mexp_name of
+      Nothing -> P.takeWhile1 $ \c -> not (isLineSpace c || c == ':')
+      Just exp_name -> P.asciiCI exp_name
+
+fieldBlock :: P.Parser (Text, Text) -- ^ (lower-case field name, block content)
+fieldBlock = impl where
   impl = do
-    -- TODO: catch IO exception.
-    cabal_file_content <- readFileStrict cabal_filepath
-    return $ fmap toBuildDependsList $ resolveCond =<< (toEither $ parsePackageDescription cabal_file_content)
-  readFileStrict file = (\s -> length s `seq` return s) =<< readFile file
-  toEither (ParseFailed e) = Left ("Failed to parse " ++ cabal_filepath ++ ": " ++ show e)
-  toEither (ParseOk _ ret) = Right ret
-  resolveCond = either makeDepsError (Right . fst) . finalizePackageDescription [] (const True) buildPlatform my_compiler_info []
-  my_compiler_info = unknownCompilerInfo buildCompilerId NoAbiTag -- is this OK??
-  makeDepsError deps = Left ("Unexpected fatal error: it claims the following dependencies are not met: " ++ show deps)
-  toBuildDependsList pdesc = libs ++ exes ++ tests ++ benches where
-    libs = maybe [] return $ fmap depsLibrary $ library pdesc
-    exes = map depsExecutable $ executables pdesc
-    tests = map depsTestSuite $ testSuites pdesc
-    benches = map depsBenchmark $ benchmarks pdesc
+    (field_name, level) <- fieldStart Nothing
+    field_trail <- P.takeTill P.isEndOfLine <* finishLine
+    rest <- remainingLines level
+    return (field_name, T.intercalate "\n" (field_trail : rest))
+  remainingLines field_indent_level = go where
+    go = (emptyLine *> go) <|> (P.endOfInput *> pure []) <|> foundSomething
+    foundSomething = do
+      this_level <- P.lookAhead indent
+      if this_level <= field_indent_level
+        then pure []
+        else do
+        _ <- indent
+        this_line <- P.takeTill (P.isEndOfLine) <* finishLine
+        (this_line :) <$> go
 
-depsBuildInfo :: BuildInfo -> [PackageName]
-depsBuildInfo = map toName .targetBuildDepends where
-  toName (Dependency pname _) = pack $ unPackageName pname
-
-depsLibrary :: Library -> BuildDepends
-depsLibrary lib = BuildDepends { depsTarget = TargetLibrary,
-                                 depsPackages = depsBuildInfo $ libBuildInfo lib
-                               }
-
-depsExecutable :: Executable -> BuildDepends
-depsExecutable exe = BuildDepends { depsTarget = TargetExecutable $ exeName exe,
-                                    depsPackages = depsBuildInfo $ buildInfo exe
-                                  }
-
-depsTestSuite :: TestSuite -> BuildDepends
-depsTestSuite ts = BuildDepends { depsTarget = TargetTestSuite $ testName ts,
-                                  depsPackages = depsBuildInfo $ testBuildInfo ts
-                                }
-
-depsBenchmark :: Benchmark -> BuildDepends
-depsBenchmark ben = BuildDepends { depsTarget = TargetBenchmark $ benchmarkName ben,
-                                   depsPackages = depsBuildInfo $ benchmarkBuildInfo ben
-                                 }
+buildDependsLine :: P.Parser [PackageName]
+buildDependsLine = pname `P.sepBy` P.char ',' where
+  pname = P.skipSpace *> P.takeWhile1 allowedChar <* P.takeTill (\c -> c == ',')
+  allowedChar '-' = True
+  allowedChar '_' = True
+  allowedChar c = isAlpha c || isDigit c
