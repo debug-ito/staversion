@@ -16,6 +16,7 @@ import Data.Char (isAlpha, isDigit)
 import Data.List (lookup)
 import Data.Text (pack, Text)
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import qualified Data.Attoparsec.Text as P
 import qualified Data.Attoparsec.Combinator as P (lookAhead)
 
@@ -37,7 +38,7 @@ data BuildDepends =
                } deriving (Show,Eq,Ord)
 
 loadCabalFile :: FilePath -> IO (Either ErrorMsg [BuildDepends])
-loadCabalFile cabal_filepath = undefined
+loadCabalFile cabal_filepath = P.parseOnly (cabalParser <* P.endOfInput) <$> TIO.readFile cabal_filepath
 
 isLineSpace :: Char -> Bool
 isLineSpace ' ' = True
