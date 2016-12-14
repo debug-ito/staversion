@@ -11,7 +11,7 @@ main = hspec spec
 spec :: Spec
 spec = describe "loadCabalFile" $ do
   it "should load library, executable and test-suite targets" $ do
-    (Right got_deps) <- loadCabalFile $ "test" </> "data" </> "doctest.cabal"
+    got_deps <- either error return  =<< loadCabalFile ("test" </> "data" </> "doctest.cabal")
     got_deps `shouldBe` [ BuildDepends { depsTarget = TargetLibrary,
                                          depsPackages = [ "base",
                                                           "base-compat",
