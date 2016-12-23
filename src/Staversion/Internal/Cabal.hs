@@ -58,7 +58,7 @@ emptyLine = indent *> (P.try finishLine <|> comment_line) where
   comment_line = P.string "--" *> P.manyTill P.anyChar finishLine *> pure ()
 
 blockHeadLine :: P.Parser Target
-blockHeadLine = indent *> target <* trail <* finishLine where
+blockHeadLine = target <* trail <* finishLine where
   trail = indent
   target = target_lib <|> target_exe <|> target_test <|> target_bench
   target_lib = P.try (P.string' "library") *> pure TargetLibrary
