@@ -12,13 +12,15 @@ module Staversion.Internal.Cabal
 
 import Control.Applicative ((<*), (*>), (<|>), (<*>), many, some)
 import Control.Monad (void, mzero)
-import Data.Char (isAlpha, isDigit)
-import Data.List (lookup)
+import Data.Bifunctor (first)
+import Data.Char (isAlpha, isDigit, toLower)
+import Data.List (lookup, intercalate)
+import Data.Monoid (mconcat)
 import Data.Text (pack, Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Data.Attoparsec.Text as P
-import qualified Data.Attoparsec.Combinator as P (lookAhead)
+import qualified Text.Megaparsec as P
+import qualified Text.Megaparsec.Text as P
 
 import Staversion.Internal.Query
   ( PackageName, ErrorMsg
@@ -38,7 +40,7 @@ data BuildDepends =
                } deriving (Show,Eq,Ord)
 
 loadCabalFile :: FilePath -> IO (Either ErrorMsg [BuildDepends])
-loadCabalFile cabal_filepath = P.parseOnly (cabalParser <* P.endOfInput) <$> TIO.readFile cabal_filepath
+loadCabalFile cabal_filepath = first show <$> P.runParser (cabalParser <* P.eof) cabal_filepath <$> TIO.readFile cabal_filepath
 
 isLineSpace :: Char -> Bool
 isLineSpace ' ' = True
@@ -46,58 +48,63 @@ isLineSpace '\t' = True
 isLineSpace _ = False
 
 indent :: P.Parser Int
-indent = T.length <$> P.takeWhile isLineSpace
+indent = length <$> (many $ P.satisfy isLineSpace)
 
 finishLine :: P.Parser ()
-finishLine = P.endOfLine <|> P.endOfInput
+finishLine = P.eof <|> void P.eol
 
 emptyLine :: P.Parser ()
-emptyLine = true_empty <|> comment_line where
-  true_empty = indent *> finishLine
-  comment_line = indent *> P.string "--" *> P.takeTill P.isEndOfLine *> finishLine
+emptyLine = indent *> (P.try finishLine <|> comment_line) where
+  comment_line = P.string "--" *> P.manyTill P.anyChar finishLine *> pure ()
 
 blockHeadLine :: P.Parser Target
 blockHeadLine = indent *> target <* trail <* finishLine where
   trail = indent
   target = target_lib <|> target_exe <|> target_test <|> target_bench
-  target_lib = P.asciiCI "library" *> pure TargetLibrary
+  target_lib = P.try (P.string' "library") *> pure TargetLibrary
   target_exe = TargetExecutable <$> targetNamed "executable"
   target_test = TargetTestSuite <$> targetNamed "test-suite"
   target_bench = TargetBenchmark <$> targetNamed "benchmark"
-  targetNamed target_type = P.asciiCI target_type *> P.takeWhile1 isLineSpace *> P.takeWhile1 (not . isLineSpace)
+  targetNamed :: String -> P.Parser Text
+  targetNamed target_type = P.try (P.string' target_type)
+                            *> (some $ P.satisfy isLineSpace)
+                            *> (fmap pack $ some $ P.satisfy (not . isLineSpace))
 
-fieldStart :: Maybe Text -- ^ expected field name. If Nothing, it just don't care.
-           -> P.Parser (Text, Int) -- ^ (lower-case field name, indent level)
+fieldStart :: Maybe String -- ^ expected field name. If Nothing, it just don't care.
+           -> P.Parser (String, Int) -- ^ (lower-case field name, indent level)
 fieldStart mexp_name = do
   level <- indent
   name <- nameParser <* indent <* P.char ':'
-  return (T.toLower name, level)
+  return (map toLower name, level)
   where
     nameParser = case mexp_name of
-      Nothing -> P.takeWhile1 $ \c -> not (isLineSpace c || c == ':')
-      Just exp_name -> P.asciiCI exp_name
+      Nothing -> some $ P.satisfy $ \c -> not (isLineSpace c || c == ':')
+      Just exp_name -> P.string' exp_name
 
-fieldBlock :: P.Parser (Text, Text) -- ^ (lower-case field name, block content)
+fieldBlock :: P.Parser (String, Text) -- ^ (lower-case field name, block content)
 fieldBlock = impl where
   impl = do
     (field_name, level) <- fieldStart Nothing
-    field_trail <- P.takeTill P.isEndOfLine <* finishLine
+    field_trail <- P.manyTill P.anyChar finishLine
     rest <- remainingLines level
-    return (field_name, T.intercalate "\n" (field_trail : rest))
-  remainingLines field_indent_level = go where
-    go = (emptyLine *> go) <|> (P.endOfInput *> pure []) <|> foundSomething
-    foundSomething = do
+    let text_block = T.intercalate "\n" $ map pack (field_trail : rest)
+    return (field_name, text_block)
+  remainingLines field_indent_level = reverse <$> go [] where
+    go cur_lines = (P.eof *> pure cur_lines) <|> foundSomething cur_lines
+    foundSomething cur_lines = do
+      void $ many emptyLine
       this_level <- P.lookAhead indent
       if this_level <= field_indent_level
-        then pure []
+        then pure cur_lines
         else do
         _ <- indent
-        this_line <- P.takeTill (P.isEndOfLine) <* finishLine
-        (this_line :) <$> go
+        this_line <- P.manyTill P.anyChar finishLine
+        go (this_line : cur_lines)
 
 buildDependsLine :: P.Parser [PackageName]
 buildDependsLine = pname `P.sepBy` P.char ',' where
-  pname = P.skipSpace *> P.takeWhile1 allowedChar <* P.takeTill (\c -> c == ',')
+  pname = pack <$> pname_str
+  pname_str = P.space *> (some $ P.satisfy allowedChar) <* (P.manyTill P.anyChar $ P.satisfy (\c -> c == ','))
   allowedChar '-' = True
   allowedChar '_' = True
   allowedChar c = isAlpha c || isDigit c
@@ -108,14 +115,29 @@ targetBlock = do
   _ <- many emptyLine
   fields <- some fieldBlock
   build_deps_block <- maybe mzero return $ lookup "build-depends" fields
-  packages <- either (const mzero) return $ P.parseOnly (buildDependsLine <* P.skipSpace <* P.endOfInput) build_deps_block
+  packages <- either (fail . show) return $ P.runParser (buildDependsLine <* P.space <* P.eof) "build-depends" build_deps_block
   return $ BuildDepends { depsTarget = target,
                           depsPackages = packages
                         }
 
 cabalParser :: P.Parser [BuildDepends]
-cabalParser = impl where
-  impl = ((:) <$> targetBlock <*> impl) <|> ignoreLine
-  ignoreLine = do
-    _ <- P.takeWhile (not . P.isEndOfLine)
-    (P.endOfInput *> pure []) <|> (P.endOfLine *> impl)
+cabalParser = reverse <$> go [] where
+  go cur_deps = targetBlockParsed cur_deps <|> (P.eof *> pure cur_deps) <|> ignoreLine cur_deps
+  targetBlockParsed cur_deps = do
+    new_dep <- targetBlock
+    go (new_dep : cur_deps)
+  ignoreLine cur_deps = P.manyTill P.anyChar finishLine *> go cur_deps
+
+-- cabalParser = reverse <$> go [] where
+--   go cur_deps = do
+--     mret <- (Just <$> targetBlock) <|> (ignoreLine *> pure Nothing)
+--     case mret of
+--      Just b -> go (b : cur_deps)
+--      Nothing -> go cur_deps
+--   ignoreLine = P.manyTill anyChar finishLine
+
+-- cabalParser = impl where
+--   impl = ((:) <$> targetBlock <*> impl) <|> ignoreLine
+--   ignoreLine = do
+--     _ <- P.takeWhile (not . P.isEndOfLine)
+--     (P.endOfInput *> pure []) <|> (P.endOfLine *> impl)
