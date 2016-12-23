@@ -84,7 +84,7 @@ fieldStart mexp_name = do
 fieldBlock :: P.Parser (String, Text) -- ^ (lower-case field name, block content)
 fieldBlock = impl where
   impl = do
-    (field_name, level) <- fieldStart Nothing
+    (field_name, level) <- P.try $ fieldStart Nothing
     field_trail <- P.manyTill P.anyChar finishLine
     rest <- remainingLines level
     let text_block = T.intercalate "\n" $ map pack (field_trail : rest)
@@ -92,7 +92,7 @@ fieldBlock = impl where
   remainingLines field_indent_level = reverse <$> go [] where
     go cur_lines = (P.eof *> pure cur_lines) <|> foundSomething cur_lines
     foundSomething cur_lines = do
-      void $ many emptyLine
+      void $ many $ P.try emptyLine
       this_level <- P.lookAhead indent
       if this_level <= field_indent_level
         then pure cur_lines
@@ -111,8 +111,8 @@ buildDependsLine = pname `P.sepBy` P.char ',' where
 
 targetBlock :: P.Parser BuildDepends
 targetBlock = do
-  target <- blockHeadLine
-  _ <- many emptyLine
+  target <- P.try blockHeadLine
+  _ <- many $ P.try emptyLine
   fields <- some fieldBlock
   build_deps_block <- maybe mzero return $ lookup "build-depends" fields
   packages <- either (fail . show) return $ P.runParser (buildDependsLine <* P.space <* P.eof) "build-depends" build_deps_block
