@@ -11,10 +11,10 @@ module Staversion.Internal.Cabal
        ) where
 
 import Control.Applicative ((<*), (*>), (<|>), (<*>), many, some)
-import Control.Monad (void, mzero)
+import Control.Monad (void, mzero, forM)
 import Data.Bifunctor (first)
 import Data.Char (isAlpha, isDigit, toLower, isSpace)
-import Data.List (lookup, intercalate)
+import Data.List (intercalate, nub)
 import Data.Monoid (mconcat)
 import Data.Text (pack, Text)
 import qualified Data.Text as T
@@ -115,8 +115,9 @@ targetBlock = do
   target <- P.try blockHeadLine
   _ <- many $ P.try emptyLine
   fields <- some fieldBlock
-  build_deps_block <- maybe mzero return $ lookup "build-depends" fields
-  packages <- either (fail . show) return $ P.runParser (buildDependsLine <* P.space <* P.eof) "build-depends" build_deps_block
+  let build_deps_blocks = map snd $ filter (("build-depends" ==) . fst) $ fields
+  packages <- fmap (nub . concat) $ forM build_deps_blocks $ \block -> do
+    either (fail . show) return $ P.runParser (buildDependsLine <* P.space <* P.eof) "build-depends" block
   return $ BuildDepends { depsTarget = target,
                           depsPackages = packages
                         }
