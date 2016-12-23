@@ -13,7 +13,7 @@ module Staversion.Internal.Cabal
 import Control.Applicative ((<*), (*>), (<|>), (<*>), many, some)
 import Control.Monad (void, mzero)
 import Data.Bifunctor (first)
-import Data.Char (isAlpha, isDigit, toLower)
+import Data.Char (isAlpha, isDigit, toLower, isSpace)
 import Data.List (lookup, intercalate)
 import Data.Monoid (mconcat)
 import Data.Text (pack, Text)
@@ -68,7 +68,7 @@ blockHeadLine = indent *> target <* trail <* finishLine where
   targetNamed :: String -> P.Parser Text
   targetNamed target_type = P.try (P.string' target_type)
                             *> (some $ P.satisfy isLineSpace)
-                            *> (fmap pack $ some $ P.satisfy (not . isLineSpace))
+                            *> (fmap pack $ some $ P.satisfy (not . isSpace))
 
 fieldStart :: Maybe String -- ^ expected field name. If Nothing, it just don't care.
            -> P.Parser (String, Int) -- ^ (lower-case field name, indent level)
@@ -128,17 +128,3 @@ cabalParser = reverse <$> go [] where
     new_dep <- targetBlock
     go (new_dep : cur_deps)
   ignoreLine cur_deps = P.manyTill P.anyChar finishLine *> go cur_deps
-
--- cabalParser = reverse <$> go [] where
---   go cur_deps = do
---     mret <- (Just <$> targetBlock) <|> (ignoreLine *> pure Nothing)
---     case mret of
---      Just b -> go (b : cur_deps)
---      Nothing -> go cur_deps
---   ignoreLine = P.manyTill anyChar finishLine
-
--- cabalParser = impl where
---   impl = ((:) <$> targetBlock <*> impl) <|> ignoreLine
---   ignoreLine = do
---     _ <- P.takeWhile (not . P.isEndOfLine)
---     (P.endOfInput *> pure []) <|> (P.endOfLine *> impl)
