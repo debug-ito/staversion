@@ -84,6 +84,7 @@ fieldStart mexp_name = do
 fieldBlock :: P.Parser (String, Text) -- ^ (lower-case field name, block content)
 fieldBlock = impl where
   impl = do
+    _ <- many $ P.try conditionalLine
     (field_name, level) <- P.try $ fieldStart Nothing
     field_trail <- P.manyTill P.anyChar finishLine
     rest <- remainingLines level
@@ -109,6 +110,11 @@ buildDependsLine = P.space *> (pname `P.endBy` ignored) where
   allowedChar c = isAlpha c || isDigit c
   ignored = P.manyTill P.anyChar finishItem *> P.space
   finishItem = P.eof <|> (void $ P.char ',')
+
+conditionalLine :: P.Parser ()
+conditionalLine = void $ indent *> (term "if" <|> term "else") *> P.manyTill P.anyChar finishLine where
+  term :: String -> P.Parser ()
+  term t = P.try (P.string' t *> P.lookAhead P.space)
 
 targetBlock :: P.Parser BuildDepends
 targetBlock = do
