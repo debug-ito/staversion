@@ -102,12 +102,13 @@ fieldBlock = impl where
         go (this_line : cur_lines)
 
 buildDependsLine :: P.Parser [PackageName]
-buildDependsLine = pname `P.sepBy` P.char ',' where
-  pname = pack <$> pname_str
-  pname_str = P.space *> (some $ P.satisfy allowedChar) <* (P.manyTill P.anyChar $ P.satisfy (\c -> c == ','))
+buildDependsLine = P.space *> (pname `P.endBy` ignored) where
+  pname = pack <$> (some $ P.satisfy allowedChar)
   allowedChar '-' = True
   allowedChar '_' = True
   allowedChar c = isAlpha c || isDigit c
+  ignored = P.manyTill P.anyChar finishItem *> P.space
+  finishItem = P.eof <|> (void $ P.char ',')
 
 targetBlock :: P.Parser BuildDepends
 targetBlock = do
