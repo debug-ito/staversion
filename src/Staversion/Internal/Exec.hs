@@ -27,17 +27,22 @@ import Staversion.Internal.Command
     Command(..)
   )
 import Staversion.Internal.Format (formatResultsCabal)
-import Staversion.Internal.Log (logDebug, logError)
+import Staversion.Internal.Log (logDebug, logError, Logger)
 import Staversion.Internal.Query
   ( Query(..), Result(..), PackageSource(..), PackageName,
     ResultBody(..),
     ErrorMsg
   )
+import Staversion.Internal.Cabal (BuildDepends(..), loadCabalFile)
 
 main :: IO ()
 main = do
   comm <- parseCommandArgs
   (TLIO.putStr . formatResultsCabal) =<< (processCommand comm)
+
+data ResolvedQuery = RQueryOne Query PackageName
+                   | RQueryCabal Query FilePath BuildDepends
+                   deriving (Show, Eq, Ord)
 
 processCommand :: Command -> IO [Result]
 processCommand = _processCommandWithCustomBuildPlanManager return
@@ -46,31 +51,46 @@ _processCommandWithCustomBuildPlanManager :: (BuildPlanManager -> IO BuildPlanMa
 _processCommandWithCustomBuildPlanManager customBPM comm = impl where
   impl = do
     bp_man <- customBPM =<< newBuildPlanManager (commBuildPlanDir comm) (commLogger comm) (commAllowNetwork comm)
-    fmap concat $ mapM (processQueriesIn bp_man) $ commSources comm
+    rqueries <- resolveQueries' logger $ commQueries comm
+    fmap concat $ mapM (processQueriesIn bp_man rqueries) $ commSources comm
   logger = commLogger comm
-  processQueriesIn bp_man source = do
-    queried_names <- fmap (nub . concat) $ mapM getQueriedPackageNames $ commQueries comm
+  processQueriesIn bp_man rqueries source = do
+    let queried_names = nub $ concat $ map getQueriedPackageNames $ rqueries
     logDebug logger ("Retrieve package source " ++ show source)
     e_build_plan <- loadBuildPlan bp_man queried_names source
     logBuildPlanResult e_build_plan
-    return $ map (makeResult source e_build_plan) $ commQueries comm
-  makeResult source e_build_plan query = case e_build_plan of
+    return $ map (makeResult source e_build_plan) $ rqueries
+  makeResult source e_build_plan rquery = case e_build_plan of
     Left error_msg -> Result { resultIn = source, resultReallyIn = Nothing,
-                               resultFor = query, resultBody = Left error_msg
+                               resultFor = originalQuery rquery, resultBody = Left error_msg
                              }
     Right build_plan -> Result { resultIn = source,
                                  resultReallyIn = if source == real_source then Nothing else Just real_source,
-                                 resultFor = query,
-                                 resultBody = Right $ searchVersions build_plan query
+                                 resultFor = originalQuery rquery,
+                                 resultBody = Right $ searchVersions build_plan rquery
                                }
       where real_source = buildPlanSource build_plan
   logBuildPlanResult (Right _) = logDebug logger ("Successfully retrieved build plan.")
   logBuildPlanResult (Left error_msg) = logError logger ("Failed to load build plan: " ++ error_msg)
 
-searchVersions :: BuildPlan -> Query -> ResultBody
-searchVersions build_plan (QueryName package_name) = SimpleResultBody package_name $ packageVersion build_plan package_name
-searchVersions _ (QueryCabalFile _) = undefined -- TODO
+resolveQueries' :: Logger -> [Query] -> IO [ResolvedQuery]
+resolveQueries' logger = fmap concat . mapM resolveQ where
+  resolveQ query = reportAndFilterError =<< resolveQuery query
+  reportAndFilterError (Left err) = logError logger err >> return []
+  reportAndFilterError (Right ret) = return ret
 
-getQueriedPackageNames :: Query -> IO [PackageName]
-getQueriedPackageNames (QueryName n) = return [n]
-getQueriedPackageNames (QueryCabalFile _) = undefined -- TODO
+resolveQuery :: Query -> IO (Either ErrorMsg [ResolvedQuery])
+resolveQuery q@(QueryName name) = return $ Right $ [RQueryOne q name]
+resolveQuery q@(QueryCabalFile file) = (fmap . fmap) (map (RQueryCabal q file)) $ loadCabalFile file
+
+originalQuery :: ResolvedQuery -> Query
+originalQuery (RQueryOne q _) = q
+originalQuery (RQueryCabal q _ _) = q
+
+searchVersions :: BuildPlan -> ResolvedQuery -> ResultBody
+searchVersions build_plan (RQueryOne _ package_name) = SimpleResultBody package_name $ packageVersion build_plan package_name
+searchVersions _ (RQueryCabal _ _ _) = undefined -- TODO
+
+getQueriedPackageNames :: ResolvedQuery -> [PackageName]
+getQueriedPackageNames (RQueryOne _ n) = [n]
+getQueriedPackageNames (RQueryCabal _ _ bd) = depsPackages bd
