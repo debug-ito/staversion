@@ -11,15 +11,11 @@ module Staversion.Internal.Query
          sourceDesc,
          Query(..),
          parseQuery,
-         ErrorMsg,
-         Result(..),
-         ResultBody(..)
+         ErrorMsg
        ) where
 
-import qualified Data.HashMap.Strict as HM
 import Data.List (isSuffixOf)
 import Data.Text (Text, pack)
-import Data.Version (Version)
 
 type PackageName = Text
 
@@ -37,27 +33,6 @@ data Query = QueryName PackageName
            deriving (Show,Eq,Ord)
 
 type ErrorMsg = String
-
--- | Result for a query.
-data Result = Result { resultIn :: PackageSource,
-                       resultFor :: Query,
-                       resultReallyIn :: Maybe PackageSource,
-                       -- ^ the true PackageSource resolved (or redirected) from 'resultIn', if any.
-                       resultBody :: Either ErrorMsg ResultBody
-                     } deriving (Show,Eq)
-
-data ResultBody = SimpleResultBody PackageName (Maybe Version)
-                  deriving (Show,Eq)
-
--- | The obtained version map.
-newtype ResultVersions = ResultVersions (HM.HashMap PackageName (Maybe Version))
-                       deriving (Show,Eq)
-
-resultVersionsFromList :: [(PackageName, Maybe Version)] -> ResultVersions
-resultVersionsFromList = ResultVersions . HM.fromList
-
-resultVersionsToList :: ResultVersions -> [(PackageName, Maybe Version)]
-resultVersionsToList (ResultVersions m) = HM.toList m
 
 -- | description of a 'PackageSource'.
 sourceDesc :: PackageSource -> Text

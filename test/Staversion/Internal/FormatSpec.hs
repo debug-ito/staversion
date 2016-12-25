@@ -5,9 +5,10 @@ import Test.Hspec
 
 import Staversion.Internal.Format (formatResultsCabal)
 import Staversion.Internal.Query
-  ( Result(..), PackageSource(..), Query(..),
-    Resolver, PackageName, ResultBody(..)
+  ( PackageSource(..), Query(..),
+    Resolver, PackageName
   )
+import Staversion.Internal.Result (Result(..), ResultBody(..))
 
 import Staversion.Internal.TestUtil (ver, simpleResultBody)
        

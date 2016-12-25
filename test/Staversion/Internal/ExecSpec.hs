@@ -16,8 +16,10 @@ import Staversion.Internal.Query
   ( PackageName,
     Query(..),
     PackageSource(..),
-    Result(..),
-    ErrorMsg,
+    ErrorMsg
+  )
+import Staversion.Internal.Result
+  ( Result(..),
     ResultBody(..)
   )
 import Staversion.Internal.Log (defaultLogger, _mockLogger, Logger(loggerThreshold), LogLevel(..))

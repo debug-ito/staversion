@@ -29,10 +29,9 @@ import Staversion.Internal.Command
 import Staversion.Internal.Format (formatResultsCabal)
 import Staversion.Internal.Log (logDebug, logError, Logger)
 import Staversion.Internal.Query
-  ( Query(..), Result(..), PackageSource(..), PackageName,
-    ResultBody(..),
-    ErrorMsg
+  ( Query(..), PackageSource(..), PackageName, ErrorMsg
   )
+import Staversion.Internal.Result (Result(..), ResultBody(..))
 import Staversion.Internal.Cabal (BuildDepends(..), loadCabalFile)
 
 main :: IO ()

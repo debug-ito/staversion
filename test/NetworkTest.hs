@@ -28,9 +28,9 @@ import Staversion.Internal.Command (Command(..))
 import Staversion.Internal.Exec (processCommand)
 import Staversion.Internal.Log (defaultLogger, Logger(loggerThreshold))
 import Staversion.Internal.Query
- ( PackageSource(..), ErrorMsg, Query(..), Result(..),
-   ResultBody(..)
+ ( PackageSource(..), ErrorMsg, Query(..)
  )
+import Staversion.Internal.Result (Result(..), ResultBody(..))
 
 main :: IO ()
 main = hspec spec

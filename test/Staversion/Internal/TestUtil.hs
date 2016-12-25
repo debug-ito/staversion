@@ -3,9 +3,9 @@ module Staversion.Internal.TestUtil
        ) where
 
 import Data.Version (Version(..))
-import Staversion.Internal.Query ( PackageName,
-                                   ResultBody(..)
+import Staversion.Internal.Query ( PackageName
                                  )
+import Staversion.Internal.Result (ResultBody(..))
 
 ver :: [Int] -> Version
 ver vs = Version vs []

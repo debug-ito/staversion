@@ -16,11 +16,11 @@ import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
 import Data.Version (showVersion, Version)
 
 import Staversion.Internal.Query
-  ( Result(..), Query(..),
+  ( Query(..),
     sourceDesc,
-    ResultBody(..),
     PackageName
   )
+import Staversion.Internal.Result (Result(..), ResultBody(..))
 
 -- | format 'Result's like it's in build-depends in .cabal files.
 formatResultsCabal :: [Result] -> TL.Text
