@@ -40,8 +40,8 @@ groupAllPreservingOrderBy sameGroup = map snd  . foldr f [] where
 -- 'Left' lines are commented out.
 type ResultLine = Either Builder Builder
 
-data ResultBlock = RBHead Builder [ResultBlock]
-                 | RBLines [ResultLine]
+data ResultBlock = RBHead Builder [ResultBlock] -- ^ header and child blocks
+                 | RBLines [ResultLine] -- ^ a block, which consists of some lines.
 
 makeSourceBlocks :: [Result] -> [ResultBlock]
 makeSourceBlocks = map sourceBlock . groupAllPreservingOrderBy ((==) `on` resultIn) where
