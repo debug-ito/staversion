@@ -57,6 +57,7 @@ makeQueryBlocks = uncurry prependLines . foldr f ([], []) where
   prependLines blocks rlines = (RBLines rlines) : blocks
   f ret (blocks, rlines) = case (resultFor ret, resultBody ret) of
     (_, Right (SimpleResultBody name mver)) -> (blocks, (versionLine name mver) : rlines)
+    (_, Right (CabalResultBody _ _ _)) -> undefined -- TODO
     ((QueryName name), Left _) -> (blocks, (packageErrorLine name) : rlines)
     ((QueryCabalFile file), Left _) -> (cabalFileErrorBlock file : prependLines blocks rlines, [])
 

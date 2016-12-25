@@ -88,7 +88,9 @@ originalQuery (RQueryCabal q _ _) = q
 
 searchVersions :: BuildPlan -> ResolvedQuery -> ResultBody
 searchVersions build_plan (RQueryOne _ package_name) = SimpleResultBody package_name $ packageVersion build_plan package_name
-searchVersions _ (RQueryCabal _ _ _) = undefined -- TODO
+searchVersions build_plan (RQueryCabal _ cabal_file build_deps) = CabalResultBody cabal_file target ret_list where
+  target = depsTarget build_deps
+  ret_list = map (\pname -> (pname, packageVersion build_plan pname)) $ depsPackages build_deps
 
 getQueriedPackageNames :: ResolvedQuery -> [PackageName]
 getQueriedPackageNames (RQueryOne _ n) = [n]

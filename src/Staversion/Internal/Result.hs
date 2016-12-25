@@ -14,6 +14,7 @@ import qualified Data.HashMap.Strict as HM
 import Staversion.Internal.Query
   ( Query, PackageSource, ErrorMsg, PackageName
   )
+import Staversion.Internal.Cabal (Target)
 
 -- | Result for a query.
 data Result = Result { resultIn :: PackageSource,
@@ -24,6 +25,7 @@ data Result = Result { resultIn :: PackageSource,
                      } deriving (Show,Eq)
 
 data ResultBody = SimpleResultBody PackageName (Maybe Version)
+                | CabalResultBody FilePath Target [(PackageName, (Maybe Version))]
                 deriving (Show,Eq)
 
 -- | The obtained version map.
