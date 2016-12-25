@@ -10,7 +10,6 @@ module Staversion.Internal.Result
        ) where
 
 import Data.Version (Version)
-import qualified Data.HashMap.Strict as HM
 import Staversion.Internal.Query
   ( Query, PackageSource, ErrorMsg, PackageName
   )
@@ -27,14 +26,3 @@ data Result = Result { resultIn :: PackageSource,
 data ResultBody = SimpleResultBody PackageName (Maybe Version)
                 | CabalResultBody FilePath Target [(PackageName, (Maybe Version))]
                 deriving (Show,Eq)
-
--- | The obtained version map.
-newtype ResultVersions = ResultVersions (HM.HashMap PackageName (Maybe Version))
-                       deriving (Show,Eq)
-
-resultVersionsFromList :: [(PackageName, Maybe Version)] -> ResultVersions
-resultVersionsFromList = ResultVersions . HM.fromList
-
-resultVersionsToList :: ResultVersions -> [(PackageName, Maybe Version)]
-resultVersionsToList (ResultVersions m) = HM.toList m
-
