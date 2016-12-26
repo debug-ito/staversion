@@ -1,5 +1,6 @@
 module Staversion.Internal.TestUtil
-       ( ver, simpleResultBody
+       ( ver, simpleResultBody,
+         verPairs
        ) where
 
 import Data.Version (Version(..))
@@ -10,13 +11,13 @@ import Staversion.Internal.Result (ResultBody(..))
 ver :: [Int] -> Version
 ver vs = Version vs []
 
--- rvers :: [(PackageName, Maybe Version)] -> ResultVersions
--- rvers = resultVersionsFromList
--- rvers = undefined
+verMaybe :: [Int] -> Maybe Version
+verMaybe [] = Nothing
+verMaybe vs = Just $ ver vs
+
+verPairs :: [(PackageName, [Int])] -> [(PackageName, Maybe Version)]
+verPairs = map f where
+  f (pname, vs) = (pname, verMaybe vs)
 
 simpleResultBody :: PackageName -> [Int] -> ResultBody
-simpleResultBody name vs = SimpleResultBody name mversion where
-  mversion = case vs of
-    [] -> Nothing
-    _ -> Just $ ver vs
-
+simpleResultBody name vs = SimpleResultBody name $ verMaybe vs

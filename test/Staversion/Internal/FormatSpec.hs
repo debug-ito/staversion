@@ -9,8 +9,9 @@ import Staversion.Internal.Query
     Resolver, PackageName
   )
 import Staversion.Internal.Result (Result(..), ResultBody(..))
+import Staversion.Internal.Cabal (Target(..))
 
-import Staversion.Internal.TestUtil (ver, simpleResultBody)
+import Staversion.Internal.TestUtil (ver, simpleResultBody, verPairs)
        
 
 
@@ -108,6 +109,44 @@ spec = describe "formatResultsCabal" $ do
                      <> "-- foobar.cabal ERROR\n"
                      <> "\n"
                      <> "hoge ==5.5\n"
+                     <> "\n"
+                   )
+    formatResultsCabal input `shouldBe` expected
+  it "should show build-depends blocks for CabalResultBody" $ do
+    let mkRet t vps = Result { resultIn = SourceStackage "lts-7.0", resultReallyIn = Nothing,
+                               resultFor = QueryCabalFile "hoge.cabal",
+                               resultBody = Right $ CabalResultBody  "hoge.cabal" t $ verPairs vps
+                             }
+        input = [ mkRet TargetLibrary [ ("base", [4,6,0,0]),
+                                        ("foobar", [5,7])
+                                      ],
+                  mkRet (TargetExecutable "hoge-exe") [ ("bytestring", [1,9]) ],
+                  mkRet (TargetTestSuite "hoge-test") [ ("hspec", [10,8,9]),
+                                                        ("QuickCheck", [5,4,2]),
+                                                        ("unknown", [])
+                                                      ],
+                  mkRet (TargetBenchmark "hoge-bench") [ ("base", [4,8,0,4]),
+                                                         ("quux", []),
+                                                         ("parsec", [3,0,2])
+                                                       ]
+                ]
+        expected = ( "------ lts-7.0\n"
+                     <> "-- hoge.cabal - library\n"
+                     <> "base ==4.6.0.0,\n"
+                     <> "foobar ==5.7\n"
+                     <> "\n"
+                     <> "-- hoge.cabal - executable hoge-exe\n"
+                     <> "bytestring ==1.9\n"
+                     <> "\n"
+                     <> "-- hoge.cabal - test-suite hoge-test\n"
+                     <> "hspec ==10.8.9,\n"
+                     <> "QuickCheck ==5.4.2\n"
+                     <> "-- unknown N/A\n"
+                     <> "\n"
+                     <> "-- hoge.cabal - benchmark hoge-bench\n"
+                     <> "base ==4.8.0.4,\n"
+                     <> "-- quux N/A,\n"
+                     <> "parsec ==3.0.2\n"
                      <> "\n"
                    )
     formatResultsCabal input `shouldBe` expected

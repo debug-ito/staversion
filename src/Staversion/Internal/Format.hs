@@ -21,6 +21,7 @@ import Staversion.Internal.Query
     PackageName
   )
 import Staversion.Internal.Result (Result(..), ResultBody(..))
+import Staversion.Internal.Cabal (Target(..))
 
 -- | format 'Result's like it's in build-depends in .cabal files.
 formatResultsCabal :: [Result] -> TL.Text
@@ -57,7 +58,7 @@ makeQueryBlocks = uncurry prependLines . foldr f ([], []) where
   prependLines blocks rlines = (RBLines rlines) : blocks
   f ret (blocks, rlines) = case (resultFor ret, resultBody ret) of
     (_, Right (SimpleResultBody name mver)) -> (blocks, (versionLine name mver) : rlines)
-    (_, Right (CabalResultBody _ _ _)) -> undefined -- TODO
+    (_, Right (CabalResultBody file target pairs)) -> (cabalFileSuccessBlock file target pairs : prependLines blocks rlines, [])
     ((QueryName name), Left _) -> (blocks, (packageErrorLine name) : rlines)
     ((QueryCabalFile file), Left _) -> (cabalFileErrorBlock file : prependLines blocks rlines, [])
 
@@ -71,6 +72,15 @@ packageErrorLine name = Left $ "-- " <> fromText name <> " ERROR"
 cabalFileErrorBlock :: FilePath -> ResultBlock
 cabalFileErrorBlock file = RBLines [Left line] where
   line = "-- " <> fromString file <> " ERROR"
+
+cabalFileSuccessBlock :: FilePath -> Target -> [(PackageName, Maybe Version)] -> ResultBlock
+cabalFileSuccessBlock file target pairs = RBHead header [RBLines $ map (uncurry versionLine) pairs] where
+  header = "-- " <> fromString file <> " - " <> target_text
+  target_text = case target of
+    TargetLibrary -> "library"
+    TargetExecutable n -> "executable " <> fromText n
+    TargetTestSuite n -> "test-suite " <> fromText n
+    TargetBenchmark n -> "benchmark " <> fromText n
 
 formatResultBlock :: ResultBlock -> Builder
 formatResultBlock (RBHead header blocks) = header <> "\n" <> mconcat (map formatResultBlock blocks)
