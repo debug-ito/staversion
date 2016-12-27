@@ -58,6 +58,30 @@ spec = describe "formatResultsCabal" $ do
                      <> "\n"
                    )
     formatResultsCabal input `shouldBe` expected
+  it "should group Results by PackageSource with preserved order (2)" $ do
+    let input = [ simpleResult "lts-5.0" "pack-A" [1,0],
+                  simpleResult "lts-5.0" "pack-A" [2,0],
+                  simpleResult "lts-6.6" "pack-A" [3,0],
+                  simpleResult "lts-6.6" "pack-A" [4,0],
+                  simpleResult "lts-8.0" "pack-A" [5,0],
+                  simpleResult "lts-6.6" "pack-A" [6,0],
+                  simpleResult "lts-6.6" "pack-A" [7,0]
+                ]
+        expected = ( "------ lts-5.0\n"
+                     <> "pack-A ==1.0,\n"
+                     <> "pack-A ==2.0\n"
+                     <> "\n"
+                     <> "------ lts-6.6\n"
+                     <> "pack-A ==3.0,\n"
+                     <> "pack-A ==4.0,\n"
+                     <> "pack-A ==6.0,\n"
+                     <> "pack-A ==7.0\n"
+                     <> "\n"
+                     <> "------ lts-8.0\n"
+                     <> "pack-A ==5.0\n"
+                     <> "\n"
+                   )
+    formatResultsCabal input `shouldBe` expected
   it "should not put comma at the last non-N/A entry even if it is followed by N/A entries"  $ do
     let input = [ simpleResult "s" "hoge" [1,0,0],
                   simpleResult "s" "not-found-1" [],
