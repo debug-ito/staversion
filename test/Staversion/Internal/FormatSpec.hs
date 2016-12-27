@@ -113,10 +113,7 @@ spec = describe "formatResultsCabal" $ do
                    )
     formatResultsCabal input `shouldBe` expected
   it "should show build-depends blocks for CabalResultBody" $ do
-    let mkRet t vps = Result { resultIn = SourceStackage "lts-7.0", resultReallyIn = Nothing,
-                               resultFor = QueryCabalFile "hoge.cabal",
-                               resultBody = Right $ CabalResultBody  "hoge.cabal" t $ verPairs vps
-                             }
+    let mkRet = cabalResult "lts-7.0" "hoge.cabal"
         input = [ mkRet TargetLibrary [ ("base", [4,6,0,0]),
                                         ("foobar", [5,7])
                                       ],
@@ -150,9 +147,56 @@ spec = describe "formatResultsCabal" $ do
                      <> "\n"
                    )
     formatResultsCabal input `shouldBe` expected
+  it "should show mixed blocks and lines" $ do
+    let input = [ simpleResult "lts-5.0" "pack-A" [4,5],
+                  simpleResult "lts-5.0" "pack-B" [7,7],
+                  cabalResult "lts-5.0" "X.cabal" TargetLibrary [("pack-A", [4,5,1]), ("pack-B", [6,0])],
+                  cabalResult "lts-5.0" "X.cabal" (TargetExecutable "X-exe") [("pack-A", []), ("pack-B", [6,6]), ("pack-C", [0,10])],
+                  cabalResult "lts-6.6" "Y.cabal" TargetLibrary [("pack-C", [9,99,0])],
+                  simpleResult "lts-6.6" "pack-A" [],
+                  simpleResult "lts-7.2" "pack-B" [8,4],
+                  cabalResult "lts-6.6" "Y.cabal" (TargetTestSuite "X-test") [("pack-D", [1,0]), ("pack-A", [5,0]), ("pack-C", []), ("pack-B", [6,5])]
+                ]
+        expected = ( "------ lts-5.0\n"
+                     <> "pack-A ==4.5,\n"
+                     <> "pack-B ==7.7\n"
+                     <> "\n"
+                     <> "-- X.cabal - library\n"
+                     <> "pack-A ==4.5.1,\n"
+                     <> "pack-B ==6.0\n"
+                     <> "\n"
+                     <> "-- X.cabal - executable X-exe\n"
+                     <> "-- pack-A N/A,\n"
+                     <> "pack-B ==6.6,\n"
+                     <> "pack-C ==0.10\n"
+                     <> "\n"
+                     <> "------ lts-6.6\n"
+                     <> "-- Y.cabal - library\n"
+                     <> "pack-C ==9.99.0\n"
+                     <> "\n"
+                     <> "-- pack-A N/A\n"
+                     <> "\n"
+                     <> "-- Y.cabal - test-suite X-test\n"
+                     <> "pack-D ==1.0,\n"
+                     <> "pack-A ==5.0,\n"
+                     <> "-- pack-C N/A,\n"
+                     <> "pack-B ==6.5\n"
+                     <> "\n"
+                     <> "------ lts-7.2\n"
+                     <> "pack-B ==8.4\n"
+                     <> "\n"
+                   )
+    formatResultsCabal input `shouldBe` expected
 
 simpleResult :: Resolver -> PackageName -> [Int] -> Result
 simpleResult res name vs = Result { resultIn = SourceStackage res, resultReallyIn = Nothing,
                                     resultFor = QueryName name,
                                     resultBody = Right $ simpleResultBody name vs
                                   }
+
+cabalResult :: Resolver -> FilePath -> Target -> [(PackageName, [Int])] -> Result
+cabalResult res file target vps =
+  Result { resultIn = SourceStackage res, resultReallyIn = Nothing,
+           resultFor = QueryCabalFile file,
+           resultBody = Right $ CabalResultBody file target $ verPairs vps
+         }
