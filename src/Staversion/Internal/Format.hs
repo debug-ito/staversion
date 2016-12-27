@@ -33,7 +33,7 @@ groupAllPreservingOrderBy sameGroup = map snd  . foldr f [] where
     update heads [] = (item, [item]) : heads
     update heads (cur@(cur_item, cur_list) : rest) =
       if sameGroup item cur_item
-      then heads ++ ( (cur_item, item : cur_list) : rest )
+      then ((cur_item, item : cur_list) : heads) ++ rest 
       else update (heads ++ [cur]) rest
 
 -- | 'Left' lines and 'Right' lines are handled differently by
