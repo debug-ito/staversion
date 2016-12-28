@@ -80,7 +80,8 @@ resolveQueries' logger = fmap concat . mapM resolveQ where
 
 resolveQuery :: Query -> IO (Either ErrorMsg [ResolvedQuery])
 resolveQuery q@(QueryName name) = return $ Right $ [RQueryOne q name]
-resolveQuery q@(QueryCabalFile file) = (fmap . fmap) (map (RQueryCabal q file)) $ loadCabalFile file
+resolveQuery q@(QueryCabalFile file) = (fmap . fmap) processBuildDependsList $ loadCabalFile file where
+  processBuildDependsList = map (RQueryCabal q file) . filter ((0 <) . length . depsPackages)
 
 originalQuery :: ResolvedQuery -> Query
 originalQuery (RQueryOne q _) = q

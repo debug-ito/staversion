@@ -23,8 +23,9 @@ import Staversion.Internal.Result
     ResultBody(..)
   )
 import Staversion.Internal.Log (defaultLogger, _mockLogger, Logger(loggerThreshold), LogLevel(..))
+import Staversion.Internal.Cabal (Target(..))
 
-import Staversion.Internal.TestUtil (ver, simpleResultBody)
+import Staversion.Internal.TestUtil (ver, simpleResultBody, verPairs)
 
 main :: IO ()
 main = hspec spec
@@ -81,8 +82,30 @@ spec_processCommand_basic = describe "processCommand" $ do
                               resultBody = Right $ simpleResultBody "aeson" [0,11,2,1]
                             }
                    ]
-    got <- processCommand comm
-    got `shouldBe` expected
+    processCommand comm `shouldReturn` expected
+  specify "QueryCabalfile, SourceStackage" $ do
+    let src = SourceStackage "lts-4.2"
+        cabal_file = ("test" </> "data" </> "foobar.cabal")
+        query = QueryCabalFile cabal_file
+        comm = baseCommand { commSources = [src], commQueries = [query] }
+        ret t vps = Result { resultIn = src, resultReallyIn = Nothing, resultFor = query,
+                             resultBody = Right $ CabalResultBody cabal_file t vps
+                           }
+        expected = [ ret TargetLibrary $ verPairs [ ("base", [4,8,2,0]),
+                                                    ("unordered-containers", [0,2,5,1])
+                                                  ],
+                     -- no result for "executable" section because it has no build-depends field.
+                     ret (TargetTestSuite "spec") $ verPairs [ ("base", [4,8,2,0]),
+                                                               ("staversion", []),
+                                                               ("text", [1,2,2,0]),
+                                                               ("filepath", [1,4,0,0]),
+                                                               ("bytestring", [0,10,6,0])
+                                                             ],
+                     ret (TargetTestSuite "network-test") $ verPairs [ ("base", [4,8,2,0]),
+                                                                       ("http-client", [0,4,26,2])
+                                                                     ]
+                   ]
+    processCommand comm `shouldReturn` expected
         
 
 singleCase :: PackageSource -> Query -> Either ErrorMsg ResultBody -> IO ()
