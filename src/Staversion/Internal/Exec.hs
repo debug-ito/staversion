@@ -74,14 +74,17 @@ _processCommandWithCustomBuildPlanManager customBPM comm = impl where
 
 resolveQueries' :: Logger -> [Query] -> IO [ResolvedQuery]
 resolveQueries' logger = fmap concat . mapM resolveQ where
-  resolveQ query = reportAndFilterError =<< resolveQuery query
+  resolveQ query = reportAndFilterError =<< resolveQuery logger query
   reportAndFilterError (Left err) = logError logger err >> return []
   reportAndFilterError (Right ret) = return ret
 
-resolveQuery :: Query -> IO (Either ErrorMsg [ResolvedQuery])
-resolveQuery q@(QueryName name) = return $ Right $ [RQueryOne q name]
-resolveQuery q@(QueryCabalFile file) = (fmap . fmap) processBuildDependsList $ loadCabalFile file where
-  processBuildDependsList = map (RQueryCabal q file) . filter ((0 <) . length . depsPackages)
+resolveQuery :: Logger -> Query -> IO (Either ErrorMsg [ResolvedQuery])
+resolveQuery _ q@(QueryName name) = return $ Right $ [RQueryOne q name]
+resolveQuery logger q@(QueryCabalFile file) = do
+  logDebug logger ("Load " ++ file ++ " for build-depends fields.")
+  (fmap . fmap) processBuildDependsList $ loadCabalFile file
+  where
+    processBuildDependsList = map (RQueryCabal q file) . filter ((0 <) . length . depsPackages)
 
 originalQuery :: ResolvedQuery -> Query
 originalQuery (RQueryOne q _) = q
