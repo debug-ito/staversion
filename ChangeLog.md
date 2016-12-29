@@ -1,5 +1,11 @@
 # Revision history for staversion
 
+## 0.1.3.0  -- 2016-12-29
+
+* Now staversion shows the exact resolver for a partial resolver (e.g. "lts-4" -> "lts-4.2")
+* Now staversion reads .cabal files, and uses their `build-depends` fields as query.
+* Fix minor error in ordering the result.
+
 ## 0.1.2.0  -- 2016-11-10
 
 * New option `--hackage`, which searches hackage for the latest version number.
