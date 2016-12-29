@@ -85,7 +85,7 @@ spec_processCommand_basic = describe "processCommand" $ do
     processCommand comm `shouldReturn` expected
   specify "QueryCabalfile, SourceStackage" $ do
     let src = SourceStackage "lts-4.2"
-        cabal_file = ("test" </> "data" </> "foobar.cabal")
+        cabal_file = ("test" </> "data" </> "foobar.cabal_test")
         query = QueryCabalFile cabal_file
         comm = baseCommand { commSources = [src], commQueries = [query] }
         ret t vps = Result { resultIn = src, resultReallyIn = Nothing, resultFor = query,

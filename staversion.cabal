@@ -17,9 +17,9 @@ extra-source-files:     README.md, ChangeLog.md,
                         test/data/lts-2.22_conpact.yaml,
                         test/data/snapshots.json,
                         test/data/aeson_preferred.json,
-                        test/data/doctest.cabal,
-                        test/data/conduit.cabal,
-                        test/data/foobar.cabal
+                        test/data/doctest.cabal_test,
+                        test/data/conduit.cabal_test,
+                        test/data/foobar.cabal_test
                         
 homepage:               https://github.com/debug-ito/staversion
 bug-reports:            https://github.com/debug-ito/staversion/issues

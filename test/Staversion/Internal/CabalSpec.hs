@@ -16,7 +16,7 @@ shouldBeParsedTo cabal_file expectation = do
 spec :: Spec
 spec = describe "loadCabalFile" $ do
   it "should load library, executable and test-suite targets" $ do
-    "doctest.cabal" `shouldBeParsedTo`
+    "doctest.cabal_test" `shouldBeParsedTo`
       [ BuildDepends { depsTarget = TargetLibrary,
                        depsPackages = [ "base",
                                         "base-compat",
@@ -61,7 +61,7 @@ spec = describe "loadCabalFile" $ do
                      }
       ]
   it "should merge conditional build-depends" $ do
-    "conduit.cabal" `shouldBeParsedTo`
+    "conduit.cabal_test" `shouldBeParsedTo`
       [ BuildDepends { depsTarget = TargetLibrary,
                        depsPackages = [ "base",
                                         "resourcet",
