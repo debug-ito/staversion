@@ -58,7 +58,7 @@ library
                         http-types >=0.8.6 && <0.10,
                         transformers >=0.3.0 && <0.6,
                         transformers-compat >=0.4.0 && <0.6,
-                        megaparsec
+                        megaparsec <5.2
 
 executable staversion
   default-language:     Haskell2010
@@ -88,7 +88,7 @@ test-suite spec
                         Staversion.Internal.TestUtil
   build-depends:        base, staversion, text, filepath, bytestring,
                         hspec >=2.1.7 && <2.4,
-                        QuickCheck
+                        QuickCheck <2.10
 
 flag network-test
   description: Enable network tests.
