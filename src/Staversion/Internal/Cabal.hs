@@ -66,9 +66,11 @@ finishLine :: P.Parser ()
 finishLine = P.eof <|> void P.eol
 
 emptyLine :: P.Parser ()
-emptyLine = indent *> (comment_line <|> only_braces) where
+emptyLine = indent *> (comment_line <|> finishLine) where
   comment_line = (P.try $ P.string "--") *> P.manyTill P.anyChar finishLine *> pure ()
-  only_braces = many (P.satisfy $ \c -> isLineSpace c || isBrace c) *> finishLine *> pure ()
+
+bracesOnlyLine :: P.Parser ()
+bracesOnlyLine = many (P.satisfy $ \c -> isLineSpace c || isBrace c) *> finishLine *> pure ()
 
 blockHeadLine :: P.Parser Target
 blockHeadLine = target <* trail <* finishLine where
