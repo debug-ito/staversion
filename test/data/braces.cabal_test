@@ -1,0 +1,74 @@
+Name: braces
+Version: 0.0.1
+Cabal-Version: >= 1.10
+License: BSD3
+Author:  Toshio Ito
+Synopsis: check with braces for section.
+Description: For now, open braces must be at line ends (except for trailing white spaces)
+             and close braces must be in their own lines (except for leading white
+             spaces and trailing 'else' block.)
+Category: Example
+
+Flag open-inline {
+Description: inline open brace.
+Default:     False
+}
+
+Flag open-own
+{  
+description: open brance in its own line.
+default: True
+}
+
+Library {  
+exposed-modules: Hoge
+build-depends: pack-a
+if flag(open-inline) {
+build-depends: pack-b,
+  pack-c <5.0 && >=3.2, pack-d
+}
+
+if flag(open-own)
+{  
+build-depends:
+  pack-e
+}
+}
+
+executable braces-else
+{  
+main-is: Main.hs
+build-depends: base
+if flag(open-inline) {
+build-depends: pack-a
+}  else {
+build-depends: pack-b
+}
+
+if flag(open-own)
+{
+
+build-depends: pack-c
+}  
+else
+{
+build-depends:
+  pack-d
+
+}  
+}  
+
+test-suite braces-nest
+  type: exitcode-stdio-1.0
+  main-is: Test.hs
+  build-depends: base
+  if flag(open-inline) {
+  build-depends: pack-a
+  if flag(open-own)
+  {
+   build-depends: pack-b > 9.5
+     , pack-c ==10.0
+  }
+  }
+
+

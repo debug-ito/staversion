@@ -110,3 +110,23 @@ spec = describe "loadCabalFile" $ do
                                       ]
                      }
       ]
+
+  it ( "should handle format with curly-braces."
+       ++ "For now, open braces should be at line ends (except for trailing white spaces),"
+       ++ " and close braces should be in their own lines (except for leading white spaces"
+       ++ " and trailing else block)"
+     ) $ do
+    "braces.cabal_test" `shouldBeParsedTo`
+      [ BuildDepends { depsTarget = TargetLibrary,
+                       depsPackages = [ "pack-a", "pack-b", "pack-c", "pack-d", "pack-e"
+                                      ]
+                     },
+        BuildDepends { depsTarget = TargetExecutable "braces-else",
+                       depsPackages = [ "base", "pack-a", "pack-b", "pack-c", "pack-d"
+                                      ]
+                     },
+        BuildDepends { depsTarget = TargetTestSuite "braces-nest",
+                       depsPackages = [ "base", "pack-a", "pack-b", "pack-c"
+                                      ]
+                     }
+      ]
