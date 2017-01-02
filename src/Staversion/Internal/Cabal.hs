@@ -96,8 +96,9 @@ fieldStart mexp_name = do
 fieldBlock :: P.Parser (String, Text) -- ^ (lower-case field name, block content)
 fieldBlock = impl where
   impl = do
-    _ <- many $ (P.try emptyLine <|> P.try conditionalLine <|> P.try bracesOnlyLine)
-    (field_name, level) <- P.try $ fieldStart Nothing
+    (field_name, level) <- P.try $ do
+      _ <- many $ (P.try emptyLine <|> P.try conditionalLine <|> P.try bracesOnlyLine)
+      fieldStart Nothing
     field_trail <- P.manyTill P.anyChar finishLine
     rest <- remainingLines level
     let text_block = T.intercalate "\n" $ map pack (field_trail : rest)
