@@ -69,9 +69,6 @@ emptyLine :: P.Parser ()
 emptyLine = indent *> (comment_line <|> finishLine) where
   comment_line = (P.try $ P.string "--") *> P.manyTill P.anyChar finishLine *> pure ()
 
-bracesOnlyLine :: P.Parser ()
-bracesOnlyLine = many (P.satisfy $ \c -> isLineSpace c || isBrace c) *> finishLine *> pure ()
-
 blockHeadLine :: P.Parser Target
 blockHeadLine = target <* trail <* finishLine where
   trail = many $ P.satisfy $ \c -> isLineSpace c || isOpenBrace c
@@ -99,7 +96,7 @@ fieldStart mexp_name = do
 fieldBlock :: P.Parser (String, Text) -- ^ (lower-case field name, block content)
 fieldBlock = impl where
   impl = do
-    _ <- many $ P.try conditionalLine
+    _ <- many $ (P.try conditionalLine <|> P.try bracesOnlyLine)
     (field_name, level) <- P.try $ fieldStart Nothing
     field_trail <- P.manyTill P.anyChar finishLine
     rest <- remainingLines level
@@ -116,6 +113,8 @@ fieldBlock = impl where
         _ <- indent
         this_line <- P.manyTill P.anyChar finishLine
         go (this_line : cur_lines)
+  bracesOnlyLine = indent *> some braceAndSpace *> finishLine
+  braceAndSpace = P.satisfy isBrace *> indent
 
 buildDependsLine :: P.Parser [PackageName]
 buildDependsLine = P.space *> (pname `P.endBy` ignored) where
