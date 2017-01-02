@@ -47,19 +47,32 @@ isLineSpace ' ' = True
 isLineSpace '\t' = True
 isLineSpace _ = False
 
+isOpenBrace :: Char -> Bool
+isOpenBrace = (== '{')
+
+isCloseBrace :: Char -> Bool
+isCloseBrace = (== '}')
+
+isBrace :: Char -> Bool
+isBrace c = isOpenBrace c || isCloseBrace c
+
+lengthOf :: (Char -> Bool) -> P.Parser Int
+lengthOf p = length <$> (many $ P.satisfy p)
+
 indent :: P.Parser Int
-indent = length <$> (many $ P.satisfy isLineSpace)
+indent = lengthOf isLineSpace
 
 finishLine :: P.Parser ()
 finishLine = P.eof <|> void P.eol
 
 emptyLine :: P.Parser ()
-emptyLine = indent *> (P.try finishLine <|> comment_line) where
-  comment_line = P.string "--" *> P.manyTill P.anyChar finishLine *> pure ()
+emptyLine = indent *> (comment_line <|> only_braces) where
+  comment_line = (P.try $ P.string "--") *> P.manyTill P.anyChar finishLine *> pure ()
+  only_braces = many (P.satisfy $ \c -> isLineSpace c || isBrace c) *> finishLine *> pure ()
 
 blockHeadLine :: P.Parser Target
 blockHeadLine = target <* trail <* finishLine where
-  trail = indent
+  trail = many $ P.satisfy $ \c -> isLineSpace c || isOpenBrace c
   target = target_lib <|> target_exe <|> target_test <|> target_bench
   target_lib = P.try (P.string' "library") *> pure TargetLibrary
   target_exe = TargetExecutable <$> targetNamed "executable"
@@ -112,9 +125,11 @@ buildDependsLine = P.space *> (pname `P.endBy` ignored) where
   finishItem = P.eof <|> (void $ P.char ',')
 
 conditionalLine :: P.Parser ()
-conditionalLine = void $ indent *> (term "if" <|> term "else") *> P.manyTill P.anyChar finishLine where
+conditionalLine = void $ leader *> (term "if" <|> term "else") *> P.manyTill P.anyChar finishLine where
+  leader = many $ P.satisfy $ \c -> isLineSpace c || isCloseBrace c
   term :: String -> P.Parser ()
-  term t = P.try (P.string' t *> P.lookAhead P.space)
+  term t = P.try (P.string' t *> P.lookAhead term_sep)
+  term_sep = void $ P.satisfy $ \c -> isSpace c || isBrace c
 
 targetBlock :: P.Parser BuildDepends
 targetBlock = do
