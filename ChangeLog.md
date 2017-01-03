@@ -1,5 +1,10 @@
 # Revision history for staversion
 
+## 0.1.3.1  -- 2017-01-03
+
+* Now staversion can parse the "curly brace" format of .cabal files (to some extent.)
+* Confirmed test with `aeson-1.1.0.0`.
+
 ## 0.1.3.0  -- 2016-12-29
 
 * Now staversion shows the exact resolver for a partial resolver (e.g. "lts-4" -> "lts-4.2")
