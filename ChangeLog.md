@@ -1,5 +1,10 @@
 # Revision history for staversion
 
+## 0.1.3.2  -- 2017-01-05
+
+* Fix dependency lower bound for `base`.
+  It was `>=4.6`, but now it's `>=4.8` due to dependency on `megaparsec`.
+
 ## 0.1.3.1  -- 2017-01-03
 
 * Now staversion can parse the "curly brace" format of .cabal files (to some extent.)
