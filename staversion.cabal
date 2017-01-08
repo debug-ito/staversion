@@ -41,7 +41,8 @@ library
                         Staversion.Internal.Command,
                         Staversion.Internal.Log,
                         Staversion.Internal.Exec,
-                        Staversion.Internal.Format
+                        Staversion.Internal.Format,
+                        Staversion.Internal.Aggregate
   other-modules:        Paths_staversion,
                         Staversion.Internal.HTTP
   build-depends:        base >=4.8 && <4.10,
@@ -59,7 +60,9 @@ library
                         http-types >=0.8.6 && <0.10,
                         transformers >=0.3.0 && <0.6,
                         transformers-compat >=0.4.0 && <0.6,
-                        megaparsec >=4.2.0 && <5.2
+                        megaparsec >=4.2.0 && <5.2,
+                        semigroups,
+                        Cabal
 
 executable staversion
   default-language:     Haskell2010
@@ -88,6 +91,7 @@ test-suite spec
                         Staversion.Internal.CabalSpec,
                         Staversion.Internal.TestUtil
   build-depends:        base, staversion, text, filepath, bytestring,
+                        Cabal, semigroups,
                         hspec >=2.1.7 && <2.4,
                         QuickCheck >=2.8.1 && <2.10
 
