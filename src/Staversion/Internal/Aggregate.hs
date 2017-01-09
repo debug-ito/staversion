@@ -16,12 +16,14 @@ import qualified Data.List.NonEmpty as NL
 import Data.Version (Version)
 import Distribution.Version (VersionRange)
 import qualified Distribution.Version as V
+import qualified Distribution.Text as DT
+import qualified Text.PrettyPrint as Pretty
 
 -- | Aggregate some 'Version's into a 'VersionRange'.
 type Aggregator = NonEmpty Version -> VersionRange
 
 showVersionRange :: VersionRange -> String
-showVersionRange = undefined -- TODO
+showVersionRange = Pretty.render . DT.disp
 
 -- | Aggregator of ORed versions.
 aggOr :: Aggregator
