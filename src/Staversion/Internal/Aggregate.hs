@@ -25,6 +25,7 @@ showVersionRange = undefined -- TODO
 
 -- | Aggregator of ORed versions.
 aggOr :: Aggregator
-aggOr vs = foldr f (V.thisVersion $ NL.last vs) $ NL.init vs where
+aggOr vs = foldr f (V.thisVersion $ NL.last svs) $ NL.init svs where
+  svs = NL.sort vs
   f elem_v range = V.unionVersionRanges (V.thisVersion elem_v) range
 
