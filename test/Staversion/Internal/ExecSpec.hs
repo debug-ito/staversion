@@ -128,7 +128,8 @@ baseCommand = Command { commBuildPlanDir = "test" </> "data",
                         commLogger = defaultLogger { loggerThreshold = Nothing },
                         commSources = [],
                         commQueries = [],
-                        commAllowNetwork = False
+                        commAllowNetwork = False,
+                        commAggregator = Nothing
                       }
 
 spec_processCommand_disambiguates :: Spec

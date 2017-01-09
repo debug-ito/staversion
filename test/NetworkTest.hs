@@ -122,7 +122,8 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
                          commLogger = quietLogger,
                          commSources = [SourceStackage "lts-3"],
                          commQueries = [QueryName "base"],
-                         commAllowNetwork = True
+                         commAllowNetwork = True,
+                         commAggregator = Nothing
                        }
     [ret] <- processCommand comm
     resultIn ret `shouldBe` SourceStackage "lts-3"
@@ -141,7 +142,8 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
                          commLogger = quietLogger,
                          commSources = [SourceHackage],
                          commQueries = [QueryName "base"],
-                         commAllowNetwork = True
+                         commAllowNetwork = True,
+                         commAggregator = Nothing
                        }
     [ret] <- processCommand comm
     resultIn ret `shouldBe` SourceHackage

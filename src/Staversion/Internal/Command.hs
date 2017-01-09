@@ -18,6 +18,8 @@ import qualified Paths_staversion as MyInfo
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
 
+import Staversion.Internal.Aggregate (Aggregator)
+import qualified Staversion.Internal.Aggregate as Agg
 import Staversion.Internal.Log
   ( LogLevel(..), Logger(loggerThreshold), defaultLogger
   )
@@ -39,9 +41,11 @@ data Command =
             -- ^ package sources to search
             commQueries :: [Query],
             -- ^ package queries
-            commAllowNetwork :: Bool
+            commAllowNetwork :: Bool,
             -- ^ if 'True', it accesses the Internet to query build plans etc.
-          } deriving (Show)
+            commAggregator :: Maybe Aggregator
+            -- ^ if 'Just', do aggregation over the results.
+          }
 
 -- | Default values for 'Command'.
 data DefCommand = DefCommand { defBuildPlanDir :: FilePath
@@ -55,7 +59,7 @@ defCommand = DefCommand <$> def_build_plan_dir where
 
 
 commandParser :: DefCommand -> Opt.Parser Command
-commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> queries <*> network where
+commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> queries <*> network <*> aggregate where
   logger = makeLogger <$> is_verbose
   makeLogger True = defaultLogger { loggerThreshold = Just LogDebug }
   makeLogger False = defaultLogger
@@ -95,6 +99,24 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> q
   no_network = Opt.switch $ mconcat [ Opt.long "no-network",
                                       Opt.help "Forbid network access."
                                     ]
+  aggregate = optional $ Opt.option (maybeReader "AGGREGATOR" parseAggregator)
+              $ mconcat [ Opt.long "aggregate",
+                          Opt.short 'a',
+                          Opt.metavar "AGGREGATOR",
+                          Opt.help "Aggregate version results over different resolvers."
+                          -- TODO: document should be in 'Doc' and be generated from aggregator lists.
+                        ]
+
+maybeReader :: String -> (String -> Maybe a) -> Opt.ReadM a
+maybeReader metavar mfunc = do
+  got <- Opt.str
+  case mfunc got of
+   Nothing -> Opt.readerError ("Unknown " ++ metavar ++ ": " ++ got)
+   Just v -> return v
+
+parseAggregator :: String -> Maybe Aggregator
+parseAggregator "or" = Just Agg.aggOr
+parseAggregator _ = Nothing
 
 programDescription :: Opt.Parser a -> Opt.ParserInfo a
 programDescription parser =
