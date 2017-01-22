@@ -3,7 +3,11 @@ module Staversion.Internal.FormatSpec (main,spec) where
 import Data.Monoid ((<>))
 import Test.Hspec
 
-import Staversion.Internal.Format (formatResultsCabal)
+import Staversion.Internal.Aggregate (aggOr)
+import Staversion.Internal.Format
+  ( formatResultsCabal,
+    formatResultsCabalAggregated
+  )
 import Staversion.Internal.Query
   ( PackageSource(..), Query(..),
     Resolver, PackageName
@@ -19,7 +23,12 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = describe "formatResultsCabal" $ do
+spec = do
+  spec_simple
+  spec_aggregate
+
+spec_simple :: Spec
+spec_simple = describe "formatResultsCabal" $ do
   it "should return empty text for empty list" $ do
     formatResultsCabal [] `shouldBe` ""
   it "should format a Result in a Cabal way" $ do
@@ -212,11 +221,39 @@ spec = describe "formatResultsCabal" $ do
                    )
     formatResultsCabal input `shouldBe` expected
 
+spec_aggregate :: Spec
+spec_aggregate = describe "formatResultsCabalAggregated" $ do
+  it "should aggregate Results over multiple package sources" $ do
+    let input = [ simpleResult "lts-4.2" "hoge" [1,2,3],
+                  simpleResult "lts-5.0" "hoge" [1,5]
+                ]
+        expected = ( "------ lts-4.2, lts-5.0\n"
+                     <> "hoge ==1.2.3 || ==1.5\n"
+                     <> "\n"
+                   )
+    formatResultsCabalAggregated aggOr input `shouldBe` expected
+  it "should show resultReallyIn in the header" $ do
+    let input = [ setRealSource "lts-4.22" $ simpleResult "lts-4" "foobar" [2,3],
+                  hackageResult "foobar" [2,3,10],
+                  simpleResult "lts-5.3" "foobar" [2,3,4]
+                ]
+        expected = ( "------ lts-4 (lts-4.22), latest in hackage, lts-5.3\n"
+                     <> "foobar ==2.3 || ==2.3.4 || ==2.3.10\n"
+                     <> "\n"
+                   )
+    formatResultsCabalAggregated aggOr input `shouldBe` expected
+
 simpleResult :: Resolver -> PackageName -> [Int] -> Result
 simpleResult res name vs = Result { resultIn = SourceStackage res, resultReallyIn = Nothing,
                                     resultFor = QueryName name,
                                     resultBody = Right $ simpleResultBody name vs
                                   }
+
+hackageResult :: PackageName -> [Int] -> Result
+hackageResult name vs = Result { resultIn = SourceHackage, resultReallyIn = Nothing,
+                                 resultFor = QueryName name,
+                                 resultBody = Right $ simpleResultBody name vs
+                               }
 
 cabalResult :: Resolver -> FilePath -> Target -> [(PackageName, [Int])] -> Result
 cabalResult res file target vps =
@@ -224,3 +261,6 @@ cabalResult res file target vps =
            resultFor = QueryCabalFile file,
            resultBody = Right $ CabalResultBody file target $ verPairs vps
          }
+
+setRealSource :: Resolver -> Result -> Result
+setRealSource resolver ret = ret { resultReallyIn = Just $ SourceStackage resolver }
