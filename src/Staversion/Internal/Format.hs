@@ -36,7 +36,10 @@ formatResultsCabal = toLazyText . mconcat . map formatResultBlock . makeSourceBl
 formatResultsCabalAggregated :: Aggregator -> [Result] -> TL.Text
 formatResultsCabalAggregated = undefined
 
-groupAllPreservingOrderBy :: (a -> a -> Bool) -> [a] -> [NonEmpty a]
+groupAllPreservingOrderBy :: (a -> a -> Bool)
+                             -- ^ The comparator that determines if the two elements are in the same group.
+                             -- This comparator must be transitive, like '(==)'.
+                          -> [a] -> [NonEmpty a]
 groupAllPreservingOrderBy sameGroup = foldr f [] where
   f item acc = update [] acc where
     update heads [] = (item :| []) : heads
