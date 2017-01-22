@@ -28,6 +28,6 @@ showVersionRange = Pretty.render . DT.disp
 -- | Aggregator of ORed versions.
 aggOr :: Aggregator
 aggOr vs = foldr f (V.thisVersion $ NL.last svs) $ NL.init svs where
-  svs = NL.sort vs
+  svs = NL.nub $ NL.sort vs
   f elem_v range = V.unionVersionRanges (V.thisVersion elem_v) range
 

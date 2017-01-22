@@ -47,3 +47,9 @@ spec_or = describe "aggOr" $ do
                    $ (vthis [5,5,0])
     aggOr input `shouldBe` expected
     (showVersionRange $ aggOr input) `shouldBe` "==0.2 || ==0.3 || ==3.3.2.1 || ==5.5 || ==5.5.0"
+  it "should eliminate duplicates" $ do
+    let input = ver [1,0] :| [ver [0,4], ver [1,2], ver [0,4], ver [1,0]]
+        expected =   vor (vthis [0,4])
+                   $ vor (vthis [1,0])
+                   $ (vthis [1,2])
+    aggOr input `shouldBe` expected
