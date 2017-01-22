@@ -11,6 +11,8 @@ module Staversion.Internal.Format
 
 import Data.Function (on)
 import Data.List (intersperse)
+import Data.List.NonEmpty (NonEmpty(..))
+import qualified Data.List.NonEmpty as NL
 import Data.Monoid (mempty, mconcat, (<>))
 import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
@@ -34,13 +36,13 @@ formatResultsCabal = toLazyText . mconcat . map formatResultBlock . makeSourceBl
 formatResultsCabalAggregated :: Aggregator -> [Result] -> TL.Text
 formatResultsCabalAggregated = undefined
 
-groupAllPreservingOrderBy :: (a -> a -> Bool) -> [a] -> [[a]]
-groupAllPreservingOrderBy sameGroup = map snd  . foldr f [] where
+groupAllPreservingOrderBy :: (a -> a -> Bool) -> [a] -> [NonEmpty a]
+groupAllPreservingOrderBy sameGroup = foldr f [] where
   f item acc = update [] acc where
-    update heads [] = (item, [item]) : heads
-    update heads (cur@(cur_item, cur_list) : rest) =
-      if sameGroup item cur_item
-      then ((cur_item, item : cur_list) : heads) ++ rest 
+    update heads [] = (item :| []) : heads
+    update heads (cur@(cur_head :| cur_rest) : rest) =
+      if sameGroup item cur_head
+      then ((item :| (cur_head : cur_rest)) : heads) ++ rest 
       else update (heads ++ [cur]) rest
 
 -- | 'Left' lines and 'Right' lines are handled differently by
@@ -53,8 +55,7 @@ data ResultBlock = RBHead Builder [ResultBlock] -- ^ header and child blocks
 
 makeSourceBlocks :: [Result] -> [ResultBlock]
 makeSourceBlocks = map sourceBlock . groupAllPreservingOrderBy ((==) `on` resultIn) where
-  sourceBlock [] = RBLines []
-  sourceBlock results@(head_ret : _) = RBHead header $ makeQueryBlocks results where
+  sourceBlock results@(head_ret :| _) = RBHead header $ makeQueryBlocks $ NL.toList results where
     header = "------ " <> (fromText $ sourceDesc $ resultIn head_ret) <> header_real_source
     header_real_source = maybe "" fromText $ resultReallyIn head_ret >>= \real_source -> do
       return (" (" <> sourceDesc real_source <> ")")
