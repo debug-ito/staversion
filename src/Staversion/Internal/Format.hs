@@ -5,7 +5,8 @@
 --
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.Format
-       ( formatResultsCabal
+       ( formatResultsCabal,
+         formatResultsCabalAggregated
        ) where
 
 import Data.Function (on)
@@ -15,6 +16,7 @@ import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
 import Data.Version (showVersion, Version)
 
+import Staversion.Internal.Aggregate (Aggregator)
 import Staversion.Internal.Query
   ( Query(..),
     sourceDesc,
@@ -26,6 +28,11 @@ import Staversion.Internal.Cabal (Target(..))
 -- | format 'Result's like it's in build-depends in .cabal files.
 formatResultsCabal :: [Result] -> TL.Text
 formatResultsCabal = toLazyText . mconcat . map formatResultBlock . makeSourceBlocks
+
+-- | aggregate 'Result's and format them like it's in build-depends in
+-- .cabal files.
+formatResultsCabalAggregated :: Aggregator -> [Result] -> TL.Text
+formatResultsCabalAggregated = undefined
 
 groupAllPreservingOrderBy :: (a -> a -> Bool) -> [a] -> [[a]]
 groupAllPreservingOrderBy sameGroup = map snd  . foldr f [] where
