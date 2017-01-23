@@ -20,7 +20,7 @@ import Staversion.Internal.Cabal (Target)
 data Result = Result { resultIn :: ResultSource,
                        resultFor :: Query,
                        resultBody :: Either ErrorMsg ResultBody
-                     } deriving (Show,Eq)
+                     } deriving (Show,Eq,Ord)
 
 data ResultSource =
   ResultSource { resultSourceQueried :: PackageSource,
@@ -31,4 +31,4 @@ data ResultSource =
 
 data ResultBody = SimpleResultBody PackageName (Maybe Version)
                 | CabalResultBody FilePath Target [(PackageName, (Maybe Version))]
-                deriving (Show,Eq)
+                deriving (Show,Eq,Ord)
