@@ -71,16 +71,16 @@ spec_processCommand_basic = describe "processCommand" $ do
         qc = QueryName "conduit"
         qa = QueryName "aeson"
         comm = baseCommand { commSources = [src2, src7], commQueries = [qc, qa] }
-        expected = [ Result { resultIn = ResultSource src2 Nothing, resultFor = qc,
+        expected = [ Result { resultIn = ResultSource src2 (Just src2), resultFor = qc,
                               resultBody = Right $ simpleResultBody "conduit" [1,2,5]
                             },
-                     Result { resultIn = ResultSource src2 Nothing, resultFor = qa,
+                     Result { resultIn = ResultSource src2 (Just src2), resultFor = qa,
                               resultBody = Right $ simpleResultBody "aeson" [0,8,0,2]
                             },
-                     Result { resultIn = ResultSource src7 Nothing, resultFor = qc,
+                     Result { resultIn = ResultSource src7 (Just src7), resultFor = qc,
                               resultBody = Right $ simpleResultBody "conduit" [1,2,7]
                             },
-                     Result { resultIn = ResultSource src7 Nothing, resultFor = qa,
+                     Result { resultIn = ResultSource src7 (Just src7), resultFor = qa,
                               resultBody = Right $ simpleResultBody "aeson" [0,11,2,1]
                             }
                    ]
@@ -90,7 +90,7 @@ spec_processCommand_basic = describe "processCommand" $ do
         cabal_file = ("test" </> "data" </> "foobar.cabal_test")
         query = QueryCabalFile cabal_file
         comm = baseCommand { commSources = [src], commQueries = [query] }
-        ret t vps = Result { resultIn = ResultSource src Nothing, resultFor = query,
+        ret t vps = Result { resultIn = ResultSource src (Just src), resultFor = query,
                              resultBody = Right $ CabalResultBody cabal_file t vps
                            }
         expected = [ ret TargetLibrary $ verPairs [ ("base", [4,8,2,0]),
@@ -117,7 +117,8 @@ singleCase' :: PackageSource -> Query -> (Either ErrorMsg ResultBody -> IO a) ->
 singleCase' src query checker = do
   [got_ret] <- processCommand comm
   (resultSourceQueried . resultIn) got_ret `shouldBe` src
-  (resultSourceReal . resultIn) got_ret `shouldBe` Nothing
+  let exp_source_real = either (const Nothing) (const $ Just $ src) $ resultBody got_ret
+  (resultSourceReal . resultIn) got_ret `shouldBe` exp_source_real
   resultFor got_ret `shouldBe` query
   checker $ resultBody got_ret
   where

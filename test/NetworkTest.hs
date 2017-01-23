@@ -148,7 +148,7 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
     [ret] <- processCommand comm
     (resultSourceQueried . resultIn) ret `shouldBe` SourceHackage
     resultFor ret `shouldBe` QueryName "base"
-    (resultSourceReal . resultIn) ret `shouldBe` Nothing
+    (resultSourceReal . resultIn) ret `shouldBe` Just SourceHackage
     case resultBody ret of
      Right (SimpleResultBody got_name (Just got_version)) -> do
        got_name `shouldBe` "base"
