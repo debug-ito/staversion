@@ -12,7 +12,7 @@ import Staversion.Internal.Query
   ( PackageSource(..), Query(..),
     Resolver, PackageName
   )
-import Staversion.Internal.Result (Result(..), ResultBody(..))
+import Staversion.Internal.Result (Result(..), ResultBody(..), ResultSource(..))
 import Staversion.Internal.Cabal (Target(..))
 
 import Staversion.Internal.TestUtil (ver, simpleResultBody, verPairs)
@@ -32,7 +32,7 @@ spec_simple = describe "formatResultsCabal" $ do
   it "should return empty text for empty list" $ do
     formatResultsCabal [] `shouldBe` ""
   it "should format a Result in a Cabal way" $ do
-    let input = [ Result { resultIn = SourceStackage "lts-6.10", resultReallyIn = Nothing,
+    let input = [ Result { resultIn = ResultSource (SourceStackage "lts-6.10") Nothing,
                            resultFor = QueryName "hoge",
                            resultBody = Right $ simpleResultBody "hoge" [3,4,5]
                          }
@@ -108,8 +108,7 @@ spec_simple = describe "formatResultsCabal" $ do
                    )
     formatResultsCabal input `shouldBe` expected
   it "should output resultReallyIn field" $ do
-    let input = [ Result { resultIn = SourceStackage "lts",
-                           resultReallyIn = Just $ SourceStackage "lts-7.4",
+    let input = [ Result { resultIn = ResultSource (SourceStackage "lts") (Just $ SourceStackage "lts-7.4"),
                            resultFor = QueryName "foobar",
                            resultBody = Right $ simpleResultBody "foobar" [3,4,5]
                          } ]
@@ -119,7 +118,7 @@ spec_simple = describe "formatResultsCabal" $ do
                    )
     formatResultsCabal input `shouldBe` expected
   it "should show ERROR if resultBody is Left, resultFor is QueryName" $ do
-    let input = [ Result { resultIn = SourceStackage "lts-4.2", resultReallyIn = Nothing,
+    let input = [ Result { resultIn = ResultSource (SourceStackage "lts-4.2") Nothing,
                            resultFor = QueryName "hogehoge",
                            resultBody = Left "some error"
                          } ]
@@ -129,11 +128,11 @@ spec_simple = describe "formatResultsCabal" $ do
                    )
     formatResultsCabal input `shouldBe` expected
   it "should show ERROR if resultBody is Left, resultFor is QueryCabalFile" $ do
-    let input = [ Result { resultIn = SourceStackage "lts-5.3", resultReallyIn = Nothing,
+    let input = [ Result { resultIn = ResultSource (SourceStackage "lts-5.3") Nothing,
                            resultFor = QueryCabalFile "foobar.cabal",
                            resultBody = Left "some error"
                          },
-                  Result { resultIn = SourceStackage "lts-5.3", resultReallyIn = Nothing,
+                  Result { resultIn = ResultSource (SourceStackage "lts-5.3") Nothing,
                            resultFor = QueryName "hoge",
                            resultBody = Right $ simpleResultBody "hoge" [5,5]
                          }
@@ -244,23 +243,24 @@ spec_aggregate = describe "formatResultsCabalAggregated" $ do
     formatResultsCabalAggregated aggOr input `shouldBe` expected
 
 simpleResult :: Resolver -> PackageName -> [Int] -> Result
-simpleResult res name vs = Result { resultIn = SourceStackage res, resultReallyIn = Nothing,
+simpleResult res name vs = Result { resultIn = ResultSource (SourceStackage res) Nothing,
                                     resultFor = QueryName name,
                                     resultBody = Right $ simpleResultBody name vs
                                   }
 
 hackageResult :: PackageName -> [Int] -> Result
-hackageResult name vs = Result { resultIn = SourceHackage, resultReallyIn = Nothing,
+hackageResult name vs = Result { resultIn = ResultSource SourceHackage Nothing,
                                  resultFor = QueryName name,
                                  resultBody = Right $ simpleResultBody name vs
                                }
 
 cabalResult :: Resolver -> FilePath -> Target -> [(PackageName, [Int])] -> Result
 cabalResult res file target vps =
-  Result { resultIn = SourceStackage res, resultReallyIn = Nothing,
+  Result { resultIn = ResultSource (SourceStackage res) Nothing,
            resultFor = QueryCabalFile file,
            resultBody = Right $ CabalResultBody file target $ verPairs vps
          }
 
 setRealSource :: Resolver -> Result -> Result
-setRealSource resolver ret = ret { resultReallyIn = Just $ SourceStackage resolver }
+setRealSource resolver ret = ret { resultIn = rin { resultSourceReal = Just $ SourceStackage resolver } } where
+  rin = resultIn ret

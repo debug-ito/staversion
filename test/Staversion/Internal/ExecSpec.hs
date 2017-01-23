@@ -20,7 +20,8 @@ import Staversion.Internal.Query
   )
 import Staversion.Internal.Result
   ( Result(..),
-    ResultBody(..)
+    ResultBody(..),
+    ResultSource(..)
   )
 import Staversion.Internal.Log (defaultLogger, _mockLogger, Logger(loggerThreshold), LogLevel(..))
 import Staversion.Internal.Cabal (Target(..))
@@ -52,7 +53,8 @@ spec_processCommand_basic = describe "processCommand" $ do
                              commLogger = logger { loggerThreshold = Just LogInfo }
                            }
     [got_ret] <- processCommand comm
-    resultIn got_ret `shouldBe` src
+    (resultSourceQueried . resultIn) got_ret `shouldBe` src
+    (resultSourceReal . resultIn) got_ret `shouldBe` Nothing
     resultFor got_ret `shouldBe` query
     case resultBody got_ret of
       Right _ -> expectationFailure "it should fail"
@@ -69,16 +71,16 @@ spec_processCommand_basic = describe "processCommand" $ do
         qc = QueryName "conduit"
         qa = QueryName "aeson"
         comm = baseCommand { commSources = [src2, src7], commQueries = [qc, qa] }
-        expected = [ Result { resultIn = src2, resultReallyIn = Nothing, resultFor = qc,
+        expected = [ Result { resultIn = ResultSource src2 Nothing, resultFor = qc,
                               resultBody = Right $ simpleResultBody "conduit" [1,2,5]
                             },
-                     Result { resultIn = src2, resultReallyIn = Nothing, resultFor = qa,
+                     Result { resultIn = ResultSource src2 Nothing, resultFor = qa,
                               resultBody = Right $ simpleResultBody "aeson" [0,8,0,2]
                             },
-                     Result { resultIn = src7, resultReallyIn = Nothing, resultFor = qc,
+                     Result { resultIn = ResultSource src7 Nothing, resultFor = qc,
                               resultBody = Right $ simpleResultBody "conduit" [1,2,7]
                             },
-                     Result { resultIn = src7, resultReallyIn = Nothing, resultFor = qa,
+                     Result { resultIn = ResultSource src7 Nothing, resultFor = qa,
                               resultBody = Right $ simpleResultBody "aeson" [0,11,2,1]
                             }
                    ]
@@ -88,7 +90,7 @@ spec_processCommand_basic = describe "processCommand" $ do
         cabal_file = ("test" </> "data" </> "foobar.cabal_test")
         query = QueryCabalFile cabal_file
         comm = baseCommand { commSources = [src], commQueries = [query] }
-        ret t vps = Result { resultIn = src, resultReallyIn = Nothing, resultFor = query,
+        ret t vps = Result { resultIn = ResultSource src Nothing, resultFor = query,
                              resultBody = Right $ CabalResultBody cabal_file t vps
                            }
         expected = [ ret TargetLibrary $ verPairs [ ("base", [4,8,2,0]),
@@ -114,8 +116,8 @@ singleCase src query exp_ret_vers = singleCase' src query (`shouldBe` exp_ret_ve
 singleCase' :: PackageSource -> Query -> (Either ErrorMsg ResultBody -> IO a) -> IO a
 singleCase' src query checker = do
   [got_ret] <- processCommand comm
-  resultIn got_ret `shouldBe` src
-  resultReallyIn got_ret `shouldBe` Nothing
+  (resultSourceQueried . resultIn) got_ret `shouldBe` src
+  (resultSourceReal . resultIn) got_ret `shouldBe` Nothing
   resultFor got_ret `shouldBe` query
   checker $ resultBody got_ret
   where
@@ -142,7 +144,7 @@ spec_processCommand_disambiguates = describe "processCommand" $ do
           _setLTSDisambiguator bp_man 4 2
           return bp_man
     [got_ret] <- _processCommandWithCustomBuildPlanManager withMockDisam comm
-    resultIn got_ret `shouldBe` SourceStackage "lts"
-    resultReallyIn got_ret `shouldBe` (Just $ SourceStackage "lts-4.2")
+    (resultSourceQueried . resultIn) got_ret `shouldBe` SourceStackage "lts"
+    (resultSourceReal . resultIn) got_ret `shouldBe` (Just $ SourceStackage "lts-4.2")
     resultFor got_ret `shouldBe` QueryName "conduit"
     resultBody got_ret `shouldBe` Right (simpleResultBody "conduit" [1,2,6,1])

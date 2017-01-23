@@ -30,7 +30,7 @@ import Staversion.Internal.Log (defaultLogger, Logger(loggerThreshold))
 import Staversion.Internal.Query
  ( PackageSource(..), ErrorMsg, Query(..)
  )
-import Staversion.Internal.Result (Result(..), ResultBody(..))
+import Staversion.Internal.Result (Result(..), ResultBody(..), ResultSource(..))
 
 main :: IO ()
 main = hspec spec
@@ -126,14 +126,14 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
                          commAggregator = Nothing
                        }
     [ret] <- processCommand comm
-    resultIn ret `shouldBe` SourceStackage "lts-3"
+    (resultSourceQueried . resultIn) ret `shouldBe` SourceStackage "lts-3"
     resultFor ret `shouldBe` QueryName "base"
     case resultBody ret of
      Right (SimpleResultBody got_name (Just got_version)) -> do
        got_name `shouldBe` "base"
        got_version `shouldSatisfy` (>= ver [4,8,1,0])
      body -> expectationFailure ("Unexpected body: " ++ show body)
-    case resultReallyIn ret of
+    case (resultSourceReal . resultIn) ret of
      Just source -> source `shouldBeAboveLTSMinor` (3,22)
      ret_really_in -> expectationFailure ("Unexpected resultReallyIn: " ++ show ret_really_in)
 
@@ -146,9 +146,9 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
                          commAggregator = Nothing
                        }
     [ret] <- processCommand comm
-    resultIn ret `shouldBe` SourceHackage
+    (resultSourceQueried . resultIn) ret `shouldBe` SourceHackage
     resultFor ret `shouldBe` QueryName "base"
-    resultReallyIn ret `shouldBe` Nothing
+    (resultSourceReal . resultIn) ret `shouldBe` Nothing
     case resultBody ret of
      Right (SimpleResultBody got_name (Just got_version)) -> do
        got_name `shouldBe` "base"

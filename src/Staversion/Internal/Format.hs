@@ -24,7 +24,7 @@ import Staversion.Internal.Query
     sourceDesc,
     PackageName
   )
-import Staversion.Internal.Result (Result(..), ResultBody(..))
+import Staversion.Internal.Result (Result(..), ResultBody(..), ResultSource(..))
 import Staversion.Internal.Cabal (Target(..))
 
 -- | format 'Result's like it's in build-depends in .cabal files.
@@ -59,9 +59,14 @@ data ResultBlock = RBHead Builder [ResultBlock] -- ^ header and child blocks
 makeSourceBlocks :: [Result] -> [ResultBlock]
 makeSourceBlocks = map sourceBlock . groupAllPreservingOrderBy ((==) `on` resultIn) where
   sourceBlock results@(head_ret :| _) = RBHead header $ makeQueryBlocks $ NL.toList results where
-    header = "------ " <> (fromText $ sourceDesc $ resultIn head_ret) <> header_real_source
-    header_real_source = maybe "" fromText $ resultReallyIn head_ret >>= \real_source -> do
-      return (" (" <> sourceDesc real_source <> ")")
+    header = "------ " <> (fromText $ sourceDesc $ source_queried ) <> header_real_source
+    source_queried = resultSourceQueried $ resultIn head_ret
+    msource_real = resultSourceReal $ resultIn head_ret
+    header_real_source = case msource_real of
+      Nothing -> ""
+      Just source_real -> if source_queried == source_real
+                          then ""
+                          else fromText (" (" <> sourceDesc source_real <> ")")
 
 makeQueryBlocks :: [Result] -> [ResultBlock]
 makeQueryBlocks = uncurry prependLines . foldr f ([], []) where

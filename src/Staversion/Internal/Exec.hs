@@ -31,7 +31,7 @@ import Staversion.Internal.Log (logDebug, logError, Logger)
 import Staversion.Internal.Query
   ( Query(..), PackageSource(..), PackageName, ErrorMsg
   )
-import Staversion.Internal.Result (Result(..), ResultBody(..))
+import Staversion.Internal.Result (Result(..), ResultBody(..), ResultSource(..))
 import Staversion.Internal.Cabal (BuildDepends(..), loadCabalFile)
 
 main :: IO ()
@@ -63,11 +63,14 @@ _processCommandWithCustomBuildPlanManager customBPM comm = impl where
     logBuildPlanResult e_build_plan
     return $ map (makeResult source e_build_plan) $ rqueries
   makeResult source e_build_plan rquery = case e_build_plan of
-    Left error_msg -> Result { resultIn = source, resultReallyIn = Nothing,
+    Left error_msg -> Result { resultIn = ResultSource { resultSourceQueried = source,
+                                                         resultSourceReal = Nothing
+                                                       },
                                resultFor = originalQuery rquery, resultBody = Left error_msg
                              }
-    Right build_plan -> Result { resultIn = source,
-                                 resultReallyIn = if source == real_source then Nothing else Just real_source,
+    Right build_plan -> Result { resultIn = ResultSource { resultSourceQueried = source,
+                                                           resultSourceReal = Just real_source
+                                                         },
                                  resultFor = originalQuery rquery,
                                  resultBody = Right $ searchVersions build_plan rquery
                                }
