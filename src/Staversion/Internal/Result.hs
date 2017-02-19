@@ -9,12 +9,13 @@ module Staversion.Internal.Result
          ResultSource(..),
          ResultBody,
          ResultBody'(..),
-         AggregatedResult(..)
+         AggregatedResult(..),
+         singletonResult
        ) where
 
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Version (Version)
-import Distribution.Version (VersionRange)
+import Distribution.Version (VersionRange, thisVersion)
 import Staversion.Internal.Query
   ( Query, PackageSource, ErrorMsg, PackageName
   )
@@ -39,6 +40,10 @@ data ResultBody' a = SimpleResultBody PackageName a
                    | CabalResultBody FilePath Target [(PackageName, a)]
                    deriving (Show,Eq,Ord)
 
+instance Functor ResultBody' where
+  fmap f (SimpleResultBody n a) = SimpleResultBody n (f a)
+  fmap f (CabalResultBody fp t pairs) = CabalResultBody fp t (map (\(n, a) -> (n, f a)) pairs)
+
 -- | Results for a query aggregated over different sources.
 data AggregatedResult =
   AggregatedResult { aggResultIn :: NonEmpty ResultSource,
@@ -46,3 +51,9 @@ data AggregatedResult =
                      aggResultBody :: Either ErrorMsg (ResultBody' (Maybe VersionRange))
                    } deriving (Show,Eq)
 
+-- | Create an 'AggregatedResult' that includes just one 'Result'.
+singletonResult :: Result -> AggregatedResult
+singletonResult ret = AggregatedResult { aggResultIn = (resultIn ret :| []),
+                                         aggResultFor = resultFor ret,
+                                         aggResultBody = (fmap . fmap . fmap) thisVersion $ resultBody ret
+                                       }
