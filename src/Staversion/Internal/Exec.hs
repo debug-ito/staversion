@@ -31,7 +31,7 @@ import Staversion.Internal.Log (logDebug, logError, Logger)
 import Staversion.Internal.Query
   ( Query(..), PackageSource(..), PackageName, ErrorMsg
   )
-import Staversion.Internal.Result (Result(..), ResultBody(..), ResultSource(..))
+import Staversion.Internal.Result (Result(..), ResultBody, ResultBody'(..), ResultSource(..))
 import Staversion.Internal.Cabal (BuildDepends(..), loadCabalFile)
 
 main :: IO ()

@@ -7,7 +7,8 @@
 module Staversion.Internal.Result
        ( Result(..),
          ResultSource(..),
-         ResultBody(..)
+         ResultBody,
+         ResultBody'(..)
        ) where
 
 import Data.Version (Version)
@@ -29,6 +30,8 @@ data ResultSource =
                  -- ^ the real (exact) 'PackageSource' resolved.
                } deriving (Show,Eq,Ord)
 
-data ResultBody = SimpleResultBody PackageName (Maybe Version)
-                | CabalResultBody FilePath Target [(PackageName, (Maybe Version))]
-                deriving (Show,Eq,Ord)
+type ResultBody = ResultBody' (Maybe Version)
+
+data ResultBody' a = SimpleResultBody PackageName a
+                   | CabalResultBody FilePath Target [(PackageName, a)]
+                   deriving (Show,Eq,Ord)

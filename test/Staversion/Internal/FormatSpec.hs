@@ -12,7 +12,7 @@ import Staversion.Internal.Query
   ( PackageSource(..), Query(..),
     Resolver, PackageName
   )
-import Staversion.Internal.Result (Result(..), ResultBody(..), ResultSource(..))
+import Staversion.Internal.Result (Result(..), ResultBody, ResultBody'(..), ResultSource(..))
 import Staversion.Internal.Cabal (Target(..))
 
 import Staversion.Internal.TestUtil (ver, simpleResultBody, verPairs)

@@ -30,7 +30,7 @@ import Staversion.Internal.Log (defaultLogger, Logger(loggerThreshold))
 import Staversion.Internal.Query
  ( PackageSource(..), ErrorMsg, Query(..)
  )
-import Staversion.Internal.Result (Result(..), ResultBody(..), ResultSource(..))
+import Staversion.Internal.Result (Result(..), ResultBody'(..), ResultSource(..))
 
 main :: IO ()
 main = hspec spec

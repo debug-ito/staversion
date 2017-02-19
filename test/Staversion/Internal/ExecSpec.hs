@@ -20,7 +20,7 @@ import Staversion.Internal.Query
   )
 import Staversion.Internal.Result
   ( Result(..),
-    ResultBody(..),
+    ResultBody, ResultBody'(..),
     ResultSource(..)
   )
 import Staversion.Internal.Log (defaultLogger, _mockLogger, Logger(loggerThreshold), LogLevel(..))

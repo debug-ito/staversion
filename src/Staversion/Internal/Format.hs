@@ -24,7 +24,7 @@ import Staversion.Internal.Query
     sourceDesc,
     PackageName
   )
-import Staversion.Internal.Result (Result(..), ResultBody(..), ResultSource(..))
+import Staversion.Internal.Result (Result(..), ResultBody'(..), ResultSource(..))
 import Staversion.Internal.Cabal (Target(..))
 
 -- | format 'Result's like it's in build-depends in .cabal files.
