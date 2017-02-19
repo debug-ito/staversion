@@ -1,5 +1,6 @@
 module Staversion.Internal.AggregateSpec (main,spec) where
 
+import Data.List (isInfixOf)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Distribution.Version as V
 import Test.Hspec
@@ -9,10 +10,12 @@ import Staversion.Internal.Aggregate
     aggOr,
     aggregateResults
   )
+import Staversion.Internal.Log (LogEntry(..), LogLevel(..))
 import Staversion.Internal.Query (Resolver, PackageSource(..), Query(..), PackageName)
 import Staversion.Internal.Result
   ( Result(..), ResultSource(..), AggregatedResult(..),
-    ResultBody'(..)
+    ResultBody'(..),
+    singletonResult
   )
 import Staversion.Internal.TestUtil (ver, simpleResultBody)
 
@@ -69,6 +72,10 @@ vors (v:rest) = vor (vthis v) $ vors rest
 
 spec_aggregateResults :: Spec
 spec_aggregateResults = describe "aggregateResults" $ do
+  it "should return empty for empty input" $ do
+    let (agg_ret, _) = aggregateResults aggOr []
+    agg_ret `shouldBe` []
+    
   it "should aggregate SimpleResultBody" $ do
     let input = [ simpleResult "lts-5.0" "hoge" [1,0],
                   simpleResult "lts-6.0" "hoge" [2,0],
@@ -84,6 +91,32 @@ spec_aggregateResults = describe "aggregateResults" $ do
                                     }
     aggregateResults aggOr input `shouldBe` ([expected], [])
 
+  it "should group Results based on their resultFor field" $ do
+    let input = [ simpleResult "lts-5.0" "hoge" [1,0],
+                  simpleResult "lts-6.0" "foo" [2,0],
+                  simpleResult "lts-7.0" "bar" [3,0]
+                ]
+        expected = map singletonResult input
+    aggregateResults aggOr input `shouldBe` (expected, [])
+
+  it "should warn about Left resultBody" $ do
+    let input = [ simpleResult "lts-5.0" "hoge" [1,0],
+                  (simpleResult "lts-6.0" "hoge" []) { resultBody = Left "SOME ERROR"
+                                                     },
+                  simpleResult "lts-7.0" "hoge" [3,0]
+                ]
+        expected = AggregatedResult { aggResultIn = rsource "lts-5.0" :| [rsource "lts-7.0"],
+                                      aggResultFor = QueryName "hoge",
+                                      aggResultBody = Right $ SimpleResultBody "hoge"
+                                                      $ Just $ vors [[1,0], [3,0]]
+                                    }
+        (got, got_logs) = aggregateResults aggOr input
+    got `shouldBe` [expected]
+    (matchLogCount LogWarn "SOME ERROR" got_logs) `shouldBe` 1
+
+  it "should produce no AggregatedResult for groups in which all Results are Left" $ do
+    True `shouldBe` False
+
 rsource :: Resolver -> ResultSource
 rsource res = ResultSource { resultSourceQueried = psource,
                              resultSourceReal = Just psource
@@ -97,3 +130,10 @@ simpleResult resolver pname version =
            resultFor = QueryName pname,
            resultBody = Right $ simpleResultBody pname version
          }
+
+matchLog :: LogLevel -> String -> LogEntry -> Bool
+matchLog exp_level exp_msg_part entry = (logLevel entry == exp_level)
+                                        && (exp_msg_part `isInfixOf` logMessage entry)
+
+matchLogCount :: LogLevel -> String -> [LogEntry] -> Int
+matchLogCount exp_level exp_msg_part = length . filter (matchLog exp_level exp_msg_part)
