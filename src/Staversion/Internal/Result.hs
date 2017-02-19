@@ -8,10 +8,13 @@ module Staversion.Internal.Result
        ( Result(..),
          ResultSource(..),
          ResultBody,
-         ResultBody'(..)
+         ResultBody'(..),
+         AggregatedResult(..)
        ) where
 
+import Data.List.NonEmpty (NonEmpty)
 import Data.Version (Version)
+import Distribution.Version (VersionRange)
 import Staversion.Internal.Query
   ( Query, PackageSource, ErrorMsg, PackageName
   )
@@ -35,3 +38,11 @@ type ResultBody = ResultBody' (Maybe Version)
 data ResultBody' a = SimpleResultBody PackageName a
                    | CabalResultBody FilePath Target [(PackageName, a)]
                    deriving (Show,Eq,Ord)
+
+-- | Results for a query aggregated over different sources.
+data AggregatedResult =
+  AggregatedResult { aggResultIn :: NonEmpty ResultSource,
+                     aggResultFor :: Query,
+                     aggResultBody :: Either ErrorMsg (ResultBody' (Maybe VersionRange))
+                   } deriving (Show,Eq)
+
