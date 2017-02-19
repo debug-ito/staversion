@@ -4,18 +4,26 @@ import Data.List.NonEmpty (NonEmpty(..))
 import qualified Distribution.Version as V
 import Test.Hspec
 
-import Staversion.Internal.TestUtil (ver)
 import Staversion.Internal.Aggregate
   ( showVersionRange,
-    aggOr
+    aggOr,
+    aggregateResults
   )
+import Staversion.Internal.Query (Resolver, PackageSource(..), Query(..), PackageName)
+import Staversion.Internal.Result
+  ( Result(..), ResultSource(..), AggregatedResult(..),
+    ResultBody'(..)
+  )
+import Staversion.Internal.TestUtil (ver, simpleResultBody)
 
 main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = describe "Aggregators" $ do
-  spec_or
+spec = do
+  spec_aggregateResults
+  describe "Aggregators" $ do
+    spec_or
 
 vor :: V.VersionRange -> V.VersionRange -> V.VersionRange
 vor = V.unionVersionRanges
@@ -53,3 +61,39 @@ spec_or = describe "aggOr" $ do
                    $ vor (vthis [1,0])
                    $ (vthis [1,2])
     aggOr input `shouldBe` expected
+
+vors :: [[Int]] -> V.VersionRange
+vors [] = error "this should not happen"
+vors [v] = vthis v
+vors (v:rest) = vor (vthis v) $ vors rest
+
+spec_aggregateResults :: Spec
+spec_aggregateResults = describe "aggregateResults" $ do
+  it "should aggregate SimpleResultBody" $ do
+    let input = [ simpleResult "lts-5.0" "hoge" [1,0],
+                  simpleResult "lts-6.0" "hoge" [2,0],
+                  simpleResult "lts-7.0" "hoge" [3,0]
+                ]
+        expected = AggregatedResult { aggResultIn = rsource "lts-5.0"
+                                                    :| [ rsource "lts-6.0",
+                                                         rsource "lts-7.0"
+                                                       ],
+                                      aggResultFor = QueryName "hoge",
+                                      aggResultBody = Right $ SimpleResultBody "hoge"
+                                                      $ Just $ vors [[1,0], [2,0], [3,0]]
+                                    }
+    aggregateResults aggOr input `shouldBe` ([expected], [])
+
+rsource :: Resolver -> ResultSource
+rsource res = ResultSource { resultSourceQueried = psource,
+                             resultSourceReal = Just psource
+                           }
+  where
+    psource = SourceStackage res
+
+simpleResult :: Resolver -> PackageName -> [Int] -> Result
+simpleResult resolver pname version =
+  Result { resultIn = rsource resolver,
+           resultFor = QueryName pname,
+           resultBody = Right $ simpleResultBody pname version
+         }
