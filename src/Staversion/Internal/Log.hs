@@ -6,6 +6,7 @@
 -- 
 module Staversion.Internal.Log
        ( LogLevel(..),
+         LogEntry(..),
          Logger(loggerThreshold),
          defaultLogger,
          putLog,
@@ -26,6 +27,10 @@ data LogLevel = LogDebug
               | LogWarn
               | LogError
               deriving (Show,Eq,Ord,Enum,Bounded)
+
+data LogEntry = LogEntry { logLevel :: LogLevel,
+                           logMessage :: String
+                         } deriving (Show,Eq,Ord)
 
 data Logger = Logger { loggerThreshold :: Maybe LogLevel,
                        -- ^ If 'Nothing', logging is disabled.
@@ -65,9 +70,9 @@ logError :: Logger -> String -> IO ()
 logError = flip putLog $ LogError
 
 -- | FOR TEST: the IORef is the history of logged messages.
-_mockLogger :: IO (Logger, IORef [(LogLevel, String)])
+_mockLogger :: IO (Logger, IORef [LogEntry])
 _mockLogger = do
   history <- newIORef []
-  let puts level msg = modifyIORef history (++ [(level, msg)])
+  let puts level msg = modifyIORef history (++ [LogEntry level msg])
   return $ (defaultLogger { loggerPutLogRaw = puts }, history)
 

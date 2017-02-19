@@ -23,7 +23,7 @@ import Staversion.Internal.Result
     ResultBody, ResultBody'(..),
     ResultSource(..)
   )
-import Staversion.Internal.Log (defaultLogger, _mockLogger, Logger(loggerThreshold), LogLevel(..))
+import Staversion.Internal.Log (defaultLogger, _mockLogger, Logger(loggerThreshold), LogLevel(..), LogEntry(..))
 import Staversion.Internal.Cabal (Target(..))
 
 import Staversion.Internal.TestUtil (ver, simpleResultBody, verPairs)
@@ -60,10 +60,10 @@ spec_processCommand_basic = describe "processCommand" $ do
       Right _ -> expectationFailure "it should fail"
       Left _ -> return ()
     got_logs <- readIORef logs
-    let match :: (LogLevel, String) -> Bool
-        match (level, msg) = (level >= LogWarn)
-                             && ("unknown.yaml" `isInfixOf` msg)
-                             && ("not found" `isInfixOf` msg)
+    let match :: LogEntry -> Bool
+        match (LogEntry level msg) = (level >= LogWarn)
+                                     && ("unknown.yaml" `isInfixOf` msg)
+                                     && ("not found" `isInfixOf` msg)
     (length $ filter match got_logs) `shouldBe` 1
   specify "QueryName, SourceStackage, full-mesh" $ do
     let src2 = SourceStackage "lts-2.22_conpact"
