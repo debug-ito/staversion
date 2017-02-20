@@ -9,6 +9,7 @@ module Staversion.Internal.Format
          formatResultsCabalAggregated
        ) where
 
+import Data.Foldable (fold)
 import Data.Function (on)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty(..))
@@ -16,20 +17,24 @@ import qualified Data.List.NonEmpty as NL
 import Data.Monoid (mempty, mconcat, (<>))
 import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
-import Data.Version (showVersion, Version)
+import Distribution.Version (VersionRange)
 
-import Staversion.Internal.Aggregate (Aggregator)
+import Staversion.Internal.Aggregate (Aggregator, showVersionRange)
 import Staversion.Internal.Query
   ( Query(..),
     sourceDesc,
     PackageName
   )
-import Staversion.Internal.Result (Result(..), ResultBody'(..), ResultSource(..))
+import Staversion.Internal.Result
+  ( Result(..), ResultBody'(..), ResultSource(..),
+    AggregatedResult(..), singletonResult
+  )
 import Staversion.Internal.Cabal (Target(..))
 
 -- | format 'Result's like it's in build-depends in .cabal files.
 formatResultsCabal :: [Result] -> TL.Text
-formatResultsCabal = toLazyText . mconcat . map formatResultBlock . makeSourceBlocks
+formatResultsCabal = toLazyText . mconcat . map formatResultBlock
+                     . makeSourceBlocks . map singletonResult
 
 -- | aggregate 'Result's and format them like it's in build-depends in
 -- .cabal files.
@@ -56,31 +61,31 @@ type ResultLine = Either Builder Builder
 data ResultBlock = RBHead Builder [ResultBlock] -- ^ header and child blocks
                  | RBLines [ResultLine] -- ^ a block, which consists of some lines.
 
-makeSourceBlocks :: [Result] -> [ResultBlock]
-makeSourceBlocks = map sourceBlock . groupAllPreservingOrderBy ((==) `on` resultIn) where
+makeSourceBlocks :: [AggregatedResult] -> [ResultBlock]
+makeSourceBlocks = map sourceBlock . groupAllPreservingOrderBy ((==) `on` aggResultIn) where
   sourceBlock results@(head_ret :| _) = RBHead header $ makeQueryBlocks $ NL.toList results where
-    header = "------ " <> (fromText $ sourceDesc $ source_queried ) <> header_real_source
-    source_queried = resultSourceQueried $ resultIn head_ret
-    msource_real = resultSourceReal $ resultIn head_ret
-    header_real_source = case msource_real of
-      Nothing -> ""
-      Just source_real -> if source_queried == source_real
-                          then ""
-                          else fromText (" (" <> sourceDesc source_real <> ")")
+    header = "------ " <> (fold $ fmap sourceHeader $ aggResultIn head_ret)
 
-makeQueryBlocks :: [Result] -> [ResultBlock]
+sourceHeader :: ResultSource -> Builder
+sourceHeader src = query_source <> real_source where
+  query_source = fromText $ sourceDesc $ resultSourceQueried $ src
+  real_source = case resultSourceReal src of
+    Nothing -> ""
+    Just real_psource -> " (" <> (fromText $ sourceDesc real_psource) <> ")"
+
+makeQueryBlocks :: [AggregatedResult] -> [ResultBlock]
 makeQueryBlocks = uncurry prependLines . foldr f ([], []) where
   prependLines blocks [] = blocks
   prependLines blocks rlines = (RBLines rlines) : blocks
-  f ret (blocks, rlines) = case (resultFor ret, resultBody ret) of
+  f ret (blocks, rlines) = case (aggResultFor ret, aggResultBody ret) of
     (_, Right (SimpleResultBody name mver)) -> (blocks, (versionLine name mver) : rlines)
     (_, Right (CabalResultBody file target pairs)) -> (cabalFileSuccessBlock file target pairs : prependLines blocks rlines, [])
     ((QueryName name), Left _) -> (blocks, (packageErrorLine name) : rlines)
     ((QueryCabalFile file), Left _) -> (cabalFileErrorBlock file : prependLines blocks rlines, [])
 
-versionLine :: PackageName -> Maybe Version -> ResultLine
+versionLine :: PackageName -> Maybe VersionRange -> ResultLine
 versionLine name Nothing = Left $ "-- " <> fromText name <> " N/A"
-versionLine name (Just ver) = Right $ fromText name <> " ==" <> (fromString $ showVersion ver)
+versionLine name (Just ver_range) = Right $ fromText name <> " " <> (fromString $ showVersionRange ver_range)
 
 packageErrorLine :: PackageName -> ResultLine
 packageErrorLine name = Left $ "-- " <> fromText name <> " ERROR"
@@ -89,7 +94,7 @@ cabalFileErrorBlock :: FilePath -> ResultBlock
 cabalFileErrorBlock file = RBLines [Left line] where
   line = "-- " <> fromString file <> " ERROR"
 
-cabalFileSuccessBlock :: FilePath -> Target -> [(PackageName, Maybe Version)] -> ResultBlock
+cabalFileSuccessBlock :: FilePath -> Target -> [(PackageName, Maybe VersionRange)] -> ResultBlock
 cabalFileSuccessBlock file target pairs = RBHead header [RBLines $ map (uncurry versionLine) pairs] where
   header = "-- " <> fromString file <> " - " <> target_text
   target_text = case target of
