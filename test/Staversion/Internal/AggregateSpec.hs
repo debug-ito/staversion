@@ -2,13 +2,16 @@ module Staversion.Internal.AggregateSpec (main,spec) where
 
 import Data.List (isInfixOf)
 import Data.List.NonEmpty (NonEmpty(..))
+import qualified Data.List.NonEmpty as NL
+import Data.Monoid (All(..))
 import qualified Distribution.Version as V
 import Test.Hspec
 
 import Staversion.Internal.Aggregate
   ( showVersionRange,
     aggOr,
-    aggregateResults
+    aggregateResults,
+    aggregatePackageVersions
   )
 import Staversion.Internal.Log (LogEntry(..), LogLevel(..))
 import Staversion.Internal.Query (Resolver, PackageSource(..), Query(..), PackageName)
@@ -24,6 +27,7 @@ main = hspec spec
 
 spec :: Spec
 spec = do
+  spec_aggregatePackageVersions
   spec_aggregateResults
   describe "Aggregators" $ do
     spec_or
@@ -116,6 +120,12 @@ spec_aggregateResults = before_ pending $ describe "aggregateResults" $ do
 
   it "should produce no AggregatedResult for groups in which all Results are Left" $ do
     True `shouldBe` False
+  it "should return error if SimpleResultBody and CabalResultBody are mixed." $ do
+    True `shouldBe` False
+  it "should group CabalResultBody based on Target" $ do
+    True `shouldBe` False
+  it "should be ok if source set are inconsistent between different Target for CabalResultBody" $ do
+    True `shouldBe` False
 
 rsource :: Resolver -> ResultSource
 rsource res = ResultSource { resultSourceQueried = psource,
@@ -136,4 +146,47 @@ matchLog exp_level exp_msg_part entry = (logLevel entry == exp_level)
                                         && (exp_msg_part `isInfixOf` logMessage entry)
 
 matchLogCount :: LogLevel -> String -> [LogEntry] -> Int
-matchLogCount exp_level exp_msg_part = length . filter (matchLog exp_level exp_msg_part)
+matchLogCount exp_level exp_msg_part = matchesLogCount exp_level [exp_msg_part]
+
+matchesLogCount :: LogLevel -> [String] -> [LogEntry] -> Int
+matchesLogCount exp_level exp_msg_parts = length . filter predicate where
+  predicate entry = getAll $ mconcat $ map (\exp_msg_part -> All $ matchLog exp_level exp_msg_part entry) exp_msg_parts
+
+seqLabels :: NonEmpty a -> NonEmpty (String, a)
+seqLabels = NL.zip labels where
+  labels = NL.fromList $ map (\n -> "ENTRY" ++ show n) ([0..] :: [Int])
+
+spec_aggregatePackageVersions :: Spec
+spec_aggregatePackageVersions = describe "aggregatePackageVersions" $ do
+  it "should accept an empty map" $ do
+    let got = aggregatePackageVersions aggOr $ seqLabels ([] :| [[], []])
+    got `shouldBe` (Just [], [])
+  it "should aggregate package version maps" $ do
+    let input = [("foo", Just $ ver [1,0]),
+                 ("bar", Just $ ver [1,2,3]),
+                 ("buzz", Just $ ver [2,0,5])
+                ]
+                :| [ [ ("foo", Just $ ver [2,0]),
+                       ("bar", Just $ ver [1,0,0,2]),
+                       ("buzz", Just $ ver [2,1])
+                     ],
+                     [ ("foo", Just $ ver [3,0]),
+                       ("bar", Just $ ver [0,0,4]),
+                       ("buzz", Just $ ver [2,2,0,10])
+                     ]
+                   ]
+        expected = [ ("foo", Just $ vors [[1,0], [2,0], [3,0]]),
+                     ("bar", Just $ vors [[1,2,3], [1,0,0,2], [0,0,4]]),
+                     ("buzz", Just $ vors [[2,0,5], [2,1], [2,2,0,10]])
+                   ]
+    aggregatePackageVersions aggOr (seqLabels input) `shouldBe` (Just expected, [])
+  it "should warn about Nothing version" $ do
+    let input = [("foo", Nothing)]
+                :| [ [("foo", Just $ ver [1,0])],
+                     [("foo", Just $ ver [2,0])]
+                   ]
+        (got, got_logs) = aggregatePackageVersions aggOr $ seqLabels input
+    got `shouldBe` Just ([("foo", Just $ vors [[1,0], [2,0]])])
+    length got_logs `shouldBe` 1
+    matchesLogCount LogWarn ["foo", "ENTRY0", "missing"] got_logs `shouldBe` 1
+

@@ -5,11 +5,15 @@
 --
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.Aggregate
-       ( Aggregator,
-         VersionRange,
+       ( -- * Top-level function
          aggregateResults,
+         -- * Aggregators
+         Aggregator,
+         VersionRange,
          showVersionRange,
-         aggOr
+         aggOr,
+         -- * Low-level functions
+         aggregatePackageVersions
        ) where
 
 import Data.List.NonEmpty (NonEmpty(..))
@@ -20,6 +24,7 @@ import qualified Distribution.Version as V
 import qualified Distribution.Text as DT
 import qualified Text.PrettyPrint as Pretty
 
+import Staversion.Internal.Query (PackageName)
 import Staversion.Internal.Log (LogEntry)
 import Staversion.Internal.Result (Result, AggregatedResult)
 
@@ -43,4 +48,19 @@ aggOr vs = foldr f (V.thisVersion $ NL.last svs) $ NL.init svs where
 -- also returns a list of 'LogEntry's to report warnings and errors.
 aggregateResults :: Aggregator -> [Result] -> ([AggregatedResult], [LogEntry])
 aggregateResults = undefined
+
+-- | Aggregate one or more maps between 'PackageName' and 'Version'.
+--
+-- The input 'Maybe' 'Version's should all be 'Just'. 'Nothing' version
+-- is warned and ignored. If the input versions are all 'Nothing', the
+-- result version range is 'Nothing'.
+--
+-- The 'PackageName' lists in the input must be consistent (i.e. they
+-- all must be the same list.) If not, it returns 'Nothing' map and an
+-- error is logged.
+aggregatePackageVersions :: Aggregator
+                         -> NonEmpty (String, [(PackageName, Maybe Version)])
+                         -- ^ (@label@, @version map@). @label@ is used for error logs.
+                         -> (Maybe [(PackageName, Maybe VersionRange)], [LogEntry])
+aggregatePackageVersions = undefined
 
