@@ -34,6 +34,7 @@ data ResultSource =
                  -- ^ the real (exact) 'PackageSource' resolved.
                } deriving (Show,Eq,Ord)
 
+-- | For backward-compatibility.
 type ResultBody = ResultBody' (Maybe Version)
 
 data ResultBody' a = SimpleResultBody PackageName a
