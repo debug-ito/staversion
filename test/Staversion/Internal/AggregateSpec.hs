@@ -179,7 +179,7 @@ spec_aggregatePackageVersions = describe "aggregatePackageVersions" $ do
                      ]
                    ]
         expected = [ ("foo", Just $ vors [[1,0], [2,0], [3,0]]),
-                     ("bar", Just $ vors [[1,2,3], [1,0,0,2], [0,0,4]]),
+                     ("bar", Just $ vors [[0,0,4], [1,0,0,2], [1,2,3]]),
                      ("buzz", Just $ vors [[2,0,5], [2,1], [2,2,0,10]])
                    ]
     aggregatePackageVersions aggOr (seqLabels input) `shouldBe` (Just expected, [])
