@@ -16,12 +16,13 @@ import Staversion.Internal.Aggregate
   )
 import Staversion.Internal.Log (LogEntry(..), LogLevel(..))
 import Staversion.Internal.Query (Resolver, PackageSource(..), Query(..), PackageName)
+import Staversion.Internal.Cabal (Target(..))
 import Staversion.Internal.Result
   ( Result(..), ResultSource(..), AggregatedResult(..),
     ResultBody'(..),
     singletonResult
   )
-import Staversion.Internal.TestUtil (ver, simpleResultBody)
+import Staversion.Internal.TestUtil (ver, simpleResultBody, verPairs)
 
 main :: IO ()
 main = hspec spec
@@ -76,7 +77,7 @@ vors [v] = vthis v
 vors (v:rest) = vor (vthis v) $ vors rest
 
 spec_aggregateResults :: Spec
-spec_aggregateResults = before_ pending $ describe "aggregateResults" $ do
+spec_aggregateResults = describe "aggregateResults" $ do
   it "should return empty for empty input" $ do
     let (agg_ret, _) = aggregateResults aggOr []
     agg_ret `shouldBe` []
@@ -119,14 +120,72 @@ spec_aggregateResults = before_ pending $ describe "aggregateResults" $ do
     got `shouldBe` [expected]
     (matchLogCount LogWarn "SOME ERROR" got_logs) `shouldBe` 1
 
-  it "should produce no AggregatedResult for groups in which all Results are Left" $ do
-    True `shouldBe` False
-  it "should return error if SimpleResultBody and CabalResultBody are mixed." $ do
-    True `shouldBe` False
+  it "should produce no AggregatedResult with Nothing version-range for groups in which all Results are Left" $ do
+    let input = [ simpleResult "lts-5.0" "hoge" [1,0],
+                  (simpleResult "lts-5.0" "foo" []) { resultBody = Left "SOME ERROR"
+                                                    },
+                  simpleResult "lts-6.0" "hoge" [2,0]
+                ]
+        expected = [ AggregatedResult { aggResultIn = rsource "lts-5.0" :| [rsource "lts-6.0"],
+                                        aggResultFor = QueryName "hoge",
+                                        aggResultBody = Right $ SimpleResultBody "hoge"
+                                                        $ Just $ vors [[1,0], [2,0]]
+                                      },
+                     AggregatedResult { aggResultIn = rsource "lts-5.0" :| [],
+                                        aggResultFor = QueryName "foo",
+                                        aggResultBody = Right $ SimpleResultBody "foo" $ Nothing
+                                      }
+                   ]
+        (got, got_logs) = aggregateResults aggOr input
+    got `shouldBe` expected
+    (matchLogCount LogWarn "SOME ERROR" got_logs) `shouldBe` 1
+  it "should return error if SimpleResultBody and CabalResultBody are mixed in the same resultFor." $ do
+    let input = [ simpleResult "lts-5.0" "hoge" [1,0],
+                  (cabalResult "lts-5.0" "foo.cabal" TargetLibrary [("foo", [1,0])])
+                    { resultFor = QueryName "hoge"
+                    }
+                ]
+        (got, got_logs) = aggregateResults aggOr input
+    got `shouldBe` []
+    (matchesLogCount LogError ["different", "results", "mixed"] got_logs) `shouldBe` 1
   it "should group CabalResultBody based on Target" $ do
-    True `shouldBe` False
+    let input = [ cabalResult "lts-5.0" "foo.cabal" TargetLibrary [("a", [1,0]), ("b", [0,0,1])],
+                  cabalResult "lts-5.0" "foo.cabal" (TargetExecutable "exe") [("c", [10,5,6]), ("d", [3,4])],
+                  cabalResult "lts-6.0" "foo.cabal" TargetLibrary [("a", [2,0]), ("b", [0,0,1])],
+                  cabalResult "lts-6.0" "foo.cabal" (TargetExecutable "exe") [("c", [8,0]), ("d", [3,3,9])]
+                ]
+        expected = [ AggregatedResult { aggResultIn = rsource "lts-5.0" :| [rsource "lts-6.0"],
+                                        aggResultFor = QueryCabalFile "foo.cabal",
+                                        aggResultBody = Right $ CabalResultBody "foo.cabal" TargetLibrary
+                                                        $ [("a", Just $ vors [[1,0], [2,0]]), ("b", Just $ vors [[0,0,1]])]
+                                      },
+                     AggregatedResult { aggResultIn = rsource "lts-5.0" :| [rsource "lts-6.0"],
+                                        aggResultFor = QueryCabalFile "foo.cabal",
+                                        aggResultBody = Right $ CabalResultBody "foo.cabal" (TargetExecutable "exef")
+                                                        $ [("c", Just $ vors [[8,0], [10,5,6]]), ("d", Just $ vors [[3,3,9], [3,4]])]
+                                      }
+                   ]
+        (got, got_logs) = aggregateResults aggOr input
+    got `shouldBe` expected
+    got_logs `shouldBe` []
   it "should be ok if source set are inconsistent between different Target for CabalResultBody" $ do
-    True `shouldBe` False
+    let input = [ cabalResult "lts-5.0" "foo.cabal" TargetLibrary [("a", [1,0]), ("b", [1,1,0])],
+                  cabalResult "lts-6.0" "foo.cabal" (TargetTestSuite "tst") [("a", [2,2,0]), ("c", [10,4,0,1])]
+                ]
+        expected = [ AggregatedResult { aggResultIn = rsource "lts-5.0" :| [],
+                                        aggResultFor = QueryCabalFile "foo.cabal",
+                                        aggResultBody = Right $ CabalResultBody "foo.cabal" TargetLibrary
+                                                        $ [("a", Just $ vors [[1,0]]), ("b", Just $ vors [[1,1,0]])]
+                                      },
+                     AggregatedResult { aggResultIn = rsource "lts-6.0" :| [],
+                                        aggResultFor = QueryCabalFile "foo.cabal",
+                                        aggResultBody = Right $ CabalResultBody "foo.cabal" (TargetExecutable "tst")
+                                                        $ [("a", Just $ vors [[2,2,0]]), ("c", Just $ vors [[10,4,0,1]])]
+                                      }
+                   ]
+        (got, got_logs) = aggregateResults aggOr input
+    got `shouldBe` expected
+    got_logs `shouldBe` []
 
 rsource :: Resolver -> ResultSource
 rsource res = ResultSource { resultSourceQueried = psource,
@@ -140,6 +199,13 @@ simpleResult resolver pname version =
   Result { resultIn = rsource resolver,
            resultFor = QueryName pname,
            resultBody = Right $ simpleResultBody pname version
+         }
+
+cabalResult :: Resolver -> FilePath -> Target -> [(PackageName, [Int])] -> Result
+cabalResult resolver cabal_file target pmap =
+  Result { resultIn = rsource resolver,
+           resultFor = QueryCabalFile cabal_file,
+           resultBody = Right $ CabalResultBody cabal_file target $ verPairs pmap
          }
 
 matchLog :: LogLevel -> String -> LogEntry -> Bool
