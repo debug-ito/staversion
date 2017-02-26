@@ -16,6 +16,12 @@ module Staversion.Internal.Aggregate
          aggregatePackageVersions
        ) where
 
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
+import qualified Control.Monad.Trans.State.Strict as State
+import Control.Monad (mzero)
+import Data.Foldable (foldrM)
+import Data.List (lookup)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
 import Data.Version (Version)
@@ -25,7 +31,7 @@ import qualified Distribution.Text as DT
 import qualified Text.PrettyPrint as Pretty
 
 import Staversion.Internal.Query (PackageName)
-import Staversion.Internal.Log (LogEntry)
+import Staversion.Internal.Log (LogEntry(..), LogLevel(..))
 import Staversion.Internal.Result (Result, AggregatedResult)
 
 -- | Aggregate some 'Version's into a 'VersionRange'.
@@ -62,5 +68,45 @@ aggregatePackageVersions :: Aggregator
                          -> NonEmpty (String, [(PackageName, Maybe Version)])
                          -- ^ (@label@, @version map@). @label@ is used for error logs.
                          -> (Maybe [(PackageName, Maybe VersionRange)], [LogEntry])
-aggregatePackageVersions = undefined
+aggregatePackageVersions aggregate pmaps = runAggM impl where
+  impl = do
+    ref_plist <- consistentPackageList $ NL.map (\(label, pmap) -> map fst pmap) $ pmaps
+    fmap (zip ref_plist) $ (fmap . fmap . fmap) aggregate $ mapM (collectJustVersions pmaps) ref_plist
 
+-- | Aggregateion monad
+type AggM = MaybeT (State.State [LogEntry])
+
+runAggM :: AggM a -> (Maybe a, [LogEntry])
+runAggM = reverseLogs . flip State.runState [] . runMaybeT where
+  reverseLogs (ret, logs) = (ret, reverse logs)
+
+warn :: String -> AggM ()
+warn msg = lift $ State.modify (entry :) where
+  entry = LogEntry { logLevel = LogWarn,
+                     logMessage = msg
+                   }
+
+bailWithError :: String -> AggM a
+bailWithError err_msg = (lift $ State.modify (entry :)) >> mzero where
+  entry = LogEntry { logLevel = LogError,
+                     logMessage = err_msg
+                   }
+
+consistentPackageList :: NonEmpty [PackageName] -> AggM [PackageName]
+consistentPackageList (ref_list :| rest) = mapM_ check rest >> return ref_list where
+  check cur_list = if cur_list == ref_list
+                   then return ()
+                   else bailWithError ( "package lists are inconsistent:"
+                                        ++ " reference list: " ++ show ref_list
+                                        ++ ", inconsitent list: " ++ show cur_list
+                                      )
+
+collectJustVersions :: NonEmpty (String, [(PackageName, Maybe Version)])
+                    -> PackageName
+                    -> AggM (Maybe (NonEmpty Version))
+collectJustVersions pmaps pname = fmap toNonEmpty $ foldrM f [] pmaps where
+  f (label, pmap) acc = case lookup pname pmap of
+                         Just (Just v) -> return (v : acc)
+                         _ -> warn ("missing version: " ++ label) >> return acc
+  toNonEmpty [] = Nothing
+  toNonEmpty (h : rest) = Just $ h :| rest
