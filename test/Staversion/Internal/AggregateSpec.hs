@@ -1,5 +1,6 @@
 module Staversion.Internal.AggregateSpec (main,spec) where
 
+import Data.Char (toLower)
 import Data.List (isInfixOf)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
@@ -143,7 +144,9 @@ simpleResult resolver pname version =
 
 matchLog :: LogLevel -> String -> LogEntry -> Bool
 matchLog exp_level exp_msg_part entry = (logLevel entry == exp_level)
-                                        && (exp_msg_part `isInfixOf` logMessage entry)
+                                        && (lc exp_msg_part `isInfixOf` (lc $ logMessage entry))
+  where
+    lc = map toLower
 
 matchLogCount :: LogLevel -> String -> [LogEntry] -> Int
 matchLogCount exp_level exp_msg_part = matchesLogCount exp_level [exp_msg_part]
@@ -189,4 +192,20 @@ spec_aggregatePackageVersions = describe "aggregatePackageVersions" $ do
     got `shouldBe` Just ([("foo", Just $ vors [[1,0], [2,0]])])
     length got_logs `shouldBe` 1
     matchesLogCount LogWarn ["foo", "ENTRY0", "missing"] got_logs `shouldBe` 1
-
+  it "should return Nothing VersionRange if all versions are Nothing" $ do
+    let input = [("foo", Nothing)]
+                :| [ [("foo", Nothing)],
+                     [("foo", Nothing)]
+                   ]
+        (got, got_logs) = aggregatePackageVersions aggOr $ seqLabels input
+    got `shouldBe` Just ([("foo", Nothing)])
+    matchesLogCount LogWarn ["foo", "missing"] got_logs `shouldBe` 3
+  it "should be an error if package lists are inconsistent" $ do
+    let input = [("foo", Just $ ver [1,0])]
+                :| [ [("foo", Just $ ver [2,0])],
+                     [("bar", Just $ ver [3,0])]
+                   ]
+        (got, got_logs) = aggregatePackageVersions aggOr $ seqLabels input
+    got `shouldBe` Nothing
+    length got_logs `shouldBe` 1
+    matchesLogCount LogError ["inconsistent", "package list"] got_logs `shouldBe` 1
