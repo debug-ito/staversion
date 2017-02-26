@@ -70,7 +70,7 @@ aggregatePackageVersions :: Aggregator
                          -> (Maybe [(PackageName, Maybe VersionRange)], [LogEntry])
 aggregatePackageVersions aggregate pmaps = runAggM impl where
   impl = do
-    ref_plist <- consistentPackageList $ NL.map (\(label, pmap) -> map fst pmap) $ pmaps
+    ref_plist <- consistentPackageList $ NL.map (\(_, pmap) -> map fst pmap) $ pmaps
     fmap (zip ref_plist) $ (fmap . fmap . fmap) aggregate $ mapM (collectJustVersions pmaps) ref_plist
 
 -- | Aggregateion monad
@@ -107,6 +107,7 @@ collectJustVersions :: NonEmpty (String, [(PackageName, Maybe Version)])
 collectJustVersions pmaps pname = fmap toNonEmpty $ foldrM f [] pmaps where
   f (label, pmap) acc = case lookup pname pmap of
                          Just (Just v) -> return (v : acc)
-                         _ -> warn ("missing version: " ++ label) >> return acc
+                         _ -> warn ("missing version for package "
+                                    ++ show pname ++ ": " ++ label) >> return acc
   toNonEmpty [] = Nothing
   toNonEmpty (h : rest) = Just $ h :| rest
