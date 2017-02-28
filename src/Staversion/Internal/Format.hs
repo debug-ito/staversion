@@ -19,14 +19,14 @@ import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
 import Distribution.Version (VersionRange)
 
-import Staversion.Internal.Aggregate (Aggregator, showVersionRange)
+import Staversion.Internal.Aggregate (Aggregator, showVersionRange, groupAllPreservingOrderBy)
 import Staversion.Internal.Query
   ( Query(..),
     sourceDesc,
     PackageName
   )
 import Staversion.Internal.Result
-  ( Result(..), ResultBody'(..), ResultSource(..),
+  ( Result(..), ResultBody'(..), ResultSource(..), resultSourceDesc,
     AggregatedResult(..), singletonResult
   )
 import Staversion.Internal.Cabal (Target(..))
@@ -40,18 +40,6 @@ formatResultsCabal = toLazyText . mconcat . map formatResultBlock
 -- .cabal files.
 formatResultsCabalAggregated :: Aggregator -> [Result] -> TL.Text
 formatResultsCabalAggregated = undefined
-
-groupAllPreservingOrderBy :: (a -> a -> Bool)
-                             -- ^ The comparator that determines if the two elements are in the same group.
-                             -- This comparator must be transitive, like '(==)'.
-                          -> [a] -> [NonEmpty a]
-groupAllPreservingOrderBy sameGroup = foldr f [] where
-  f item acc = update [] acc where
-    update heads [] = (item :| []) : heads
-    update heads (cur@(cur_head :| cur_rest) : rest) =
-      if sameGroup item cur_head
-      then ((item :| (cur_head : cur_rest)) : heads) ++ rest 
-      else update (heads ++ [cur]) rest
 
 -- | 'Left' lines and 'Right' lines are handled differently by
 -- 'formatResultBlock'. It puts commas at the right places assuming
@@ -67,11 +55,7 @@ makeSourceBlocks = map sourceBlock . groupAllPreservingOrderBy ((==) `on` aggRes
     header = "------ " <> (fold $ fmap sourceHeader $ aggResultIn head_ret)
 
 sourceHeader :: ResultSource -> Builder
-sourceHeader src = query_source <> real_source where
-  query_source = fromText $ sourceDesc $ resultSourceQueried $ src
-  real_source = case resultSourceReal src of
-    Nothing -> ""
-    Just real_psource -> " (" <> (fromText $ sourceDesc real_psource) <> ")"
+sourceHeader = fromText . resultSourceDesc
 
 makeQueryBlocks :: [AggregatedResult] -> [ResultBlock]
 makeQueryBlocks = uncurry prependLines . foldr f ([], []) where
