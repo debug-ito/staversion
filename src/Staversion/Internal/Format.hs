@@ -19,7 +19,10 @@ import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
 import Distribution.Version (VersionRange)
 
-import Staversion.Internal.Aggregate (Aggregator, showVersionRange, groupAllPreservingOrderBy)
+import Staversion.Internal.Aggregate
+  ( Aggregator, showVersionRange, groupAllPreservingOrderBy,
+    aggregateResults
+  )
 import Staversion.Internal.Query
   ( Query(..),
     sourceDesc,
@@ -34,13 +37,13 @@ import Staversion.Internal.Log (LogEntry)
 
 -- | format 'Result's like it's in build-depends in .cabal files.
 formatResultsCabal :: [Result] -> TL.Text
-formatResultsCabal = toLazyText . mconcat . map formatResultBlock
-                     . makeSourceBlocks . map singletonResult
+formatResultsCabal = formatAggregatedResults . map singletonResult
 
 -- | aggregate 'Result's and format them like it's in build-depends in
 -- .cabal files.
 formatResultsCabalAggregated :: Aggregator -> [Result] -> (TL.Text, [LogEntry])
-formatResultsCabalAggregated = undefined
+formatResultsCabalAggregated aggregator = (\(aggs, logs) -> (formatAggregatedResults aggs, logs))
+                                          . aggregateResults aggregator
 
 -- | 'Left' lines and 'Right' lines are handled differently by
 -- 'formatResultBlock'. It puts commas at the right places assuming
@@ -50,10 +53,13 @@ type ResultLine = Either Builder Builder
 data ResultBlock = RBHead Builder [ResultBlock] -- ^ header and child blocks
                  | RBLines [ResultLine] -- ^ a block, which consists of some lines.
 
+formatAggregatedResults :: [AggregatedResult] -> TL.Text
+formatAggregatedResults = toLazyText . mconcat . map formatResultBlock . makeSourceBlocks
+
 makeSourceBlocks :: [AggregatedResult] -> [ResultBlock]
 makeSourceBlocks = map sourceBlock . groupAllPreservingOrderBy ((==) `on` aggResultIn) where
   sourceBlock results@(head_ret :| _) = RBHead header $ makeQueryBlocks $ NL.toList results where
-    header = "------ " <> (fold $ fmap sourceHeader $ aggResultIn head_ret)
+    header = "------ " <> (fold $ NL.intersperse ", " $ fmap sourceHeader $ aggResultIn head_ret)
 
 sourceHeader :: ResultSource -> Builder
 sourceHeader = fromText . resultSourceDesc
