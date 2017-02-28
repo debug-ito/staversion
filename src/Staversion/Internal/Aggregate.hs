@@ -30,6 +30,7 @@ import Data.List (lookup)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
 import Data.Text (unpack)
+import Data.Traversable (traverse)
 import Data.Version (Version)
 import Distribution.Version (VersionRange)
 import qualified Distribution.Version as V
