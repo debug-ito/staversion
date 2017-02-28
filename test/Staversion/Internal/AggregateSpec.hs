@@ -165,7 +165,7 @@ spec_aggregateResults = describe "aggregateResults" $ do
                                       },
                      AggregatedResult { aggResultIn = rsource "lts-5.0" :| [rsource "lts-6.0"],
                                         aggResultFor = QueryCabalFile "foo.cabal",
-                                        aggResultBody = Right $ CabalResultBody "foo.cabal" (TargetExecutable "exef")
+                                        aggResultBody = Right $ CabalResultBody "foo.cabal" (TargetExecutable "exe")
                                                         $ [("c", Just $ vors [[8,0], [10,5,6]]), ("d", Just $ vors [[3,3,9], [3,4]])]
                                       }
                    ]

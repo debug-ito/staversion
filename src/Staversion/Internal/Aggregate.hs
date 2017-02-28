@@ -25,6 +25,7 @@ import Control.Monad (mzero, forM_)
 import Control.Applicative ((<$>), (<|>))
 import Data.Foldable (foldrM)
 import Data.Function (on)
+import Data.Monoid (mconcat, All(All))
 import Data.List (lookup)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
@@ -98,13 +99,16 @@ aggregateInSameQuery aggregate results = impl where
       aggregateRights (right_head :| right_rest)
   warnLefts lefts = forM_ lefts $ \(left_ret, left_err) -> do
     warn ("Error for " ++ makeLabel left_ret ++ ": " ++ left_err)
-  aggregateRights rights = do
-    let right_bodies = fmap (\(ret, body) -> (makeLabel ret, body)) rights
-        agg_source = fmap (\(ret, _) -> resultIn ret) rights
-    range_bodies <- aggregateBodies aggregate right_bodies
-    return $ fmap (makeAggregatedResult agg_source) range_bodies
   makeLabel r = "Result in " ++ (unpack $ resultSourceDesc $ resultIn r)
                 ++ ", for " ++ (show $ resultFor r)
+  aggregateRights rights = do
+    checkConsistentBodies $ fmap snd rights
+    right_groups <- toNonEmpty $ groupAllPreservingOrderBy (isSameBodyGroup `on` snd) $ NL.toList rights
+    traverse aggregateGroup right_groups
+  aggregateGroup group = do
+    let agg_source = fmap (\(ret, _) -> resultIn ret) group
+    range_body <- aggregateGroupedBodies aggregate $ fmap (\(result, body) -> (makeLabel result, body)) $ group
+    return $ makeAggregatedResult agg_source range_body
   makeAggregatedResult agg_source range_body =
     AggregatedResult { aggResultIn = agg_source,
                        aggResultFor = resultFor $ NL.head results,
@@ -117,39 +121,39 @@ partitionResults = foldr f ([], []) where
     Left err -> ((ret, err) : lefts, rights)
     Right body -> (lefts, (ret, body) : rights)
 
-aggregateBodies :: Aggregator
-                -> NonEmpty (String, ResultBody' (Maybe Version))
-                -> AggM (NonEmpty (ResultBody' (Maybe VersionRange)))
-aggregateBodies aggregate ver_bodies = case NL.head ver_bodies of
-  (_, SimpleResultBody _ _) -> doSimple
-  (_, CabalResultBody _ _ _) -> doCabal
+checkConsistentBodies :: NonEmpty ResultBody -> AggM ()
+checkConsistentBodies bodies = case bodies of
+  (SimpleResultBody _ _ :| rest) -> expectTrue $ mconcat $ map (All . isSimple) rest
+  (CabalResultBody _ _ _ :| rest) -> expectTrue $ mconcat $ map (All . isCabal) rest
   where
-    doSimple = do
-      labeled_pmaps <- traverse (\(label, body) -> (,) label <$> pmapSimple body) ver_bodies
-      range_pmap <- aggregatePackageVersionsM aggregate labeled_pmaps
-      case range_pmap of
-       [(pname, range)] -> return $ SimpleResultBody pname range :| []
-       _ -> bailWithError "Fatal: aggregatePackageVersionsM somehow lost SimpleResultBody package pairs."
-    doCabal = do
-      let labeledCabal (label, body) = (\(fp,t,pmap) -> (labelWithTarget t label,fp,t,pmap)) <$> pmapCabal body
-          -- labeledCabal extracts data from CabalResultBody data constructor.
-          labelWithTarget target orig_label = orig_label ++ " target = " ++ show target
-          getTarget (_,_,t,_) = t
-          aggregateInTargetGroup group@((_, fp, t, _) :| _) =
-            fmap (CabalResultBody fp t) $ aggregatePackageVersionsM aggregate $ fmap (\(label, _, _, pmap) -> (label, pmap)) group
-      labeled_cabal_groups <- (toNonEmpty . groupAllPreservingOrderBy ((==) `on` getTarget)) =<< (mapM labeledCabal $ NL.toList ver_bodies)
-      traverse aggregateInTargetGroup labeled_cabal_groups
+    isSimple (SimpleResultBody _ _) = True
+    isSimple _ = False
+    isCabal (CabalResultBody _ _ _) = True
+    isCabal _ = False
+    expectTrue (All True) = return ()
+    expectTrue _ = bailWithError "different types of results are mixed."
 
-inconsistentBodiesError :: AggM a
-inconsistentBodiesError = bailWithError "different types of results are mixed."
+isSameBodyGroup :: ResultBody' a -> ResultBody' a -> Bool
+isSameBodyGroup (SimpleResultBody _ _) (SimpleResultBody _ _) = True
+isSameBodyGroup (CabalResultBody fp_a t_a _) (CabalResultBody fp_b t_b _) = (fp_a == fp_b) && (t_a == t_b)
+isSameBodyGroup _ _ = False
 
-pmapSimple :: ResultBody' a -> AggM [(PackageName, a)]
-pmapSimple (SimpleResultBody pname val) = return [(pname, val)]
-pmapSimple _ = inconsistentBodiesError
+pmapInBody :: ResultBody' a -> [(PackageName, a)]
+pmapInBody (SimpleResultBody pname val) = [(pname, val)]
+pmapInBody (CabalResultBody _ _ pmap) = pmap
 
-pmapCabal :: ResultBody' a -> AggM (FilePath, Target, [(PackageName, a)])
-pmapCabal (CabalResultBody fp t pmap) = return (fp, t, pmap)
-pmapCabal _ = inconsistentBodiesError
+aggregateGroupedBodies :: Aggregator
+                       -> NonEmpty (String, ResultBody' (Maybe Version))
+                       -> AggM (ResultBody' (Maybe VersionRange))
+aggregateGroupedBodies aggregate ver_bodies =
+  makeBody =<< (aggregatePackageVersionsM aggregate $ fmap toPmap $ ver_bodies)
+  where
+    toPmap (label, body) = (label, pmapInBody body)
+    makeBody range_pmap = case NL.head ver_bodies of
+      (_, SimpleResultBody _ _) -> case range_pmap of
+        [(pname, vrange)] -> return $ SimpleResultBody pname vrange
+        _ -> bailWithError "Fatal: aggregateGroupedBodies somehow lost SimpleResultBody package pairs."
+      (_, CabalResultBody fp target _) -> return $ CabalResultBody fp target range_pmap
 
 toNonEmpty :: [a] -> AggM (NonEmpty a)
 toNonEmpty [] = mzero
