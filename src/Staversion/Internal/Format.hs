@@ -30,6 +30,7 @@ import Staversion.Internal.Result
     AggregatedResult(..), singletonResult
   )
 import Staversion.Internal.Cabal (Target(..))
+import Staversion.Internal.Log (LogEntry)
 
 -- | format 'Result's like it's in build-depends in .cabal files.
 formatResultsCabal :: [Result] -> TL.Text
@@ -38,7 +39,7 @@ formatResultsCabal = toLazyText . mconcat . map formatResultBlock
 
 -- | aggregate 'Result's and format them like it's in build-depends in
 -- .cabal files.
-formatResultsCabalAggregated :: Aggregator -> [Result] -> TL.Text
+formatResultsCabalAggregated :: Aggregator -> [Result] -> (TL.Text, [LogEntry])
 formatResultsCabalAggregated = undefined
 
 -- | 'Left' lines and 'Right' lines are handled differently by

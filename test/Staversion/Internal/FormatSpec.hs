@@ -230,8 +230,7 @@ spec_aggregate = describe "formatResultsCabalAggregated" $ do
                      <> "hoge ==1.2.3 || ==1.5\n"
                      <> "\n"
                    )
-    pending
-    formatResultsCabalAggregated aggOr input `shouldBe` expected
+    formatResultsCabalAggregated aggOr input `shouldBe` (expected, [])
   it "should show resultReallyIn in the header" $ do
     let input = [ setRealSource "lts-4.22" $ simpleResult "lts-4" "foobar" [2,3],
                   hackageResult "foobar" [2,3,10],
@@ -241,8 +240,7 @@ spec_aggregate = describe "formatResultsCabalAggregated" $ do
                      <> "foobar ==2.3 || ==2.3.4 || ==2.3.10\n"
                      <> "\n"
                    )
-    pending
-    formatResultsCabalAggregated aggOr input `shouldBe` expected
+    formatResultsCabalAggregated aggOr input `shouldBe` (expected, [])
 
 simpleResult :: Resolver -> PackageName -> [Int] -> Result
 simpleResult res name vs = Result { resultIn = ResultSource (SourceStackage res) Nothing,

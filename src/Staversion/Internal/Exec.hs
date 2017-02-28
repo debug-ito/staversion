@@ -12,6 +12,7 @@ module Staversion.Internal.Exec
        ) where
 
 import Control.Applicative ((<$>))
+import Control.Monad (mapM_)
 import Data.Function (on)
 import Data.List (groupBy, nub)
 import Data.Text (unpack)
@@ -27,7 +28,7 @@ import Staversion.Internal.Command
     Command(..)
   )
 import qualified Staversion.Internal.Format as Format
-import Staversion.Internal.Log (logDebug, logError, Logger)
+import Staversion.Internal.Log (logDebug, logError, Logger, putLogEntry)
 import Staversion.Internal.Query
   ( Query(..), PackageSource(..), PackageName, ErrorMsg
   )
@@ -37,10 +38,14 @@ import Staversion.Internal.Cabal (BuildDepends(..), loadCabalFile)
 main :: IO ()
 main = do
   comm <- parseCommandArgs
-  (TLIO.putStr . formatResults comm) =<< (processCommand comm)
+  (showFormatResult comm . formatResults comm) =<< (processCommand comm)
   where
-    formatResults comm = maybe Format.formatResultsCabal (\agg -> Format.formatResultsCabalAggregated agg)
+    formatResults comm = maybe ((\txt -> (txt, [])) . Format.formatResultsCabal)
+                               (\agg -> Format.formatResultsCabalAggregated agg)
                          $ commAggregator comm
+    showFormatResult comm (formatted, logs) = do
+      mapM_ (putLogEntry $ commLogger comm) logs
+      TLIO.putStr formatted
 
 data ResolvedQuery = RQueryOne Query PackageName
                    | RQueryCabal Query FilePath BuildDepends

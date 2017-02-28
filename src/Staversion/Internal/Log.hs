@@ -10,6 +10,7 @@ module Staversion.Internal.Log
          Logger(loggerThreshold),
          defaultLogger,
          putLog,
+         putLogEntry,
          logDebug,
          logInfo,
          logWarn,
@@ -56,6 +57,9 @@ putLog :: Logger -> LogLevel -> String -> IO ()
 putLog logger level raw_msg = when (fmap (level >=) mthreshold == Just True) $ loggerPutLogRaw logger level msg where
   mthreshold = loggerThreshold logger
   msg = toLabel level ++ " " ++ raw_msg
+
+putLogEntry :: Logger -> LogEntry -> IO ()
+putLogEntry logger entry = putLog logger (logLevel entry) (logMessage entry)
 
 logDebug :: Logger -> String -> IO ()
 logDebug = flip putLog $ LogDebug
