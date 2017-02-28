@@ -7,6 +7,7 @@
 module Staversion.Internal.Result
        ( Result(..),
          ResultSource(..),
+         resultSourceDesc,
          ResultBody,
          ResultBody'(..),
          AggregatedResult(..),
@@ -14,10 +15,13 @@ module Staversion.Internal.Result
        ) where
 
 import Data.List.NonEmpty (NonEmpty(..))
+import Data.Monoid ((<>))
+import Data.Text (Text)
 import Data.Version (Version)
 import Distribution.Version (VersionRange, thisVersion)
 import Staversion.Internal.Query
-  ( Query, PackageSource, ErrorMsg, PackageName
+  ( Query, PackageSource, ErrorMsg, PackageName,
+    sourceDesc
   )
 import Staversion.Internal.Cabal (Target)
 
@@ -33,6 +37,13 @@ data ResultSource =
                  resultSourceReal :: Maybe PackageSource
                  -- ^ the real (exact) 'PackageSource' resolved.
                } deriving (Show,Eq,Ord)
+
+resultSourceDesc :: ResultSource -> Text
+resultSourceDesc src = query_source <> real_source where
+  query_source = sourceDesc $ resultSourceQueried $ src
+  real_source = case resultSourceReal src of
+    Nothing -> ""
+    Just real_psource -> " (" <> sourceDesc real_psource <> ")"
 
 -- | For backward-compatibility.
 type ResultBody = ResultBody' (Maybe Version)
