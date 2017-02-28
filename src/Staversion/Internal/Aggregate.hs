@@ -86,17 +86,19 @@ aggregateResults aggregate = unMonad
 aggregateInSameQuery :: Aggregator -> NonEmpty Result -> AggM (NonEmpty AggregatedResult)
 aggregateInSameQuery aggregate results = impl where
   impl = do
-    range_bodies <- aggregateBodies aggregate =<< toNonEmpty =<< (fmap concat $ mapM getLabeledBody $ NL.toList results)
-    return $ fmap makeAggregatedResult range_bodies
+    right_bodies <- toNonEmpty =<< (fmap concat $ mapM getLabeledBody $ NL.toList results)
+    let agg_source = fmap (\(_,source,_) -> source) right_bodies
+    range_bodies <- aggregateBodies aggregate $ fmap (\(label,_,body) -> (label,body)) right_bodies
+    return $ fmap (makeAggregatedResult agg_source) range_bodies
   makeLabel r = "Result in " ++ (unpack $ resultSourceDesc $ resultIn r)
                 ++ ", for " ++ (show $ resultFor r)
   getLabeledBody r = case resultBody r of
-    Right rbody -> return [(makeLabel r, rbody)]
+    Right rbody -> return [(makeLabel r, resultIn r, rbody)]
     Left err -> do
       warn ("Error for " ++ makeLabel r ++ ": " ++ err)
       return []
-  makeAggregatedResult range_body =
-    AggregatedResult { aggResultIn = fmap resultIn results,
+  makeAggregatedResult agg_source range_body =
+    AggregatedResult { aggResultIn = agg_source,
                        aggResultFor = resultFor $ NL.head results,
                        aggResultBody = Right range_body
                      }
