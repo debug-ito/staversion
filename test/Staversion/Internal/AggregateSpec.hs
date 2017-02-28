@@ -120,25 +120,29 @@ spec_aggregateResults = describe "aggregateResults" $ do
     got `shouldBe` [expected]
     (matchLogCount LogWarn "SOME ERROR" got_logs) `shouldBe` 1
 
-  it "should produce no AggregatedResult with Nothing version-range for groups in which all Results are Left" $ do
+  it "should produce AggregatedResult with Left body for groups in which all Results are Left" $ do
     let input = [ simpleResult "lts-5.0" "hoge" [1,0],
                   (simpleResult "lts-5.0" "foo" []) { resultBody = Left "SOME ERROR"
                                                     },
-                  simpleResult "lts-6.0" "hoge" [2,0]
+                  simpleResult "lts-6.0" "hoge" [2,0],
+                  (simpleResult "lts-6.0" "foo" []) { resultBody = Left "SOME ANOTHER ERROR"
+                                                    }
                 ]
         expected = [ AggregatedResult { aggResultIn = rsource "lts-5.0" :| [rsource "lts-6.0"],
                                         aggResultFor = QueryName "hoge",
                                         aggResultBody = Right $ SimpleResultBody "hoge"
                                                         $ Just $ vors [[1,0], [2,0]]
                                       },
-                     AggregatedResult { aggResultIn = rsource "lts-5.0" :| [],
+                     AggregatedResult { aggResultIn = rsource "lts-5.0" :| [rsource "lts-6.0"],
                                         aggResultFor = QueryName "foo",
-                                        aggResultBody = Right $ SimpleResultBody "foo" $ Nothing
+                                        aggResultBody = Left "SOME ERROR"
                                       }
                    ]
         (got, got_logs) = aggregateResults aggOr input
     got `shouldBe` expected
+    length got_logs `shouldBe` 2
     (matchLogCount LogWarn "SOME ERROR" got_logs) `shouldBe` 1
+    (matchLogCount LogWarn "SOME ANOTHER ERROR" got_logs) `shouldBe` 1
   it "should return error if SimpleResultBody and CabalResultBody are mixed in the same resultFor." $ do
     let input = [ simpleResult "lts-5.0" "hoge" [1,0],
                   (cabalResult "lts-5.0" "foo.cabal" TargetLibrary [("foo", [1,0])])
