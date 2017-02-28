@@ -38,7 +38,7 @@ import qualified Text.PrettyPrint as Pretty
 import Staversion.Internal.Cabal (Target(..))
 import Staversion.Internal.Query (PackageName)
 import Staversion.Internal.Log (LogEntry(..), LogLevel(..))
-import Staversion.Internal.Result (Result(..), AggregatedResult, ResultBody'(..), resultSourceDesc)
+import Staversion.Internal.Result (Result(..), AggregatedResult(..), ResultBody'(..), resultSourceDesc)
 
 -- | Aggregate some 'Version's into a 'VersionRange'.
 type Aggregator = NonEmpty Version -> VersionRange
@@ -86,8 +86,8 @@ aggregateResults aggregate = unMonad
 aggregateInSameQuery :: Aggregator -> NonEmpty Result -> AggM (NonEmpty AggregatedResult)
 aggregateInSameQuery aggregate results = impl where
   impl = do
-    bodies <- toNonEmpty =<< (fmap concat $ mapM getLabeledBody $ NL.toList results)
-    undefined -- TODO
+    range_bodies <- aggregateBodies aggregate =<< toNonEmpty =<< (fmap concat $ mapM getLabeledBody $ NL.toList results)
+    return $ fmap makeAggregatedResult range_bodies
   makeLabel r = "Result in " ++ (unpack $ resultSourceDesc $ resultIn r)
                 ++ ", for " ++ (show $ resultFor r)
   getLabeledBody r = case resultBody r of
@@ -95,26 +95,34 @@ aggregateInSameQuery aggregate results = impl where
     Left err -> do
       warn ("Error for " ++ makeLabel r ++ ": " ++ err)
       return []
+  makeAggregatedResult range_body =
+    AggregatedResult { aggResultIn = fmap resultIn results,
+                       aggResultFor = resultFor $ NL.head results,
+                       aggResultBody = Right range_body
+                     }
 
 aggregateBodies :: Aggregator
                 -> NonEmpty (String, ResultBody' (Maybe Version))
                 -> AggM (NonEmpty (ResultBody' (Maybe VersionRange)))
-aggregateBodies aggregate ver_bodies = case NL.last ver_bodies of
-  (last_label, SimpleResultBody last_name last_val) -> doSimple last_label last_name last_val
+aggregateBodies aggregate ver_bodies = case NL.head ver_bodies of
+  (_, SimpleResultBody _ _) -> doSimple
   (_, CabalResultBody _ _ _) -> doCabal
   where
-    doSimple last_label last_name last_val = do
-      let f (label, body) acc = NL.cons <$> ((,) label <$> pmapSimple body) <*> pure acc
-      labeled_pmaps <- foldrM f ((last_label, [(last_name, last_val)]) :| []) $ NL.init ver_bodies
+    doSimple = do
+      labeled_pmaps <- traverse (\(label, body) -> (,) label <$> pmapSimple body) ver_bodies
       range_pmap <- aggregatePackageVersionsM aggregate labeled_pmaps
       case range_pmap of
        [(pname, range)] -> return $ SimpleResultBody pname range :| []
        _ -> bailWithError "Fatal: aggregatePackageVersionsM somehow lost SimpleResultBody package pairs."
     doCabal = do
-      let labeledCabal (label, body) = (\(fp,t,pmap) -> (label,fp,t,pmap)) <$> pmapCabal body
+      let labeledCabal (label, body) = (\(fp,t,pmap) -> (labelWithTarget t label,fp,t,pmap)) <$> pmapCabal body
+          -- labeledCabal extracts data from CabalResultBody data constructor.
+          labelWithTarget target orig_label = orig_label ++ " target = " ++ show target
           getTarget (_,_,t,_) = t
+          aggregateInTargetGroup group@((_, fp, t, _) :| _) =
+            fmap (CabalResultBody fp t) $ aggregatePackageVersionsM aggregate $ fmap (\(label, _, _, pmap) -> (label, pmap)) group
       labeled_cabal_groups <- (toNonEmpty . groupAllPreservingOrderBy ((==) `on` getTarget)) =<< (mapM labeledCabal $ NL.toList ver_bodies)
-      undefined -- TODO
+      traverse aggregateInTargetGroup labeled_cabal_groups
 
 inconsistentBodiesError :: AggM a
 inconsistentBodiesError = bailWithError "different types of results are mixed."
@@ -126,23 +134,6 @@ pmapSimple _ = inconsistentBodiesError
 pmapCabal :: ResultBody' a -> AggM (FilePath, Target, [(PackageName, a)])
 pmapCabal (CabalResultBody fp t pmap) = return (fp, t, pmap)
 pmapCabal _ = inconsistentBodiesError
-
--- -- | intermediate aggregation structure.
--- data AggregatedBody a = AggBodySimple (NonEmpty (PackageName, a))
---                       | AggBodyCabal FilePath Target (NonEmpty [(PackageName, a)])
--- 
--- aggregateBodies :: NonEmpty (ResultBody' a) -> AggM (NonEmpty (AggregatedBody a))
--- aggregateBodies bodies = case NL.tail bodies of
---   SimpleResultBody tail_name tail_val -> doSimple tail_name tail_val
---   CabalResultBody _ _ _ -> undefined
---   where
---     inconsistentBodiesError = bailWithError "different types of results are mixed."
---     doSimple tail_name tail_val = fmap AggBodySimple $ foldrM f ((tail_name, tail_val) :| []) $ NL.init bodies where
---       f (SimpleResultBody cur_name cur_val) acc = return $ NL.cons (cur_name, cur_val) acc
---       f _ _ = inconsistentBodiesError
--- 
--- aggregatedBodyToRange :: Aggregator -> AggregatedBody (Maybe Version) -> AggM (ResultBody' (Maybe VersionRange))
--- aggregatedBodyToRange aggregate (AggBodySimple ppairs) = 
 
 toNonEmpty :: [a] -> AggM (NonEmpty a)
 toNonEmpty [] = mzero
@@ -202,10 +193,10 @@ consistentPackageList (ref_list :| rest) = mapM_ check rest >> return ref_list w
 collectJustVersions :: NonEmpty (String, [(PackageName, Maybe Version)])
                     -> PackageName
                     -> AggM (Maybe (NonEmpty Version))
-collectJustVersions pmaps pname = fmap toNonEmpty $ foldrM f [] pmaps where
+collectJustVersions pmaps pname = fmap toMaybeNonEmpty $ foldrM f [] pmaps where
   f (label, pmap) acc = case lookup pname pmap of
                          Just (Just v) -> return (v : acc)
                          _ -> warn ("missing version for package "
                                     ++ show pname ++ ": " ++ label) >> return acc
-  toNonEmpty [] = Nothing
-  toNonEmpty (h : rest) = Just $ h :| rest
+  toMaybeNonEmpty [] = Nothing
+  toMaybeNonEmpty (h : rest) = Just $ h :| rest
