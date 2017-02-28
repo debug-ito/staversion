@@ -183,7 +183,7 @@ spec_aggregateResults = describe "aggregateResults" $ do
                                       },
                      AggregatedResult { aggResultIn = rsource "lts-6.0" :| [],
                                         aggResultFor = QueryCabalFile "foo.cabal",
-                                        aggResultBody = Right $ CabalResultBody "foo.cabal" (TargetExecutable "tst")
+                                        aggResultBody = Right $ CabalResultBody "foo.cabal" (TargetTestSuite "tst")
                                                         $ [("a", Just $ vors [[2,2,0]]), ("c", Just $ vors [[10,4,0,1]])]
                                       }
                    ]
