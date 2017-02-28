@@ -21,7 +21,7 @@ module Staversion.Internal.Aggregate
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import qualified Control.Monad.Trans.State.Strict as State
-import Control.Monad (mzero)
+import Control.Monad (mzero, forM_)
 import Control.Applicative ((<$>), (<|>))
 import Data.Foldable (foldrM)
 import Data.Function (on)
@@ -36,9 +36,9 @@ import qualified Distribution.Text as DT
 import qualified Text.PrettyPrint as Pretty
 
 import Staversion.Internal.Cabal (Target(..))
-import Staversion.Internal.Query (PackageName)
+import Staversion.Internal.Query (PackageName, ErrorMsg)
 import Staversion.Internal.Log (LogEntry(..), LogLevel(..))
-import Staversion.Internal.Result (Result(..), AggregatedResult(..), ResultBody'(..), resultSourceDesc)
+import Staversion.Internal.Result (Result(..), AggregatedResult(..), ResultBody, ResultBody'(..), resultSourceDesc)
 
 -- | Aggregate some 'Version's into a 'VersionRange'.
 type Aggregator = NonEmpty Version -> VersionRange
@@ -85,23 +85,37 @@ aggregateResults aggregate = unMonad
 
 aggregateInSameQuery :: Aggregator -> NonEmpty Result -> AggM (NonEmpty AggregatedResult)
 aggregateInSameQuery aggregate results = impl where
-  impl = do
-    right_bodies <- toNonEmpty =<< (fmap concat $ mapM getLabeledBody $ NL.toList results)
-    let agg_source = fmap (\(_,source,_) -> source) right_bodies
-    range_bodies <- aggregateBodies aggregate $ fmap (\(label,_,body) -> (label,body)) right_bodies
+  impl = case partitionResults $ NL.toList results of
+    ([], []) -> error "there must be at least one Result"
+    (lefts@(left_head : left_rest), []) -> do
+      warnLefts lefts
+      return $ return $ AggregatedResult { aggResultIn = (resultIn . fst) <$> (left_head :| left_rest),
+                                           aggResultFor = resultFor $ fst $ left_head,
+                                           aggResultBody = Left $ snd $ left_head
+                                         }
+    (lefts, (right_head : right_rest)) -> do
+      warnLefts lefts
+      aggregateRights (right_head :| right_rest)
+  warnLefts lefts = forM_ lefts $ \(left_ret, left_err) -> do
+    warn ("Error for " ++ makeLabel left_ret ++ ": " ++ left_err)
+  aggregateRights rights = do
+    let right_bodies = fmap (\(ret, body) -> (makeLabel ret, body)) rights
+        agg_source = fmap (\(ret, _) -> resultIn ret) rights
+    range_bodies <- aggregateBodies aggregate right_bodies
     return $ fmap (makeAggregatedResult agg_source) range_bodies
   makeLabel r = "Result in " ++ (unpack $ resultSourceDesc $ resultIn r)
                 ++ ", for " ++ (show $ resultFor r)
-  getLabeledBody r = case resultBody r of
-    Right rbody -> return [(makeLabel r, resultIn r, rbody)]
-    Left err -> do
-      warn ("Error for " ++ makeLabel r ++ ": " ++ err)
-      return []
   makeAggregatedResult agg_source range_body =
     AggregatedResult { aggResultIn = agg_source,
                        aggResultFor = resultFor $ NL.head results,
                        aggResultBody = Right range_body
                      }
+
+partitionResults :: [Result] -> ([(Result, ErrorMsg)], [(Result, ResultBody)])
+partitionResults = foldr f ([], []) where
+  f ret (lefts, rights) = case resultBody ret of
+    Left err -> ((ret, err) : lefts, rights)
+    Right body -> (lefts, (ret, body) : rights)
 
 aggregateBodies :: Aggregator
                 -> NonEmpty (String, ResultBody' (Maybe Version))
