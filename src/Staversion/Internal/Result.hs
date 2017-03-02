@@ -43,7 +43,9 @@ resultSourceDesc src = query_source <> real_source where
   query_source = sourceDesc $ resultSourceQueried $ src
   real_source = case resultSourceReal src of
     Nothing -> ""
-    Just real_psource -> " (" <> sourceDesc real_psource <> ")"
+    Just real_psource -> if real_psource == resultSourceQueried src
+                         then ""
+                         else " (" <> sourceDesc real_psource <> ")"
 
 -- | For backward-compatibility.
 type ResultBody = ResultBody' (Maybe Version)

@@ -32,7 +32,7 @@ spec_simple = describe "formatResultsCabal" $ do
   it "should return empty text for empty list" $ do
     formatResultsCabal [] `shouldBe` ""
   it "should format a Result in a Cabal way" $ do
-    let input = [ Result { resultIn = ResultSource (SourceStackage "lts-6.10") Nothing,
+    let input = [ Result { resultIn = ResultSource (SourceStackage "lts-6.10") (Just $ SourceStackage "lts-6.10"),
                            resultFor = QueryName "hoge",
                            resultBody = Right $ simpleResultBody "hoge" [3,4,5]
                          }
@@ -132,7 +132,7 @@ spec_simple = describe "formatResultsCabal" $ do
                            resultFor = QueryCabalFile "foobar.cabal",
                            resultBody = Left "some error"
                          },
-                  Result { resultIn = ResultSource (SourceStackage "lts-5.3") Nothing,
+                  Result { resultIn = ResultSource (SourceStackage "lts-5.3") (Just $ SourceStackage "lts-5.3"),
                            resultFor = QueryName "hoge",
                            resultBody = Right $ simpleResultBody "hoge" [5,5]
                          }
@@ -243,20 +243,20 @@ spec_aggregate = describe "formatResultsCabalAggregated" $ do
     formatResultsCabalAggregated aggOr input `shouldBe` (expected, [])
 
 simpleResult :: Resolver -> PackageName -> [Int] -> Result
-simpleResult res name vs = Result { resultIn = ResultSource (SourceStackage res) Nothing,
+simpleResult res name vs = Result { resultIn = ResultSource (SourceStackage res) (Just $ SourceStackage res),
                                     resultFor = QueryName name,
                                     resultBody = Right $ simpleResultBody name vs
                                   }
 
 hackageResult :: PackageName -> [Int] -> Result
-hackageResult name vs = Result { resultIn = ResultSource SourceHackage Nothing,
+hackageResult name vs = Result { resultIn = ResultSource SourceHackage (Just SourceHackage),
                                  resultFor = QueryName name,
                                  resultBody = Right $ simpleResultBody name vs
                                }
 
 cabalResult :: Resolver -> FilePath -> Target -> [(PackageName, [Int])] -> Result
 cabalResult res file target vps =
-  Result { resultIn = ResultSource (SourceStackage res) Nothing,
+  Result { resultIn = ResultSource (SourceStackage res) (Just $ SourceStackage res),
            resultFor = QueryCabalFile file,
            resultBody = Right $ CabalResultBody file target $ verPairs vps
          }
