@@ -128,7 +128,7 @@ spec_simple = describe "formatResultsCabal" $ do
                    )
     formatResultsCabal input `shouldBe` expected
   it "should show ERROR if resultBody is Left, resultFor is QueryCabalFile" $ do
-    let input = [ Result { resultIn = ResultSource (SourceStackage "lts-5.3") Nothing,
+    let input = [ Result { resultIn = ResultSource (SourceStackage "lts-5.3") (Just $ SourceStackage "lts-5.3"),
                            resultFor = QueryCabalFile "foobar.cabal",
                            resultBody = Left "some error"
                          },
