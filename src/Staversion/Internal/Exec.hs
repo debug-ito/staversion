@@ -38,11 +38,13 @@ import Staversion.Internal.Cabal (BuildDepends(..), loadCabalFile)
 main :: IO ()
 main = do
   comm <- parseCommandArgs
-  (showFormatResult comm . formatResults comm) =<< (processCommand comm)
+  showFormatResult comm =<< formatResults comm =<< (processCommand comm)
   where
-    formatResults comm = maybe ((\txt -> (txt, [])) . Format.formatResultsCabal)
-                               (\agg -> Format.formatResultsCabalAggregated agg)
-                         $ commAggregator comm
+    formatResults comm results = case commAggregator comm of
+      Nothing -> return (Format.formatResultsCabal results, [])
+      Just agg -> do
+        logDebug (commLogger comm) ("Results before aggregation: " ++ show results)
+        return $ Format.formatResultsCabalAggregated agg results
     showFormatResult comm (formatted, logs) = do
       mapM_ (putLogEntry $ commLogger comm) logs
       TLIO.putStr formatted
