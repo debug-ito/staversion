@@ -190,6 +190,17 @@ spec_aggregateResults = describe "aggregateResults" $ do
         (got, got_logs) = aggregateResults aggOr input
     got `shouldBe` expected
     got_logs `shouldBe` []
+  it "should nub aggregated ResultSources" $ do
+    let input = [ simpleResult "lts-5.0" "hoge" [1,0,0],
+                  simpleResult "lts-5.0" "hoge" [1,0,0],
+                  simpleResult "lts-5.0" "hoge" [1,0,0]
+                ]
+        expected = [ AggregatedResult { aggResultIn = rsource "lts-5.0" :| [],
+                                        aggResultFor = QueryName "hoge",
+                                        aggResultBody = Right $ SimpleResultBody "hoge" $ Just $ vthis [1,0,0]
+                                      }
+                   ]
+    aggregateResults aggOr input `shouldBe` (expected, [])
 
 rsource :: Resolver -> ResultSource
 rsource res = ResultSource { resultSourceQueried = psource,

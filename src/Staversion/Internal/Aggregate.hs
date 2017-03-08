@@ -86,7 +86,7 @@ aggregateResults aggregate = unMonad
     toList (Just list) = list
 
 aggregateInSameQuery :: Aggregator -> NonEmpty Result -> AggM (NonEmpty AggregatedResult)
-aggregateInSameQuery aggregate results = impl where
+aggregateInSameQuery aggregate results = (fmap . fmap) nubAggregatedSources $ impl where
   impl = case partitionResults $ NL.toList results of
     ([], []) -> error "there must be at least one Result"
     (lefts@(left_head : left_rest), []) -> do
@@ -115,6 +115,9 @@ aggregateInSameQuery aggregate results = impl where
                        aggResultFor = resultFor $ NL.head results,
                        aggResultBody = Right range_body
                      }
+
+nubAggregatedSources :: AggregatedResult -> AggregatedResult
+nubAggregatedSources input = input { aggResultIn = NL.nub $ aggResultIn input }
 
 partitionResults :: [Result] -> ([(Result, ErrorMsg)], [(Result, ResultBody)])
 partitionResults = foldr f ([], []) where
