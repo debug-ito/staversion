@@ -201,6 +201,20 @@ spec_aggregateResults = describe "aggregateResults" $ do
                                       }
                    ]
     aggregateResults aggOr input `shouldBe` (expected, [])
+  it "should warn about Nothing version in CabalResultBody with Target" $ do
+    let input = [ cabalResult "lts-5.0" "foo.cabal" TargetLibrary [("hoge-pack", [1,0]), ("b", [1,1,0])],
+                  cabalResult "lts-4.0" "foo.cabal" TargetLibrary [("hoge-pack", []), ("b", [1,0,9])]
+                ]
+        expected = [ AggregatedResult { aggResultIn = rsource "lts-5.0" :| [rsource "lts-4.0"],
+                                        aggResultFor = QueryCabalFile "foo.cabal",
+                                        aggResultBody = Right $ CabalResultBody "foo.cabal" TargetLibrary
+                                                        $ [("hoge-pack", Just $ vthis [1,0]), ("b", Just $ vors [[1,0,9], [1,1,0]])]
+                                      }
+                   ]
+        (got, got_logs) = aggregateResults aggOr input
+    got `shouldBe` expected
+    length got_logs `shouldBe` 1
+    (matchesLogCount LogWarn ["hoge-pack", "foo.cabal", "lts-4.0", "TargetLibrary"] got_logs) `shouldBe` 1
 
 rsource :: Resolver -> ResultSource
 rsource res = ResultSource { resultSourceQueried = psource,
