@@ -108,8 +108,11 @@ aggregateInSameQuery aggregate results = (fmap . fmap) nubAggregatedSources $ im
     traverse aggregateGroup right_groups
   aggregateGroup group = do
     let agg_source = fmap (\(ret, _) -> resultIn ret) group
-    range_body <- aggregateGroupedBodies aggregate $ fmap (\(result, body) -> (makeLabel result, body)) $ group
+    range_body <- aggregateGroupedBodies aggregate
+                  $ fmap (\(result, body) -> (makeLabel result ++ makeBodyLabel body, body)) $ group
     return $ makeAggregatedResult agg_source range_body
+  makeBodyLabel (SimpleResultBody _ _) = ""
+  makeBodyLabel (CabalResultBody _ target _) = ", target " ++ show target
   makeAggregatedResult agg_source range_body =
     AggregatedResult { aggResultIn = agg_source,
                        aggResultFor = resultFor $ NL.head results,
