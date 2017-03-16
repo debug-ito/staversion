@@ -11,6 +11,8 @@ module Staversion.Internal.Cabal
        ) where
 
 import Control.Applicative ((<*), (*>), (<|>), (<*>), many, some)
+import Control.Exception (IOException)
+import qualified Control.Exception as Exception
 import Control.Monad (void, mzero, forM)
 import Data.Bifunctor (first)
 import Data.Char (isAlpha, isDigit, toLower, isSpace)
@@ -40,7 +42,12 @@ data BuildDepends =
                } deriving (Show,Eq,Ord)
 
 loadCabalFile :: FilePath -> IO (Either ErrorMsg [BuildDepends])
-loadCabalFile cabal_filepath = first show <$> P.runParser (cabalParser <* P.eof) cabal_filepath <$> TIO.readFile cabal_filepath
+loadCabalFile cabal_filepath = handleIOError $ first show <$> parseContent <$> readContent where
+  readContent = TIO.readFile cabal_filepath
+  parseContent = P.runParser (cabalParser <* P.eof) cabal_filepath
+  handleIOError = Exception.handle h where
+    h :: IOException -> IO (Either ErrorMsg [BuildDepends])
+    h = return . Left . show
 
 isLineSpace :: Char -> Bool
 isLineSpace ' ' = True
