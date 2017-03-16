@@ -1,6 +1,7 @@
 module Staversion.Internal.ExecSpec (main,spec) where
 
 import Data.Version (Version(Version))
+import Data.Either (isLeft)
 import Data.IORef (readIORef)
 import Data.List (isInfixOf)
 import System.FilePath ((</>))
@@ -35,6 +36,7 @@ spec :: Spec
 spec = do
   spec_processCommand_basic
   spec_processCommand_disambiguates
+  spec_processCommand_error
 
 spec_processCommand_basic :: Spec
 spec_processCommand_basic = describe "processCommand" $ do
@@ -149,3 +151,20 @@ spec_processCommand_disambiguates = describe "processCommand" $ do
     (resultSourceReal . resultIn) got_ret `shouldBe` (Just $ SourceStackage "lts-4.2")
     resultFor got_ret `shouldBe` QueryName "conduit"
     resultBody got_ret `shouldBe` Right (simpleResultBody "conduit" [1,2,6,1])
+
+spec_processCommand_error :: Spec
+spec_processCommand_error = describe "processCommand" $ do
+  it "should continue processing after IO error in reading .cabal file" $ do
+    let src = SourceStackage "lts-4.2"
+        comm = baseCommand { commSources = [src],
+                             commQueries = [ QueryCabalFile "this_does_not_exist.cabal",
+                                             QueryName "parsec"
+                                           ]
+                           }
+    [got_cabal, got_name] <- processCommand comm
+    resultFor got_cabal `shouldBe` QueryCabalFile "this_does_not_exist.cabal"
+    resultBody got_cabal `shouldSatisfy` isLeft
+    got_name `shouldBe` Result { resultIn = ResultSource src (Just src),
+                                 resultFor = QueryName "parsec",
+                                 resultBody = Right $ simpleResultBody "parsec" [3,1,9]
+                               }
