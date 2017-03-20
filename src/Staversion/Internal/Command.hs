@@ -10,13 +10,15 @@ module Staversion.Internal.Command
        ) where
 
 import Control.Applicative ((<$>), (<*>), optional, some, (<|>))
-import Data.Monoid (mconcat)
+import Data.Function (on)
+import Data.Monoid (mconcat, (<>))
 import Data.Text (pack)
 import Data.Version (showVersion)
 import qualified Options.Applicative as Opt
 import qualified Paths_staversion as MyInfo
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
+import qualified Text.PrettyPrint.ANSI.Leijen as Pretty
 
 import Staversion.Internal.Aggregate (Aggregator)
 import qualified Staversion.Internal.Aggregate as Agg
@@ -103,8 +105,7 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> q
               $ mconcat [ Opt.long "aggregate",
                           Opt.short 'a',
                           Opt.metavar "AGGREGATOR",
-                          Opt.help "Aggregate version results over different resolvers."
-                          -- TODO: document should be in 'Doc' and be generated from aggregator lists.
+                          Opt.helpDoc $ Just $ docAggregators "AGGREGATOR"
                         ]
 
 maybeReader :: String -> (String -> Maybe a) -> Opt.ReadM a
@@ -114,9 +115,32 @@ maybeReader metavar mfunc = do
    Nothing -> Opt.readerError ("Unknown " ++ metavar ++ ": " ++ got)
    Just v -> return v
 
+data AggregatorSpec =
+  AggregatorSpec { aggSpecFunc :: Aggregator,
+                   aggSpecSymbol :: String,
+                   aggSpecDesc :: String
+                 }
+
+aggregators :: [AggregatorSpec]
+aggregators = [ AggregatorSpec Agg.aggOr "or" "concatenate versions with (||)."
+              ]
+
 parseAggregator :: String -> Maybe Aggregator
-parseAggregator "or" = Just Agg.aggOr
-parseAggregator _ = Nothing
+parseAggregator symbol = toMaybe $ filter (\spec -> aggSpecSymbol spec == symbol) aggregators where
+  toMaybe [] = Nothing
+  toMaybe (a : _) = Just $ aggSpecFunc a
+
+wrapped :: String -> Pretty.Doc
+wrapped = Pretty.fillSep . map Pretty.text . words
+
+docAggregators :: String -> Pretty.Doc
+docAggregators metaver = Pretty.vsep $ (foreword  :) $ map docForAgg aggregators where
+  foreword = wrapped ( "Aggregate version results over different resolvers."
+                       ++ " Possible " ++ metaver ++ " is:"
+                     )
+  docForAgg AggregatorSpec {aggSpecSymbol = symbol, aggSpecDesc = desc} =
+    Pretty.dquotes (Pretty.text symbol) <> ": " <> Pretty.align (wrapped desc)
+
 
 programDescription :: Opt.Parser a -> Opt.ParserInfo a
 programDescription parser =
