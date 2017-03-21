@@ -12,6 +12,7 @@ module Staversion.Internal.Aggregate
          VersionRange,
          showVersionRange,
          aggOr,
+         aggPvp,
          -- * Utility
          groupAllPreservingOrderBy,
          -- * Low-level functions
@@ -66,6 +67,11 @@ aggOr :: Aggregator
 aggOr vs = foldr f (V.thisVersion $ NL.last svs) $ NL.init svs where
   svs = NL.nub $ NL.sort vs
   f elem_v range = V.unionVersionRanges (V.thisVersion elem_v) range
+
+-- | Aggregate versions to the range that the versions cover in a
+-- (strict) PVP sense.
+aggPvp :: Aggregator
+aggPvp = undefined
 
 -- | Aggregate 'Result's with the given 'Aggregator'. It first groups
 -- 'Result's based on its 'resultFor' field, and then each group is

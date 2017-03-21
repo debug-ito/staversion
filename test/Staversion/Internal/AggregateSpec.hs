@@ -4,13 +4,16 @@ import Data.Char (toLower)
 import Data.List (isInfixOf)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
+import Data.Maybe (fromJust)
 import Data.Monoid (All(..))
 import qualified Distribution.Version as V
 import Test.Hspec
 
 import Staversion.Internal.Aggregate
-  ( showVersionRange,
+  ( Aggregator,
+    showVersionRange,
     aggOr,
+    aggPvp,
     aggregateResults,
     aggregatePackageVersions
   )
@@ -33,6 +36,7 @@ spec = do
   spec_aggregateResults
   describe "Aggregators" $ do
     spec_or
+    spec_pvp
 
 vor :: V.VersionRange -> V.VersionRange -> V.VersionRange
 vor = V.unionVersionRanges
@@ -72,9 +76,31 @@ spec_or = describe "aggOr" $ do
     aggOr input `shouldBe` expected
 
 vors :: [[Int]] -> V.VersionRange
-vors [] = error "this should not happen"
-vors [v] = vthis v
-vors (v:rest) = vor (vthis v) $ vors rest
+vors = vors' . map vthis
+
+vors' :: [V.VersionRange] -> V.VersionRange
+vors' [] = error "this should not happen"
+vors' [v] = v
+vors' (v:rest) = vor v $ vors' rest
+
+-- | Version interval. vint x y = [x, y)
+vint :: [Int] -> [Int] ->V.VersionRange
+vint vl vu = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [interval] where
+  interval = (V.LowerBound (ver vl) V.InclusiveBound, V.UpperBound (ver vu) V.ExclusiveBound)
+
+spec_pvp :: Spec
+spec_pvp = describe "aggPvp" $ before (return aggPvp) $ do
+  testAgg [[1,2,0,0]] $ vint [1,2,0,0] [1,3]
+  testAgg [[1,2,0]] $ vint [1,2,0] [1,3]
+  testAgg [[1,2]] $ vint [1,2] [1,3]
+  testAgg [[1]] $ vint [1] [1,0]
+
+testAgg :: [[Int]] -> V.VersionRange -> SpecWith Aggregator
+testAgg input expected = specify desc $ \agg -> agg input' `shouldBe` expected where
+  input' = case input of
+    [] -> error "input to Aggregator must be non-empty."
+    (h : rest) -> fmap ver $ (h :| rest)
+  desc = show input ++ " -> " ++ showVersionRange expected
 
 spec_aggregateResults :: Spec
 spec_aggregateResults = describe "aggregateResults" $ do
