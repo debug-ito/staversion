@@ -90,10 +90,32 @@ vint vl vu = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [inte
 
 spec_pvp :: Spec
 spec_pvp = describe "aggPvp" $ before (return aggPvp) $ do
-  testAgg [[1,2,0,0]] $ vint [1,2,0,0] [1,3]
+  testAgg [[1,2,0,7]] $ vint [1,2,0,7] [1,3]
   testAgg [[1,2,0]] $ vint [1,2,0] [1,3]
   testAgg [[1,2]] $ vint [1,2] [1,3]
   testAgg [[1]] $ vint [1] [1,0]
+  testAgg [[1,2,0,0], [1,2,3,0]] $ vint [1,2,0,0] [1,3]
+  testAgg [[1,2,0,0], [1,2,0,0]] $ vint [1,2,0,0] [1,3]
+  testAgg [[1,2,0,0], [1,3]] $ vint [1,2,0,0] [1,4]
+  testAgg [[1,2,0,0], [1,3,0]] $ vors' [ vint [1,2,0,0] [1,3],
+                                         vint [1,3,0] [1,4]
+                                       ]
+  testAgg [[1,3,0], [1,2,0,0]] $ vors' [ vint [1,2,0,0] [1,3],
+                                         vint [1,3,0] [1,4]
+                                       ]
+  testAgg [[1,2,0,0], [1,3,0,0]] $ vors' [ vint [1,2,0,0] [1,3],
+                                           vint [1,3,0,0] [1,4]
+                                         ]
+  testAgg [[1,3,0,0], [1,2,0,0]] $ vors' [ vint [1,2,0,0] [1,3],
+                                           vint [1,3,0,0] [1,4]
+                                         ]
+  testAgg [[1,2,0,0], [2]] $ vors' [ vint [1,2,0,0] [1,3],
+                                     vint [2] [2,0]
+                                   ]
+  testAgg [[2,2,0], [2,0], [3,5,0,1], [2,2,0,5]] $ vors' [ vint [2,0] [2,1],
+                                                           vint [2,2,0] [2,3],
+                                                           vint [3,5,0,1] [3,6]
+                                                         ]
 
 testAgg :: [[Int]] -> V.VersionRange -> SpecWith Aggregator
 testAgg input expected = specify desc $ \agg -> agg input' `shouldBe` expected where
