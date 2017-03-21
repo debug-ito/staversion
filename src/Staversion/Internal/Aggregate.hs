@@ -26,6 +26,7 @@ import Control.Monad (mzero, forM_)
 import Control.Applicative ((<$>), (<|>))
 import Data.Foldable (foldrM, foldr1)
 import Data.Function (on)
+import Data.Maybe (fromJust)
 import Data.Monoid (mconcat, All(All))
 import Data.List (lookup)
 import Data.List.NonEmpty (NonEmpty(..))
@@ -69,7 +70,13 @@ aggOr = foldr1 V.unionVersionRanges . fmap V.thisVersion . NL.nub . NL.sort
 -- | Aggregate versions to the range that the versions cover in a
 -- (strict) PVP sense.
 aggPvp :: Aggregator
-aggPvp = undefined
+aggPvp = V.simplifyVersionRange . foldr1 V.unionVersionRanges . fmap toRange . NL.nub . NL.sort where
+  toRange v = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [(V.LowerBound v V.InclusiveBound, V.UpperBound vu V.ExclusiveBound)] where
+    vu = V.Version { V.versionBranch = vu_number, V.versionTags = [] }
+    vu_number = case V.versionBranch v of
+      [] -> error "versionBranch must not be empty."
+      [x] -> [x, 0]
+      (x : y : _) -> [x, y + 1]
 
 -- | Aggregate 'Result's with the given 'Aggregator'. It first groups
 -- 'Result's based on its 'resultFor' field, and then each group is
