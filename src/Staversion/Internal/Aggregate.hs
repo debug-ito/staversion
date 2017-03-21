@@ -24,7 +24,7 @@ import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
 import qualified Control.Monad.Trans.State.Strict as State
 import Control.Monad (mzero, forM_)
 import Control.Applicative ((<$>), (<|>))
-import Data.Foldable (foldrM)
+import Data.Foldable (foldrM, foldr1)
 import Data.Function (on)
 import Data.Monoid (mconcat, All(All))
 import Data.List (lookup)
@@ -64,9 +64,7 @@ groupAllPreservingOrderBy sameGroup = foldr f [] where
 
 -- | Aggregator of ORed versions.
 aggOr :: Aggregator
-aggOr vs = foldr f (V.thisVersion $ NL.last svs) $ NL.init svs where
-  svs = NL.nub $ NL.sort vs
-  f elem_v range = V.unionVersionRanges (V.thisVersion elem_v) range
+aggOr = foldr1 V.unionVersionRanges . fmap V.thisVersion . NL.nub . NL.sort
 
 -- | Aggregate versions to the range that the versions cover in a
 -- (strict) PVP sense.
