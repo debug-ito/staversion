@@ -33,7 +33,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
 import Data.Text (unpack)
 import Data.Traversable (traverse)
-import Data.Version (Version)
+import Data.Version (Version, makeVersion)
 import Distribution.Version (VersionRange)
 import qualified Distribution.Version as V
 import qualified Distribution.Text as DT
@@ -72,8 +72,7 @@ aggOr = foldr1 V.unionVersionRanges . fmap V.thisVersion . NL.nub . NL.sort
 aggPvp :: Aggregator
 aggPvp = V.simplifyVersionRange . foldr1 V.unionVersionRanges . fmap toRange . NL.nub . NL.sort where
   toRange v = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [(V.LowerBound v V.InclusiveBound, V.UpperBound vu V.ExclusiveBound)] where
-    vu = V.Version { V.versionBranch = vu_number, V.versionTags = [] }
-    vu_number = case V.versionBranch v of
+    vu = makeVersion $ case V.versionBranch v of
       [] -> error "versionBranch must not be empty."
       [x] -> [x, 0]
       (x : y : _) -> [x, y + 1]
