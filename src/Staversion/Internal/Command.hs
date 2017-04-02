@@ -143,7 +143,7 @@ docAggregators metaver = Pretty.vsep $ (foreword  :) $ map docForAgg aggregators
                        ++ " Possible " ++ metaver ++ " is:"
                      )
   docForAgg AggregatorSpec {aggSpecSymbol = symbol, aggSpecDesc = desc} =
-    Pretty.dquotes (Pretty.text symbol) <> ": " <> Pretty.align (wrapped desc)
+    Pretty.hang 2 $ wrapped ("\"" <> symbol <> "\": " <> desc)
 
 
 programDescription :: Opt.Parser a -> Opt.ParserInfo a
