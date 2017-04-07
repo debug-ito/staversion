@@ -95,7 +95,7 @@ test-suite spec
                         Staversion.Internal.TestUtil
   build-depends:        base, staversion, text, filepath, bytestring,
                         Cabal, semigroups,
-                        hspec >=2.1.7 && <2.4,
+                        hspec >=2.1.7,
                         QuickCheck >=2.8.1 && <2.10
 
 flag network-test
