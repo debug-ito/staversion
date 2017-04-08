@@ -67,6 +67,40 @@ You can also specify .cabal files in the query. In that case, staversion reads `
     
     (snip)
 
+## Package version ranges over different resolvers
+
+With `--aggregate` (`-a`) option, you can aggregate version numbers in different resolvers into a version range using the given aggregation rule.
+
+For example, `or` rule just concatenates versions with `(||)` condition.
+
+    $ staversion --aggregate or -r lts-5 -r lts-6 -r lts-7 -H aeson
+    ------ lts-5 (lts-5.18), lts-6 (lts-6.31), lts-7 (lts-7.20), latest in hackage
+    aeson ==0.9.0.1 || ==0.11.3.0 || ==1.1.1.0
+
+`pvp` rule aggregates versions into a range that should be compatible with the obtained versions in terms of PVP (Package Versioning Policy.)
+
+    $ staversion --aggregate pvp -r lts-5 -r lts-6 -r lts-7 -H aeson
+    ------ lts-5 (lts-5.18), lts-6 (lts-6.31), lts-7 (lts-7.20), latest in hackage
+    aeson >=0.9.0.1 && <0.10 || >=0.11.3.0 && <0.12 || >=1.1.1.0 && <1.2
+
+You can use `--aggregate` option with querying .cabal files.
+
+    $ staversion --aggregate pvp -r lts-6 -r lts-7 -r lts-8 staversion.cabal 
+    ------ lts-6 (lts-6.31), lts-7 (lts-7.20), lts-8 (lts-8.8)
+    -- staversion.cabal - library
+    base >=4.8.2.0 && <4.9 || >=4.9.0.0 && <4.10,
+    unordered-containers >=0.2.7.2 && <0.3,
+    aeson >=0.11.3.0 && <0.12 || >=1.0.2.1 && <1.1,
+    text >=1.2.2.1 && <1.3,
+    bytestring >=0.10.6.0 && <0.11,
+    yaml >=0.8.22 && <0.9,
+    filepath >=1.4.0.0 && <1.5,
+    directory >=1.2.2.0 && <1.3 || >=1.3.0.0 && <1.4,
+    optparse-applicative >=0.12.1.0 && <0.13 || >=0.13.2.0 && <0.14,
+    containers >=0.5.6.2 && <0.6,
+    
+    (snip)
+
 
 ## TODO
 
