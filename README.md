@@ -26,8 +26,8 @@ staversion mainly focuses on package versions in stackage, i.e. it answers to qu
     conduit ==1.2.6.1,
     base ==4.8.2.0
     
-    ------ lts-6
-    conduit ==1.2.8,
+    ------ lts-6 (lts-6.31)
+    conduit ==1.2.9.1,
     base ==4.8.2.0
 
 staversion first reads build plan YAML files that are stored locally in your computer, then it tries to fetch them over network.
@@ -70,7 +70,6 @@ You can also specify .cabal files in the query. In that case, staversion reads `
 
 ## TODO
 
-- Show version number ranges supported by the given resolvers.
 - Cache build plans in some local storage (SQLite?)
 
 ## Author
