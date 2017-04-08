@@ -34,7 +34,7 @@ staversion first reads build plan YAML files that are stored locally in your com
 
 ## Package version in Hackage
 
-You can also look up the latest version numbers hosted on hackage.
+You can also look up the latest version numbers hosted on hackage with `--hackage` (`-H`) option.
 
     $ staversion --hackage conduit base
     ------ latest in hackage
