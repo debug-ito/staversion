@@ -1,5 +1,12 @@
 # Revision history for staversion
 
+## 0.1.4.0  -- 2017-04-08
+
+* Add `--aggregate` option, which aggregates versions in different LTS resolvers.
+  There are `or` and `pvp` aggregators.
+* Bug fix: when it fails to load a given .cabal file, now it continues processing the next target.
+
+
 ## 0.1.3.2  -- 2017-01-05
 
 * Fix dependency lower bound for `base`.
