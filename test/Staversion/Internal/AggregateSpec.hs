@@ -99,6 +99,10 @@ spec_pvp = describe "aggPvp" $ before (return aggPvp) $ do
   testAgg [[1,0]] $ vint [1] [1,1] -- trailing-zero
   testAgg [[1,0,0,0]] $ vint [1] [1,1] -- traling-zeroes
   testAgg [[1]] $ vint [1] [1,1] -- because 1 and 1.0 are considered equivalent.
+  testAgg [[0]] $ vint [0] [0,1]
+  testAgg [[0,0]] $ vint [0] [0,1]
+  testAgg [[0,0,0]] $ vint [0] [0,1]
+  testAgg [[0,0,1]] $ vint [0,0,1] [0,1]
   testAgg [[1,2,0,7], [1,2,3,0]] $ vint [1,2,0,7] [1,3]
   testAgg [[1,2,0,7], [1,2,0,7]] $ vint [1,2,0,7] [1,3]
   testAgg [[1,2,0,7], [1,3]] $ vint [1,2,0,7] [1,4]
