@@ -29,6 +29,7 @@ import Data.Function (on)
 import Data.Maybe (fromJust)
 import Data.Monoid (mconcat, All(All))
 import Data.List (lookup)
+import qualified Data.List as List
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
 import Data.Text (unpack)
@@ -71,11 +72,20 @@ aggOr = foldr1 V.unionVersionRanges . fmap V.thisVersion . NL.nub . NL.sort
 -- (strict) PVP sense.
 aggPvp :: Aggregator
 aggPvp = V.simplifyVersionRange . foldr1 V.unionVersionRanges . fmap toRange . NL.nub . NL.sort where
-  toRange v = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [(V.LowerBound v V.InclusiveBound, V.UpperBound vu V.ExclusiveBound)] where
-    vu = makeVersion $ case V.versionBranch v of
+  toRange v = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [(V.LowerBound norm_v V.InclusiveBound, V.UpperBound vu V.ExclusiveBound)] where
+    norm_v = makeVersion $ normalizeTralingZeroes $ V.versionBranch v
+    vu = makeVersion $ case V.versionBranch norm_v of
       [] -> error "versionBranch must not be empty."
-      [x] -> [x, 0]
+      [x] -> [x, 1]  -- because [x] and [x,0] is equivalent
       (x : y : _) -> [x, y + 1]
+
+normalizeTralingZeroes :: [Int] -> [Int]
+normalizeTralingZeroes [] = []
+normalizeTralingZeroes (head_v : rest) = head_v : (concat $ dropTrailingZeros $ List.group rest) where
+  dropTrailingZeros [] = []
+  dropTrailingZeros groups = if and $ map (== 0) $ last groups
+                             then init groups
+                             else groups
 
 -- | Aggregate 'Result's with the given 'Aggregator'. It first groups
 -- 'Result's based on its 'resultFor' field, and then each group is
