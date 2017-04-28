@@ -79,20 +79,27 @@ aggPvp = aggPvpMajor
 -- which means it assumes major-version bump is not
 -- backward-compatible.
 aggPvpMajor :: Aggregator
-aggPvpMajor = V.simplifyVersionRange . foldr1 V.unionVersionRanges . fmap toRange . NL.nub . NL.sort where
-  toRange v = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [(V.LowerBound norm_v V.InclusiveBound, V.UpperBound vu V.ExclusiveBound)] where
-    norm_v = makeVersion $ normalizeTralingZeroes $ V.versionBranch v
-    vu = makeVersion $ case V.versionBranch norm_v of
-      [] -> error "versionBranch must not be empty."
-      [x] -> [x, 1]  -- because [x] and [x,0] is equivalent
-      (x : y : _) -> [x, y + 1]
+aggPvpMajor = aggPvpGeneral $ makeUpper where
+  makeUpper [] = error "version must not be empty."
+  makeUpper [x] = [x, 1] -- because [x] and [x,0] is equivalent
+  makeUpper (x : y : _) = [x, y + 1]
 
 -- | Aggregate versions to the range that versions cover in a PVP
 -- sense. This aggregator sets the upper bound to a minor version,
 -- which means it assumes minor-version bump is not
 -- backward-compatible.
 aggPvpMinor :: Aggregator
-aggPvpMinor = undefined
+aggPvpMinor = aggPvpGeneral $ makeUpper where
+  makeUpper [] = error "version must not be empty."
+  makeUpper [x] = [x, 0, 1]
+  makeUpper [x,y] = [x, y, 1]
+  makeUpper (x : y : z : _) = [x, y, z + 1]
+
+aggPvpGeneral :: ([Int] -> [Int]) -> Aggregator
+aggPvpGeneral makeUpper = V.simplifyVersionRange . foldr1 V.unionVersionRanges . fmap toRange . NL.nub . NL.sort where
+  toRange v = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [(V.LowerBound norm_v V.InclusiveBound, V.UpperBound vu V.ExclusiveBound)] where
+    norm_v = makeVersion $ normalizeTralingZeroes $ V.versionBranch v
+    vu = makeVersion $ makeUpper $ V.versionBranch norm_v
 
 normalizeTralingZeroes :: [Int] -> [Int]
 normalizeTralingZeroes [] = []
