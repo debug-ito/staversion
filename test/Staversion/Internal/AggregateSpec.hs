@@ -105,6 +105,48 @@ spec_pvp = describe "aggPvp" $ before (return aggPvp) $ do
   testAgg [[0,0]] $ vint [0] [0,1]
   testAgg [[0,0,0]] $ vint [0] [0,1]
   testAgg [[0,0,1]] $ vint [0,0,1] [0,1]
+  testAgg [[1,2,0,7], [1,2,3,0]] $ vint [1,2,0,7] [1,3]
+  testAgg [[1,2,0,7], [1,2,0,7]] $ vint [1,2,0,7] [1,3]
+  testAgg [[1,2,0,7], [1,3]] $ vint [1,2,0,7] [1,4]
+  testAgg [[1,2,0,7], [1,3,4]] $ vors' [ vint [1,2,0,7] [1,3],
+                                         vint [1,3,4] [1,4]
+                                       ]
+  testAgg [[1,2,0,7], [1,3,0]] $ vint [1,2,0,7] [1,4] -- trailing-zero
+  testAgg [[1,3,4], [1,2,0,7]] $ vors' [ vint [1,2,0,7] [1,3],
+                                         vint [1,3,4] [1,4]
+                                       ]
+  testAgg [[1,3,0], [1,2,0,7]] $ vint [1,2,0,7] [1,4]
+  testAgg [[1,2,0,7], [1,3,0,8]] $ vors' [ vint [1,2,0,7] [1,3],
+                                           vint [1,3,0,8] [1,4]
+                                         ]
+  testAgg [[1,2,0,0], [1,3,0,0]] $ vint [1,2] [1,4] -- trailing-zeroes
+  testAgg [[1,3,0,8], [1,2,0,7]] $ vors' [ vint [1,2,0,7] [1,3],
+                                           vint [1,3,0,8] [1,4]
+                                         ]
+  testAgg [[1,2,0,7], [2]] $ vors' [ vint [1,2,0,7] [1,3],
+                                     vint [2] [2,1]
+                                   ]
+  testAgg [[2,2,0], [2,0], [3,5,0,1], [2,2,0,5]] $ vors' [ vint [2] [2,1],
+                                                           vint [2,2] [2,3],
+                                                           vint [3,5,0,1] [3,6]
+                                                         ]
+
+
+spec_pvpMinor :: Spec
+spec_pvpMinor = describe "aggPvpMinor" $ before (return aggPvpMinor) $ do
+  testAgg [[1,2,0,7]] $ vint [1,2,0,7] [1,2,1]
+  testAgg [[1,2,3,0]] $ vint [1,2,3] [1,2,4] -- trailing-zero
+  testAgg [[1,2,0,0]] $ vint [1,2] [1,2,1] -- trailing-zeroes
+  testAgg [[1,2,10]] $ vint [1,2,10] [1,2,11]
+  testAgg [[1,2,0]] $ vint [1,2] [1,2,1]  -- trailing-zero
+  testAgg [[1,2]] $ vint [1,2] [1,2,1]
+  testAgg [[1,0]] $ vint [1] [1,0,1] -- trailing-zero
+  testAgg [[1,0,0,0]] $ vint [1] [1,0,1] -- traling-zeroes
+  testAgg [[1]] $ vint [1] [1,0,1] -- because 1 and 1.0 are considered equivalent.
+  testAgg [[0]] $ vint [0] [0,0,1]
+  testAgg [[0,0]] $ vint [0] [0,0,1]
+  testAgg [[0,0,0]] $ vint [0] [0,0,1]
+  testAgg [[0,0,1]] $ vint [0,0,1] [0,0,2]
   testAgg [[1,2,0,7], [1,2,3,0]] $ vors' [ vint [1,2,0,7] [1,2,1],
                                            vint [1,2,3] [1,2,4]
                                          ]
@@ -143,47 +185,6 @@ spec_pvp = describe "aggPvp" $ before (return aggPvp) $ do
   testAgg [[1,2,2,4], [1,2,1,0], [1,2,0,4]] $ vors' [ vint [1,2,0,4] [1,2,2],
                                                       vint [1,2,2,4] [1,2,3]
                                                     ]
-
-spec_pvpMinor :: Spec
-spec_pvpMinor = describe "aggPvpMinor" $ before (return aggPvpMinor) $ do
-  testAgg [[1,2,0,7]] $ vint [1,2,0,7] [1,2,1]
-  testAgg [[1,2,3,0]] $ vint [1,2,3] [1,2,4] -- trailing-zero
-  testAgg [[1,2,0,0]] $ vint [1,2] [1,2,1] -- trailing-zeroes
-  testAgg [[1,2,10]] $ vint [1,2,10] [1,2,11]
-  testAgg [[1,2,0]] $ vint [1,2] [1,2,1]  -- trailing-zero
-  testAgg [[1,2]] $ vint [1,2] [1,2,1]
-  testAgg [[1,0]] $ vint [1] [1,0,1] -- trailing-zero
-  testAgg [[1,0,0,0]] $ vint [1] [1,0,1] -- traling-zeroes
-  testAgg [[1]] $ vint [1] [1,0,1] -- because 1 and 1.0 are considered equivalent.
-  testAgg [[0]] $ vint [0] [0,0,1]
-  testAgg [[0,0]] $ vint [0] [0,0,1]
-  testAgg [[0,0,0]] $ vint [0] [0,0,1]
-  testAgg [[0,0,1]] $ vint [0,0,1] [0,0,2]
-  testAgg [[1,2,0,7], [1,2,3,0]] $ vint [1,2,0,7] [1,3]
-  testAgg [[1,2,0,7], [1,2,0,7]] $ vint [1,2,0,7] [1,3]
-  testAgg [[1,2,0,7], [1,3]] $ vint [1,2,0,7] [1,4]
-  testAgg [[1,2,0,7], [1,3,4]] $ vors' [ vint [1,2,0,7] [1,3],
-                                         vint [1,3,4] [1,4]
-                                       ]
-  testAgg [[1,2,0,7], [1,3,0]] $ vint [1,2,0,7] [1,4] -- trailing-zero
-  testAgg [[1,3,4], [1,2,0,7]] $ vors' [ vint [1,2,0,7] [1,3],
-                                         vint [1,3,4] [1,4]
-                                       ]
-  testAgg [[1,3,0], [1,2,0,7]] $ vint [1,2,0,7] [1,4]
-  testAgg [[1,2,0,7], [1,3,0,8]] $ vors' [ vint [1,2,0,7] [1,3],
-                                           vint [1,3,0,8] [1,4]
-                                         ]
-  testAgg [[1,2,0,0], [1,3,0,0]] $ vint [1,2] [1,4] -- trailing-zeroes
-  testAgg [[1,3,0,8], [1,2,0,7]] $ vors' [ vint [1,2,0,7] [1,3],
-                                           vint [1,3,0,8] [1,4]
-                                         ]
-  testAgg [[1,2,0,7], [2]] $ vors' [ vint [1,2,0,7] [1,3],
-                                     vint [2] [2,1]
-                                   ]
-  testAgg [[2,2,0], [2,0], [3,5,0,1], [2,2,0,5]] $ vors' [ vint [2] [2,1],
-                                                           vint [2,2] [2,3],
-                                                           vint [3,5,0,1] [3,6]
-                                                         ]
 
 
 testAgg :: [[Int]] -> V.VersionRange -> SpecWith Aggregator
