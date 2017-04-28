@@ -13,6 +13,8 @@ module Staversion.Internal.Aggregate
          showVersionRange,
          aggOr,
          aggPvp,
+         aggPvpMajor,
+         aggPvpMinor,
          -- * Utility
          groupAllPreservingOrderBy,
          -- * Low-level functions
@@ -68,16 +70,29 @@ groupAllPreservingOrderBy sameGroup = foldr f [] where
 aggOr :: Aggregator
 aggOr = foldr1 V.unionVersionRanges . fmap V.thisVersion . NL.nub . NL.sort
 
--- | Aggregate versions to the range that the versions cover in a
--- (strict) PVP sense.
+-- | Alias for 'aggPvpMajor' for backward-compatibility.
 aggPvp :: Aggregator
-aggPvp = V.simplifyVersionRange . foldr1 V.unionVersionRanges . fmap toRange . NL.nub . NL.sort where
+aggPvp = aggPvpMajor
+
+-- | Aggregate versions to the range that the versions cover in a PVP
+-- sense. This aggregator sets the upper bound to a major version,
+-- which means it assumes major-version bump is not
+-- backward-compatible.
+aggPvpMajor :: Aggregator
+aggPvpMajor = V.simplifyVersionRange . foldr1 V.unionVersionRanges . fmap toRange . NL.nub . NL.sort where
   toRange v = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [(V.LowerBound norm_v V.InclusiveBound, V.UpperBound vu V.ExclusiveBound)] where
     norm_v = makeVersion $ normalizeTralingZeroes $ V.versionBranch v
     vu = makeVersion $ case V.versionBranch norm_v of
       [] -> error "versionBranch must not be empty."
       [x] -> [x, 1]  -- because [x] and [x,0] is equivalent
       (x : y : _) -> [x, y + 1]
+
+-- | Aggregate versions to the range that versions cover in a PVP
+-- sense. This aggregator sets the upper bound to a minor version,
+-- which means it assumes minor-version bump is not
+-- backward-compatible.
+aggPvpMinor :: Aggregator
+aggPvpMinor = undefined
 
 normalizeTralingZeroes :: [Int] -> [Int]
 normalizeTralingZeroes [] = []
