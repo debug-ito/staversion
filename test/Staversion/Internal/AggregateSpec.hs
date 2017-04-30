@@ -13,7 +13,7 @@ import Staversion.Internal.Aggregate
   ( Aggregator,
     showVersionRange,
     aggOr,
-    aggPvp,
+    aggPvpMajor,
     aggPvpMinor,
     aggregateResults,
     aggregatePackageVersions
@@ -37,7 +37,7 @@ spec = do
   spec_aggregateResults
   describe "Aggregators" $ do
     spec_or
-    spec_pvp
+    spec_pvpMajor
     spec_pvpMinor
 
 vor :: V.VersionRange -> V.VersionRange -> V.VersionRange
@@ -90,8 +90,8 @@ vint :: [Int] -> [Int] ->V.VersionRange
 vint vl vu = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [interval] where
   interval = (V.LowerBound (ver vl) V.InclusiveBound, V.UpperBound (ver vu) V.ExclusiveBound)
 
-spec_pvp :: Spec
-spec_pvp = describe "aggPvp" $ before (return aggPvp) $ do
+spec_pvpMajor :: Spec
+spec_pvpMajor = describe "aggPvpMajor" $ before (return aggPvpMajor) $ do
   testAgg [[1,2,0,7]] $ vint [1,2,0,7] [1,3]
   testAgg [[1,2,3,0]] $ vint [1,2,3] [1,3] -- trailing-zero
   testAgg [[1,2,0,0]] $ vint [1,2] [1,3] -- trailing-zeroes

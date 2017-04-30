@@ -12,7 +12,6 @@ module Staversion.Internal.Aggregate
          VersionRange,
          showVersionRange,
          aggOr,
-         aggPvp,
          aggPvpMajor,
          aggPvpMinor,
          -- * Utility
@@ -69,10 +68,6 @@ groupAllPreservingOrderBy sameGroup = foldr f [] where
 -- | Aggregator of ORed versions.
 aggOr :: Aggregator
 aggOr = foldr1 V.unionVersionRanges . fmap V.thisVersion . NL.nub . NL.sort
-
--- | Alias for 'aggPvpMajor' for backward-compatibility.
-aggPvp :: Aggregator
-aggPvp = aggPvpMajor
 
 -- | Aggregate versions to the range that the versions cover in a PVP
 -- sense. This aggregator sets the upper bound to a major version,
