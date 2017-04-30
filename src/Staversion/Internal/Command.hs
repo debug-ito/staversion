@@ -123,10 +123,19 @@ data AggregatorSpec =
 
 aggregators :: [AggregatorSpec]
 aggregators = [ AggregatorSpec Agg.aggOr "or" "concatenate versions with (||).",
-                AggregatorSpec Agg.aggPvp "pvp" ( "aggregate versions to a range that is supposed to be "
-                                                  ++ "compatible with the given versions "
-                                                  ++ "in terms of PVP (Package Versioning Policy.)"
-                                                )
+                AggregatorSpec Agg.aggPvpMajor "pvp-major"
+                ( "aggregate versions to a range that is supposed to be "
+                  ++ "compatible with the given versions "
+                  ++ "in terms of PVP (Package Versioning Policy.) "
+                  ++ "Major versions are used for upper bounds."
+                ),
+                AggregatorSpec Agg.aggPvpMajor "pvp" "alias for 'pvp-major'",
+                AggregatorSpec Agg.aggPvpMinor "pvp-minor"
+                ( "aggregate versions to a range that is supposed to be "
+                  ++ "compatible with the given versions "
+                  ++ "in terms of PVP. "
+                  ++ "Minor versions are used for upper bounds, i.e. this is stricter than 'pvp-major'."
+                )
               ]
 
 parseAggregator :: String -> Maybe Aggregator
