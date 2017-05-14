@@ -1,5 +1,16 @@
 # Revision history for staversion
 
+## 0.2.0.0  -- 2017-05-14
+
+* [breaking change] `pvp` aggregator now does "trailing-zero
+  normalization". For example, it now assumes versions "2.2" and
+  "2.2.0.0" are practically the same (#2).
+* Add `pvp-major` aggregator, which is just an alias for `pvp`
+  aggregator.
+* Add `pvp-minor` aggregator, which is similar to `pvp-major` but it
+  uses minor versions for upper bounds (#2).
+
+
 ## 0.1.4.0  -- 2017-04-08
 
 * Add `--aggregate` option, which aggregates versions in different LTS resolvers.
