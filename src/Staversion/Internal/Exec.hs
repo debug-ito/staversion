@@ -20,7 +20,6 @@ import Data.Maybe (isJust)
 import Data.Text (unpack, pack)
 import qualified Data.Text.Lazy.IO as TLIO
 
-import Staversion.Internal.Aggregate (showVersionRange)
 import Staversion.Internal.BuildPlan
   ( BuildPlan, packageVersion, buildPlanSource,
     newBuildPlanManager, loadBuildPlan,
@@ -45,7 +44,7 @@ main = do
   where
     formatResults comm results = do
       let fconf = Format.FormatConfig { Format.fconfAggregator = commAggregator comm,
-                                        Format.fconfFormatVersion = pack . showVersionRange
+                                        Format.fconfFormatVersion = Format.formatVersionCabal
                                       }
       when (isJust $ commAggregator comm) $ do
         logDebug (commLogger comm) ("Results before aggregation: " ++ show results)

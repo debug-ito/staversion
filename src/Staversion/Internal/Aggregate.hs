@@ -37,8 +37,8 @@ import Data.Text (unpack)
 import Data.Traversable (traverse)
 import Data.Version (Version, makeVersion)
 import Distribution.Version (VersionRange)
-import qualified Distribution.Version as V
 import qualified Distribution.Text as DT
+import qualified Distribution.Version as V
 import qualified Text.PrettyPrint as Pretty
 
 import Staversion.Internal.Cabal (Target(..))
@@ -49,6 +49,7 @@ import Staversion.Internal.Result (Result(..), AggregatedResult(..), ResultBody,
 -- | Aggregate some 'Version's into a 'VersionRange'.
 type Aggregator = NonEmpty Version -> VersionRange
 
+-- | Let Cabal convert 'VersionRange' to 'String'
 showVersionRange :: VersionRange -> String
 showVersionRange = Pretty.render . DT.disp
 

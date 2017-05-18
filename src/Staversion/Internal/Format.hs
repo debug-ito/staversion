@@ -7,7 +7,8 @@
 module Staversion.Internal.Format
        ( formatResults,
          FormatConfig(..),
-         FormatVersion
+         FormatVersion,
+         formatVersionCabal
        ) where
 
 import Data.Foldable (fold)
@@ -16,14 +17,14 @@ import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
 import Data.Monoid (mempty, mconcat, (<>))
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
 import Distribution.Version (VersionRange)
 
 import Staversion.Internal.Aggregate
-  ( Aggregator, showVersionRange, groupAllPreservingOrderBy,
-    aggregateResults
+  ( Aggregator, groupAllPreservingOrderBy,
+    aggregateResults, showVersionRange
   )
 import Staversion.Internal.Query
   ( Query(..),
@@ -39,6 +40,11 @@ import Staversion.Internal.Log (LogEntry)
 
 -- | Format for 'VersionRange'.
 type FormatVersion = VersionRange -> Text
+
+-- | Let Cabal format 'VersionRange'.
+formatVersionCabal :: FormatVersion
+formatVersionCabal = pack . showVersionRange
+
 
 data FormatConfig = FormatConfig { fconfAggregator :: Maybe Aggregator,
                                    fconfFormatVersion :: FormatVersion

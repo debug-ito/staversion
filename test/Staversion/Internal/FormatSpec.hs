@@ -5,10 +5,11 @@ import Data.Text (pack)
 import qualified Data.Text.Lazy as TL
 import Test.Hspec
 
-import Staversion.Internal.Aggregate (aggOr, showVersionRange, Aggregator)
+import Staversion.Internal.Aggregate (aggOr, Aggregator)
 import Staversion.Internal.Format
   ( formatResults,
-    FormatConfig(..)
+    FormatConfig(..),
+    formatVersionCabal
   )
 import Staversion.Internal.Log (LogEntry)
 import Staversion.Internal.Query
@@ -34,14 +35,14 @@ spec = do
 formatResultsCabal :: [Result] -> TL.Text
 formatResultsCabal =  fst . formatResults fconf where
   fconf = FormatConfig { fconfAggregator = Nothing,
-                         fconfFormatVersion = pack . showVersionRange
+                         fconfFormatVersion = formatVersionCabal
                        }
 
 -- | for backward-compatibility.
 formatResultsCabalAggregated :: Aggregator -> [Result] -> (TL.Text, [LogEntry])
 formatResultsCabalAggregated agg = formatResults fconf where
   fconf = FormatConfig { fconfAggregator = Just agg,
-                         fconfFormatVersion = pack . showVersionRange
+                         fconfFormatVersion = formatVersionCabal
                        }
 
 spec_simple :: Spec
