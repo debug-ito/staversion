@@ -1,13 +1,16 @@
 module Staversion.Internal.FormatSpec (main,spec) where
 
 import Data.Monoid ((<>))
+import Data.Text (pack)
+import qualified Data.Text.Lazy as TL
 import Test.Hspec
 
-import Staversion.Internal.Aggregate (aggOr)
+import Staversion.Internal.Aggregate (aggOr, showVersionRange, Aggregator)
 import Staversion.Internal.Format
-  ( formatResultsCabal,
-    formatResultsCabalAggregated
+  ( formatResults,
+    FormatConfig(..)
   )
+import Staversion.Internal.Log (LogEntry)
 import Staversion.Internal.Query
   ( PackageSource(..), Query(..),
     Resolver, PackageName
@@ -27,8 +30,22 @@ spec = do
   spec_simple
   spec_aggregate
 
+-- | for backward-compatibility.
+formatResultsCabal :: [Result] -> TL.Text
+formatResultsCabal =  fst . formatResults fconf where
+  fconf = FormatConfig { fconfAggregator = Nothing,
+                         fconfFormatVersion = pack . showVersionRange
+                       }
+
+-- | for backward-compatibility.
+formatResultsCabalAggregated :: Aggregator -> [Result] -> (TL.Text, [LogEntry])
+formatResultsCabalAggregated agg = formatResults fconf where
+  fconf = FormatConfig { fconfAggregator = Just agg,
+                         fconfFormatVersion = pack . showVersionRange
+                       }
+
 spec_simple :: Spec
-spec_simple = describe "formatResultsCabal" $ do
+spec_simple = describe "formatResults" $ do
   it "should return empty text for empty list" $ do
     formatResultsCabal [] `shouldBe` ""
   it "should format a Result in a Cabal way" $ do
@@ -221,7 +238,7 @@ spec_simple = describe "formatResultsCabal" $ do
     formatResultsCabal input `shouldBe` expected
 
 spec_aggregate :: Spec
-spec_aggregate = describe "formatResultsCabalAggregated" $ do
+spec_aggregate = describe "formatResults" $ do
   it "should aggregate Results over multiple package sources" $ do
     let input = [ simpleResult "lts-4.2" "hoge" [1,2,3],
                   simpleResult "lts-5.0" "hoge" [1,5]

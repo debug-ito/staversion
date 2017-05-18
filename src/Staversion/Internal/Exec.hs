@@ -12,13 +12,15 @@ module Staversion.Internal.Exec
        ) where
 
 import Control.Applicative ((<$>))
-import Control.Monad (mapM_)
+import Control.Monad (mapM_, when)
 import Data.Either (rights)
 import Data.Function (on)
 import Data.List (groupBy, nub)
-import Data.Text (unpack)
+import Data.Maybe (isJust)
+import Data.Text (unpack, pack)
 import qualified Data.Text.Lazy.IO as TLIO
 
+import Staversion.Internal.Aggregate (showVersionRange)
 import Staversion.Internal.BuildPlan
   ( BuildPlan, packageVersion, buildPlanSource,
     newBuildPlanManager, loadBuildPlan,
@@ -41,11 +43,13 @@ main = do
   comm <- parseCommandArgs
   showFormatResult comm =<< formatResults comm =<< (processCommand comm)
   where
-    formatResults comm results = case commAggregator comm of
-      Nothing -> return (Format.formatResultsCabal results, [])
-      Just agg -> do
+    formatResults comm results = do
+      let fconf = Format.FormatConfig { Format.fconfAggregator = commAggregator comm,
+                                        Format.fconfFormatVersion = pack . showVersionRange
+                                      }
+      when (isJust $ commAggregator comm) $ do
         logDebug (commLogger comm) ("Results before aggregation: " ++ show results)
-        return $ Format.formatResultsCabalAggregated agg results
+      return $ Format.formatResults fconf results
     showFormatResult comm (formatted, logs) = do
       mapM_ (putLogEntry $ commLogger comm) logs
       TLIO.putStr formatted

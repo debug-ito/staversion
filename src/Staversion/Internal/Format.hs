@@ -5,8 +5,9 @@
 --
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.Format
-       ( formatResultsCabal,
-         formatResultsCabalAggregated
+       ( formatResults,
+         FormatConfig(..),
+         FormatVersion
        ) where
 
 import Data.Foldable (fold)
@@ -15,6 +16,7 @@ import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
 import Data.Monoid (mempty, mconcat, (<>))
+import Data.Text (Text)
 import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
 import Distribution.Version (VersionRange)
@@ -35,15 +37,25 @@ import Staversion.Internal.Result
 import Staversion.Internal.Cabal (Target(..))
 import Staversion.Internal.Log (LogEntry)
 
--- | format 'Result's like it's in build-depends in .cabal files.
-formatResultsCabal :: [Result] -> TL.Text
-formatResultsCabal = formatAggregatedResults . map singletonResult
+-- | Format for 'VersionRange'.
+type FormatVersion = VersionRange -> Text
 
--- | aggregate 'Result's and format them like it's in build-depends in
--- .cabal files.
-formatResultsCabalAggregated :: Aggregator -> [Result] -> (TL.Text, [LogEntry])
-formatResultsCabalAggregated aggregator = (\(aggs, logs) -> (formatAggregatedResults aggs, logs))
-                                          . aggregateResults aggregator
+data FormatConfig = FormatConfig { fconfAggregator :: Maybe Aggregator,
+                                   fconfFormatVersion :: FormatVersion
+                                 }
+
+
+
+-- | Format 'Result's with the given 'FormatConfig'.
+formatResults :: FormatConfig -> [Result] -> (TL.Text, [LogEntry])
+formatResults fconf = (\(aggs, logs) -> (formatAggregatedResults fconf aggs, logs))
+                      . aggregateResultsWithConf
+  where
+    aggregateResultsWithConf = case fconfAggregator fconf of
+      Nothing -> \results -> (map singletonResult results, [])
+      Just agg -> aggregateResults agg
+
+
 
 -- | 'Left' lines and 'Right' lines are handled differently by
 -- 'formatResultBlock'. It puts commas at the right places assuming
@@ -53,30 +65,30 @@ type ResultLine = Either Builder Builder
 data ResultBlock = RBHead Builder [ResultBlock] -- ^ header and child blocks
                  | RBLines [ResultLine] -- ^ a block, which consists of some lines.
 
-formatAggregatedResults :: [AggregatedResult] -> TL.Text
-formatAggregatedResults = toLazyText . mconcat . map formatResultBlock . makeSourceBlocks
+formatAggregatedResults :: FormatConfig -> [AggregatedResult] -> TL.Text
+formatAggregatedResults fconf = toLazyText . mconcat . map formatResultBlock . makeSourceBlocks fconf
 
-makeSourceBlocks :: [AggregatedResult] -> [ResultBlock]
-makeSourceBlocks = map sourceBlock . groupAllPreservingOrderBy ((==) `on` aggResultIn) where
-  sourceBlock results@(head_ret :| _) = RBHead header $ makeQueryBlocks $ NL.toList results where
+makeSourceBlocks :: FormatConfig -> [AggregatedResult] -> [ResultBlock]
+makeSourceBlocks fconf = map sourceBlock . groupAllPreservingOrderBy ((==) `on` aggResultIn) where
+  sourceBlock results@(head_ret :| _) = RBHead header $ makeQueryBlocks fconf $ NL.toList results where
     header = "------ " <> (fold $ NL.intersperse ", " $ fmap sourceHeader $ aggResultIn head_ret)
 
 sourceHeader :: ResultSource -> Builder
 sourceHeader = fromText . resultSourceDesc
 
-makeQueryBlocks :: [AggregatedResult] -> [ResultBlock]
-makeQueryBlocks = uncurry prependLines . foldr f ([], []) where
+makeQueryBlocks :: FormatConfig -> [AggregatedResult] -> [ResultBlock]
+makeQueryBlocks fconf = uncurry prependLines . foldr f ([], []) where
   prependLines blocks [] = blocks
   prependLines blocks rlines = (RBLines rlines) : blocks
   f ret (blocks, rlines) = case (aggResultFor ret, aggResultBody ret) of
-    (_, Right (SimpleResultBody name mver)) -> (blocks, (versionLine name mver) : rlines)
-    (_, Right (CabalResultBody file target pairs)) -> (cabalFileSuccessBlock file target pairs : prependLines blocks rlines, [])
+    (_, Right (SimpleResultBody name mver)) -> (blocks, (versionLine (fconfFormatVersion fconf) name mver) : rlines)
+    (_, Right (CabalResultBody file target pairs)) -> (cabalFileSuccessBlock fconf file target pairs : prependLines blocks rlines, [])
     ((QueryName name), Left _) -> (blocks, (packageErrorLine name) : rlines)
     ((QueryCabalFile file), Left _) -> (cabalFileErrorBlock file : prependLines blocks rlines, [])
 
-versionLine :: PackageName -> Maybe VersionRange -> ResultLine
-versionLine name Nothing = Left $ "-- " <> fromText name <> " N/A"
-versionLine name (Just ver_range) = Right $ fromText name <> " " <> (fromString $ showVersionRange ver_range)
+versionLine :: FormatVersion -> PackageName -> Maybe VersionRange -> ResultLine
+versionLine _ name Nothing = Left $ "-- " <> fromText name <> " N/A"
+versionLine format_version name (Just ver_range) = Right $ fromText name <> " " <> (fromText $ format_version ver_range)
 
 packageErrorLine :: PackageName -> ResultLine
 packageErrorLine name = Left $ "-- " <> fromText name <> " ERROR"
@@ -85,8 +97,8 @@ cabalFileErrorBlock :: FilePath -> ResultBlock
 cabalFileErrorBlock file = RBLines [Left line] where
   line = "-- " <> fromString file <> " ERROR"
 
-cabalFileSuccessBlock :: FilePath -> Target -> [(PackageName, Maybe VersionRange)] -> ResultBlock
-cabalFileSuccessBlock file target pairs = RBHead header [RBLines $ map (uncurry versionLine) pairs] where
+cabalFileSuccessBlock :: FormatConfig -> FilePath -> Target -> [(PackageName, Maybe VersionRange)] -> ResultBlock
+cabalFileSuccessBlock fconf file target pairs = RBHead header [RBLines $ map (uncurry $ versionLine $ fconfFormatVersion fconf) pairs] where
   header = "-- " <> fromString file <> " - " <> target_text
   target_text = case target of
     TargetLibrary -> "library"
