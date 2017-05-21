@@ -5,7 +5,7 @@
 --
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.Format
-       ( formatResults,
+       ( formatAggregatedResults,
          FormatConfig(..),
          FormatVersion,
          formatVersionCabal
@@ -23,8 +23,8 @@ import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
 import Distribution.Version (VersionRange)
 
 import Staversion.Internal.Aggregate
-  ( Aggregator, groupAllPreservingOrderBy,
-    aggregateResults, showVersionRange
+  ( groupAllPreservingOrderBy,
+    showVersionRange
   )
 import Staversion.Internal.Query
   ( Query(..),
@@ -46,22 +46,8 @@ formatVersionCabal :: FormatVersion
 formatVersionCabal = pack . showVersionRange
 
 
-data FormatConfig = FormatConfig { fconfAggregator :: Maybe Aggregator,
-                                   fconfFormatVersion :: FormatVersion
+data FormatConfig = FormatConfig { fconfFormatVersion :: FormatVersion
                                  }
-
-
-
--- | Format 'Result's with the given 'FormatConfig'.
-formatResults :: FormatConfig -> [Result] -> (TL.Text, [LogEntry])
-formatResults fconf = (\(aggs, logs) -> (formatAggregatedResults fconf aggs, logs))
-                      . aggregateResultsWithConf
-  where
-    aggregateResultsWithConf = case fconfAggregator fconf of
-      Nothing -> \results -> (map singletonResult results, [])
-      Just agg -> aggregateResults agg
-
-
 
 -- | 'Left' lines and 'Right' lines are handled differently by
 -- 'formatResultBlock'. It puts commas at the right places assuming
@@ -70,6 +56,7 @@ type ResultLine = Either Builder Builder
 
 data ResultBlock = RBHead Builder [ResultBlock] -- ^ header and child blocks
                  | RBLines [ResultLine] -- ^ a block, which consists of some lines.
+
 
 formatAggregatedResults :: FormatConfig -> [AggregatedResult] -> TL.Text
 formatAggregatedResults fconf = toLazyText . mconcat . map formatResultBlock . makeSourceBlocks fconf

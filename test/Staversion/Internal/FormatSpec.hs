@@ -5,9 +5,9 @@ import Data.Text (pack)
 import qualified Data.Text.Lazy as TL
 import Test.Hspec
 
-import Staversion.Internal.Aggregate (aggOr, Aggregator)
+import Staversion.Internal.Aggregate (aggOr, Aggregator, aggregateResults)
 import Staversion.Internal.Format
-  ( formatResults,
+  ( formatAggregatedResults,
     FormatConfig(..),
     formatVersionCabal
   )
@@ -16,7 +16,10 @@ import Staversion.Internal.Query
   ( PackageSource(..), Query(..),
     Resolver, PackageName
   )
-import Staversion.Internal.Result (Result(..), ResultBody, ResultBody'(..), ResultSource(..))
+import Staversion.Internal.Result
+  ( Result(..), ResultBody, ResultBody'(..), ResultSource(..),
+    singletonResult
+  )
 import Staversion.Internal.Cabal (Target(..))
 
 import Staversion.Internal.TestUtil (ver, simpleResultBody, verPairs)
@@ -33,20 +36,19 @@ spec = do
 
 -- | for backward-compatibility.
 formatResultsCabal :: [Result] -> TL.Text
-formatResultsCabal =  fst . formatResults fconf where
-  fconf = FormatConfig { fconfAggregator = Nothing,
-                         fconfFormatVersion = formatVersionCabal
+formatResultsCabal =  formatAggregatedResults fconf . map singletonResult where
+  fconf = FormatConfig { fconfFormatVersion = formatVersionCabal
                        }
 
 -- | for backward-compatibility.
 formatResultsCabalAggregated :: Aggregator -> [Result] -> (TL.Text, [LogEntry])
-formatResultsCabalAggregated agg = formatResults fconf where
-  fconf = FormatConfig { fconfAggregator = Just agg,
-                         fconfFormatVersion = formatVersionCabal
+formatResultsCabalAggregated agg = mapFirst (formatAggregatedResults fconf) . aggregateResults agg where
+  fconf = FormatConfig { fconfFormatVersion = formatVersionCabal
                        }
+  mapFirst f (a, b) = (f a, b)
 
 spec_simple :: Spec
-spec_simple = describe "formatResults" $ do
+spec_simple = describe "formatAggregatedResults" $ do
   it "should return empty text for empty list" $ do
     formatResultsCabal [] `shouldBe` ""
   it "should format a Result in a Cabal way" $ do
@@ -239,7 +241,7 @@ spec_simple = describe "formatResults" $ do
     formatResultsCabal input `shouldBe` expected
 
 spec_aggregate :: Spec
-spec_aggregate = describe "formatResults" $ do
+spec_aggregate = describe "formatAggregatedResults" $ do
   it "should aggregate Results over multiple package sources" $ do
     let input = [ simpleResult "lts-4.2" "hoge" [1,2,3],
                   simpleResult "lts-5.0" "hoge" [1,5]

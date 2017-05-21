@@ -20,6 +20,7 @@ import Data.Maybe (isJust)
 import Data.Text (unpack, pack)
 import qualified Data.Text.Lazy.IO as TLIO
 
+import Staversion.Internal.Aggregate (aggregateResults)
 import Staversion.Internal.BuildPlan
   ( BuildPlan, packageVersion, buildPlanSource,
     newBuildPlanManager, loadBuildPlan,
@@ -29,29 +30,34 @@ import Staversion.Internal.Command
   ( parseCommandArgs,
     Command(..)
   )
+import Staversion.Internal.Format (formatAggregatedResults)
 import qualified Staversion.Internal.Format as Format
 import Staversion.Internal.Log (logDebug, logError, Logger, putLogEntry)
 import Staversion.Internal.Query
   ( Query(..), PackageSource(..), PackageName, ErrorMsg
   )
-import Staversion.Internal.Result (Result(..), ResultBody, ResultBody'(..), ResultSource(..))
+import Staversion.Internal.Result
+  ( Result(..), ResultBody, ResultBody'(..), ResultSource(..),
+    singletonResult
+  )
 import Staversion.Internal.Cabal (BuildDepends(..), loadCabalFile)
 
 main :: IO ()
 main = do
   comm <- parseCommandArgs
-  showFormatResult comm =<< formatResults comm =<< (processCommand comm)
+  formatAndShow comm =<< aggregate comm =<< (processCommand comm)
   where
-    formatResults comm results = do
-      let fconf = Format.FormatConfig { Format.fconfAggregator = commAggregator comm,
-                                        Format.fconfFormatVersion = Format.formatVersionCabal
-                                      }
-      when (isJust $ commAggregator comm) $ do
+    aggregate comm results = case commAggregator comm of
+      Nothing -> return $ map singletonResult results
+      Just agg -> do
         logDebug (commLogger comm) ("Results before aggregation: " ++ show results)
-      return $ Format.formatResults fconf results
-    showFormatResult comm (formatted, logs) = do
-      mapM_ (putLogEntry $ commLogger comm) logs
-      TLIO.putStr formatted
+        let (aresults, logs) = aggregateResults agg results
+        mapM_ (putLogEntry $ commLogger comm) logs
+        return aresults
+    formatAndShow _ aresults = do
+      let fconf = Format.FormatConfig { Format.fconfFormatVersion = Format.formatVersionCabal
+                                      }
+      TLIO.putStr $ formatAggregatedResults fconf aresults
 
 data ResolvedQuery = RQueryOne PackageName
                    | RQueryCabal FilePath BuildDepends
