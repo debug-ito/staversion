@@ -8,7 +8,7 @@ import System.FilePath ((</>))
 import Test.Hspec
 
 import Staversion.Internal.BuildPlan (_setLTSDisambiguator)
-import Staversion.Internal.Command (Command(..))
+import Staversion.Internal.Command (Command(..), defFormatConfig)
 import Staversion.Internal.Exec
   ( processCommand,
     _processCommandWithCustomBuildPlanManager
@@ -134,7 +134,8 @@ baseCommand = Command { commBuildPlanDir = "test" </> "data",
                         commSources = [],
                         commQueries = [],
                         commAllowNetwork = False,
-                        commAggregator = Nothing
+                        commAggregator = Nothing,
+                        commFormatConfig = defFormatConfig
                       }
 
 spec_processCommand_disambiguates :: Spec

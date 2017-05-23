@@ -6,7 +6,8 @@
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.Command
        ( Command(..),
-         parseCommandArgs
+         parseCommandArgs,
+         defFormatConfig
        ) where
 
 import Control.Applicative ((<$>), (<*>), optional, some, (<|>))
@@ -22,6 +23,8 @@ import qualified Text.PrettyPrint.ANSI.Leijen as Pretty
 
 import Staversion.Internal.Aggregate (Aggregator)
 import qualified Staversion.Internal.Aggregate as Agg
+import Staversion.Internal.Format (FormatConfig(..))
+import qualified Staversion.Internal.Format as Format
 import Staversion.Internal.Log
   ( LogLevel(..), Logger(loggerThreshold), defaultLogger
   )
@@ -45,8 +48,10 @@ data Command =
             -- ^ package queries
             commAllowNetwork :: Bool,
             -- ^ if 'True', it accesses the Internet to query build plans etc.
-            commAggregator :: Maybe Aggregator
+            commAggregator :: Maybe Aggregator,
             -- ^ if 'Just', do aggregation over the results.
+            commFormatConfig :: FormatConfig
+            -- ^ config for the formatter
           }
 
 -- | Default values for 'Command'.
@@ -59,9 +64,13 @@ defCommand = DefCommand <$> def_build_plan_dir where
     home <- getHomeDirectory
     return $ home </> ".stack" </> "build-plan"
 
+defFormatConfig :: FormatConfig
+defFormatConfig = FormatConfig { fconfFormatVersion = Format.formatVersionCabal
+                               }
 
 commandParser :: DefCommand -> Opt.Parser Command
-commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> queries <*> network <*> aggregate where
+commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
+                         <*> queries <*> network <*> aggregate <*> format_config where
   logger = makeLogger <$> is_verbose
   makeLogger True = defaultLogger { loggerThreshold = Just LogDebug }
   makeLogger False = defaultLogger
@@ -107,6 +116,7 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources <*> q
                           Opt.metavar "AGGREGATOR",
                           Opt.helpDoc $ Just $ docAggregators "AGGREGATOR"
                         ]
+  format_config = pure $ defFormatConfig
 
 maybeReader :: String -> (String -> Maybe a) -> Opt.ReadM a
 maybeReader metavar mfunc = do

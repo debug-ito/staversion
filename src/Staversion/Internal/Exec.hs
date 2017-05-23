@@ -54,10 +54,8 @@ main = do
         let (aresults, logs) = aggregateResults agg results
         mapM_ (putLogEntry $ commLogger comm) logs
         return aresults
-    formatAndShow _ aresults = do
-      let fconf = Format.FormatConfig { Format.fconfFormatVersion = Format.formatVersionCabal
-                                      }
-      TLIO.putStr $ formatAggregatedResults fconf aresults
+    formatAndShow comm aresults = do
+      TLIO.putStr $ formatAggregatedResults (commFormatConfig comm) aresults
 
 data ResolvedQuery = RQueryOne PackageName
                    | RQueryCabal FilePath BuildDepends

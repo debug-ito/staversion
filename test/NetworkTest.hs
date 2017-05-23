@@ -24,7 +24,7 @@ import Staversion.Internal.BuildPlan.Stackage
     PartialResolver(..), ExactResolver(..),
     parseResolverString
   )
-import Staversion.Internal.Command (Command(..))
+import Staversion.Internal.Command (Command(..), defFormatConfig)
 import Staversion.Internal.Exec (processCommand)
 import Staversion.Internal.Log (defaultLogger, Logger(loggerThreshold))
 import Staversion.Internal.Query
@@ -123,7 +123,8 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
                          commSources = [SourceStackage "lts-3"],
                          commQueries = [QueryName "base"],
                          commAllowNetwork = True,
-                         commAggregator = Nothing
+                         commAggregator = Nothing,
+                         commFormatConfig = defFormatConfig
                        }
     [ret] <- processCommand comm
     (resultSourceQueried . resultIn) ret `shouldBe` SourceStackage "lts-3"
@@ -143,7 +144,8 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
                          commSources = [SourceHackage],
                          commQueries = [QueryName "base"],
                          commAllowNetwork = True,
-                         commAggregator = Nothing
+                         commAggregator = Nothing,
+                         commFormatConfig = defFormatConfig
                        }
     [ret] <- processCommand comm
     (resultSourceQueried . resultIn) ret `shouldBe` SourceHackage
