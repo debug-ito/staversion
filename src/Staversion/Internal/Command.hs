@@ -125,22 +125,24 @@ maybeReader metavar mfunc = do
    Nothing -> Opt.readerError ("Unknown " ++ metavar ++ ": " ++ got)
    Just v -> return v
 
-data AggregatorSpec =
-  AggregatorSpec { aggSpecFunc :: Aggregator,
-                   aggSpecSymbol :: String,
-                   aggSpecDesc :: String
-                 }
+
+data SelectSpec a = SelectSpec { selectResult :: a,
+                                 selectSymbol :: String,
+                                 selectDesc :: String
+                               }
+
+type AggregatorSpec = SelectSpec Aggregator
 
 aggregators :: [AggregatorSpec]
-aggregators = [ AggregatorSpec Agg.aggOr "or" "concatenate versions with (||).",
-                AggregatorSpec Agg.aggPvpMajor "pvp-major"
+aggregators = [ SelectSpec Agg.aggOr "or" "concatenate versions with (||).",
+                SelectSpec Agg.aggPvpMajor "pvp-major"
                 ( "aggregate versions to a range that is supposed to be "
                   ++ "compatible with the given versions "
                   ++ "in terms of PVP (Package Versioning Policy.) "
                   ++ "Major versions are used for upper bounds."
                 ),
-                AggregatorSpec Agg.aggPvpMajor "pvp" "alias for 'pvp-major'",
-                AggregatorSpec Agg.aggPvpMinor "pvp-minor"
+                SelectSpec Agg.aggPvpMajor "pvp" "alias for 'pvp-major'",
+                SelectSpec Agg.aggPvpMinor "pvp-minor"
                 ( "aggregate versions to a range that is supposed to be "
                   ++ "compatible with the given versions "
                   ++ "in terms of PVP. "
@@ -148,22 +150,25 @@ aggregators = [ AggregatorSpec Agg.aggOr "or" "concatenate versions with (||).",
                 )
               ]
 
-parseAggregator :: String -> Maybe Aggregator
-parseAggregator symbol = toMaybe $ filter (\spec -> aggSpecSymbol spec == symbol) aggregators where
+parseSelect :: [SelectSpec a] -> String -> Maybe a
+parseSelect specs symbol = toMaybe $ filter (\spec -> selectSymbol spec == symbol) specs where
   toMaybe [] = Nothing
-  toMaybe (a : _) = Just $ aggSpecFunc a
+  toMaybe (spec : _) = Just $ selectResult spec
+
+parseAggregator :: String -> Maybe Aggregator
+parseAggregator = parseSelect aggregators
 
 wrapped :: String -> Pretty.Doc
 wrapped = Pretty.fillSep . map Pretty.text . words
 
-docAggregators :: String -> Pretty.Doc
-docAggregators metaver = Pretty.vsep $ (foreword  :) $ map docForAgg aggregators where
-  foreword = wrapped ( "Aggregate version results over different resolvers."
-                       ++ " Possible " ++ metaver ++ " is:"
-                     )
-  docForAgg AggregatorSpec {aggSpecSymbol = symbol, aggSpecDesc = desc} =
+docSelect :: [SelectSpec a] -> String -> String -> Pretty.Doc
+docSelect specs foreword_str metavar = Pretty.vsep $ (foreword  :) $ map docSpec specs where
+  foreword = wrapped ( foreword_str ++ " Possible " ++ metavar ++ " is:" )
+  docSpec SelectSpec {selectSymbol = symbol, selectDesc = desc} =
     Pretty.hang 2 $ wrapped ("\"" <> symbol <> "\": " <> desc)
 
+docAggregators :: String -> Pretty.Doc
+docAggregators = docSelect aggregators "Aggregate version results over different resolvers."
 
 programDescription :: Opt.Parser a -> Opt.ParserInfo a
 programDescription parser =
