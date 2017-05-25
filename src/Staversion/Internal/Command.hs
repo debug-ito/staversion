@@ -23,7 +23,7 @@ import qualified Text.PrettyPrint.ANSI.Leijen as Pretty
 
 import Staversion.Internal.Aggregate (Aggregator)
 import qualified Staversion.Internal.Aggregate as Agg
-import Staversion.Internal.Format (FormatConfig(..))
+import Staversion.Internal.Format (FormatConfig(..), FormatVersion)
 import qualified Staversion.Internal.Format as Format
 import Staversion.Internal.Log
   ( LogLevel(..), Logger(loggerThreshold), defaultLogger
@@ -169,6 +169,16 @@ docSelect specs foreword_str metavar = Pretty.vsep $ (foreword  :) $ map docSpec
 
 docAggregators :: String -> Pretty.Doc
 docAggregators = docSelect aggregators "Aggregate version results over different resolvers."
+
+
+formatVersions :: [SelectSpec FormatVersion]
+formatVersions = [ SelectSpec Format.formatVersionCabal "cabal"
+                   ( "Let Cabal format VersionRanges"
+                   )
+                 ]
+
+docFormatVersions :: String -> Pretty.Doc
+docFormatVersions = docSelect formatVersions "Format for package version ranges."
 
 programDescription :: Opt.Parser a -> Opt.ParserInfo a
 programDescription parser =
