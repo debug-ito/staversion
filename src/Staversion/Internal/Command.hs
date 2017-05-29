@@ -64,10 +64,6 @@ defCommand = DefCommand <$> def_build_plan_dir where
     home <- getHomeDirectory
     return $ home </> ".stack" </> "build-plan"
 
-defFormatConfig :: FormatConfig
-defFormatConfig = FormatConfig { fconfFormatVersion = Format.formatVersionCabal
-                               }
-
 commandParser :: DefCommand -> Opt.Parser Command
 commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
                          <*> queries <*> network <*> aggregate <*> format_config where
@@ -116,7 +112,12 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
                           Opt.metavar "AGGREGATOR",
                           Opt.helpDoc $ Just $ docAggregators "AGGREGATOR"
                         ]
-  format_config = pure $ defFormatConfig
+  format_config = FormatConfig <$> format_version
+  format_version = Opt.option (maybeReader "FORMAT" $ parseSelect formatVersions)
+                   $ mconcat [ Opt.long "format-version",
+                               Opt.metavar "FORMAT",
+                               Opt.helpDoc $ Just $ docFormatVersions "FORMAT"
+                             ]
 
 maybeReader :: String -> (String -> Maybe a) -> Opt.ReadM a
 maybeReader metavar mfunc = do
@@ -167,15 +168,22 @@ docSelect specs foreword_str metavar = Pretty.vsep $ (foreword  :) $ map docSpec
   docSpec SelectSpec {selectSymbol = symbol, selectDesc = desc} =
     Pretty.hang 2 $ wrapped ("\"" <> symbol <> "\": " <> desc)
 
+
+
 docAggregators :: String -> Pretty.Doc
 docAggregators = docSelect aggregators "Aggregate version results over different resolvers."
 
+
+defFormatConfig :: FormatConfig
+defFormatConfig = FormatConfig { fconfFormatVersion = selectResult $ head formatVersions
+                               }
 
 formatVersions :: [SelectSpec FormatVersion]
 formatVersions = [ SelectSpec Format.formatVersionCabal "cabal"
                    ( "Let Cabal format VersionRanges"
                    )
                  ]
+
 
 docFormatVersions :: String -> Pretty.Doc
 docFormatVersions = docSelect formatVersions "Format for package version ranges."
