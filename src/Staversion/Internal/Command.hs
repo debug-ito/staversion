@@ -116,7 +116,8 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
   format_version = Opt.option (maybeReader "FORMAT" $ parseSelect formatVersions)
                    $ mconcat [ Opt.long "format-version",
                                Opt.metavar "FORMAT",
-                               Opt.helpDoc $ Just $ docFormatVersions "FORMAT"
+                               Opt.helpDoc $ Just $ docFormatVersions "FORMAT",
+                               Opt.value $ fconfFormatVersion defFormatConfig
                              ]
 
 maybeReader :: String -> (String -> Maybe a) -> Opt.ReadM a
@@ -166,9 +167,13 @@ docSelect :: [SelectSpec a] -> String -> String -> Pretty.Doc
 docSelect specs foreword_str metavar = Pretty.vsep $ (foreword  :) $ map docSpec specs where
   foreword = wrapped ( foreword_str ++ " Possible " ++ metavar ++ " is:" )
   docSpec SelectSpec {selectSymbol = symbol, selectDesc = desc} =
-    Pretty.hang 2 $ wrapped ("\"" <> symbol <> "\": " <> desc)
+    Pretty.hang 2 $ wrapped (symbol <> ": " <> desc)
 
-
+docSelectWithDefault :: [SelectSpec a] -> String -> String -> Pretty.Doc
+docSelectWithDefault [] foreword metavar = docSelect [] foreword metavar where
+docSelectWithDefault (def_spec : rest) foreword metavar = docSelect (def_spec' : rest) foreword metavar where
+  def_spec' = def_spec { selectSymbol = selectSymbol def_spec <> " [DEFAULT]" }
+  
 
 docAggregators :: String -> Pretty.Doc
 docAggregators = docSelect aggregators "Aggregate version results over different resolvers."
@@ -185,8 +190,10 @@ formatVersions = [ SelectSpec Format.formatVersionCabal "cabal"
                  ]
 
 
+-- TODO: show default format.
+
 docFormatVersions :: String -> Pretty.Doc
-docFormatVersions = docSelect formatVersions "Format for package version ranges."
+docFormatVersions = docSelectWithDefault formatVersions "Format for package version ranges."
 
 programDescription :: Opt.Parser a -> Opt.ParserInfo a
 programDescription parser =
