@@ -8,7 +8,8 @@ module Staversion.Internal.Format
        ( formatAggregatedResults,
          FormatConfig(..),
          FormatVersion,
-         formatVersionCabal
+         formatVersionCabal,
+         formatVersionCabalCaret
        ) where
 
 import Data.Foldable (fold)
@@ -44,6 +45,11 @@ type FormatVersion = VersionRange -> Text
 -- | Let Cabal format 'VersionRange'.
 formatVersionCabal :: FormatVersion
 formatVersionCabal = pack . showVersionRange
+
+-- | Similar to 'formatVersionCabal', but it uses the \"caret\"
+-- operator (@^>=@) where possible.
+formatVersionCabalCaret :: FormatVersion
+formatVersionCabalCaret = undefined
 
 
 data FormatConfig = FormatConfig { fconfFormatVersion :: FormatVersion

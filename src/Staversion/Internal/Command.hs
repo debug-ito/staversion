@@ -190,8 +190,6 @@ formatVersions = [ SelectSpec Format.formatVersionCabal "cabal"
                  ]
 
 
--- TODO: show default format.
-
 docFormatVersions :: String -> Pretty.Doc
 docFormatVersions = docSelectWithDefault formatVersions "Format for package version ranges."
 

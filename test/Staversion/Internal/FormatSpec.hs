@@ -33,6 +33,7 @@ spec :: Spec
 spec = do
   spec_simple
   spec_aggregate
+  spec_formatVersionCabalCaret
 
 -- | for backward-compatibility.
 formatResultsCabal :: [Result] -> TL.Text
@@ -284,3 +285,7 @@ cabalResult res file target vps =
 setRealSource :: Resolver -> Result -> Result
 setRealSource resolver ret = ret { resultIn = rin { resultSourceReal = Just $ SourceStackage resolver } } where
   rin = resultIn ret
+
+spec_formatVersionCabalCaret :: Spec
+spec_formatVersionCabalCaret = describe "formatVersionCabalCaret" $ do
+  it "should hogehoge" $ True `shouldBe` False
