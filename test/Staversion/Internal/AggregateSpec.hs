@@ -4,7 +4,6 @@ import Data.Char (toLower)
 import Data.List (isInfixOf)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
-import Data.Maybe (fromJust)
 import Data.Monoid (All(..))
 import qualified Distribution.Version as V
 import Test.Hspec
@@ -26,7 +25,13 @@ import Staversion.Internal.Result
     ResultBody'(..),
     singletonResult
   )
-import Staversion.Internal.TestUtil (ver, simpleResultBody, verPairs)
+import Staversion.Internal.TestUtil
+  ( ver, simpleResultBody, verPairs,
+    vor,
+    vthis,
+    vors, vors',
+    vint
+  )
 
 main :: IO ()
 main = hspec spec
@@ -39,12 +44,6 @@ spec = do
     spec_or
     spec_pvpMajor
     spec_pvpMinor
-
-vor :: V.VersionRange -> V.VersionRange -> V.VersionRange
-vor = V.unionVersionRanges
-
-vthis :: [Int] -> V.VersionRange
-vthis = V.thisVersion . ver
 
 spec_or :: Spec
 spec_or = describe "aggOr" $ do
@@ -76,19 +75,6 @@ spec_or = describe "aggOr" $ do
                    $ vor (vthis [1,0])
                    $ (vthis [1,2])
     aggOr input `shouldBe` expected
-
-vors :: [[Int]] -> V.VersionRange
-vors = vors' . map vthis
-
-vors' :: [V.VersionRange] -> V.VersionRange
-vors' [] = error "this should not happen"
-vors' [v] = v
-vors' (v:rest) = vor v $ vors' rest
-
--- | Version interval. vint x y = [x, y)
-vint :: [Int] -> [Int] ->V.VersionRange
-vint vl vu = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [interval] where
-  interval = (V.LowerBound (ver vl) V.InclusiveBound, V.UpperBound (ver vu) V.ExclusiveBound)
 
 spec_pvpMajor :: Spec
 spec_pvpMajor = describe "aggPvpMajor" $ before (return aggPvpMajor) $ do
