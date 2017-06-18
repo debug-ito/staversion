@@ -9,7 +9,8 @@ import Staversion.Internal.Aggregate (aggOr, Aggregator, aggregateResults)
 import Staversion.Internal.Format
   ( formatAggregatedResults,
     FormatConfig(..),
-    formatVersionCabal
+    formatVersionCabal,
+    formatVersionCabalCaret,
   )
 import Staversion.Internal.Log (LogEntry)
 import Staversion.Internal.Query
@@ -22,7 +23,10 @@ import Staversion.Internal.Result
   )
 import Staversion.Internal.Cabal (Target(..))
 
-import Staversion.Internal.TestUtil (ver, simpleResultBody, verPairs)
+import Staversion.Internal.TestUtil
+  ( ver, simpleResultBody, verPairs,
+    vthis, vors', vint
+  )
        
 
 
@@ -288,4 +292,14 @@ setRealSource resolver ret = ret { resultIn = rin { resultSourceReal = Just $ So
 
 spec_formatVersionCabalCaret :: Spec
 spec_formatVersionCabalCaret = describe "formatVersionCabalCaret" $ do
-  it "should hogehoge" $ True `shouldBe` False
+  specify "single" $ do
+    formatVersionCabalCaret (vthis [1,0,0]) `shouldBe` "== 1.0.0"
+  specify "or equals" $ do
+    formatVersionCabalCaret (vors' [vthis [1,0,0], vthis [1,0,5,6]]) `shouldBe` "== 1.0.0 || ==1.0.5.6"
+  specify "caret" $ do
+    formatVersionCabalCaret (vint [1,2,3,4] [1,3]) `shouldBe` "^>=1.2.3.4"
+  specify "caret or" $ do
+    formatVersionCabalCaret (vors' [vint [1] [1,1], vint [2,0,3] [2,1]]) `shouldBe` "^>=1 || ^>=2.0.3"
+  specify "mixed" $ do
+    formatVersionCabalCaret (vors' [vint [1,2,0,4] [1,2,3], vint [2,0] [2,1], vint [3,0,4,5] [3,1]])
+      `shouldBe` ">=1.2.0.4 && <1.2.3 || ==2.0.* || ^>=3.0.4.5"
