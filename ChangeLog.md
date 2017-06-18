@@ -1,5 +1,11 @@
 # Revision history for staversion
 
+## 0.2.1.0  -- 2017-06-18
+
+* Add `--format-version` option.
+* `--format-version cabal-caret` option uses the caret operator (`^>=`) if possible. (#2)
+
+
 ## 0.2.0.0  -- 2017-05-14
 
 * [breaking change] `pvp` aggregator now does "trailing-zero
