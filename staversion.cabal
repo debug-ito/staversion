@@ -113,7 +113,7 @@ test-suite network-test
     buildable:          False
   -- other-extensions:     
   other-modules:        Staversion.Internal.TestUtil
-  build-depends:        base, staversion, http-client, http-client-tls, bytestring,
+  build-depends:        base, staversion, http-client, http-client-tls, bytestring, Cabal,
                         hspec
 
                         
