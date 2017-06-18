@@ -19,9 +19,11 @@ import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
 import Data.Monoid (mempty, mconcat, (<>))
 import Data.Text (Text, pack)
+import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
 import Distribution.Version (VersionRange)
+import qualified Distribution.Version as V
 
 import Staversion.Internal.Aggregate
   ( groupAllPreservingOrderBy,
@@ -49,7 +51,34 @@ formatVersionCabal = pack . showVersionRange
 -- | Similar to 'formatVersionCabal', but it uses the \"caret\"
 -- operator (@^>=@) where possible.
 formatVersionCabalCaret :: FormatVersion
-formatVersionCabalCaret = undefined
+formatVersionCabalCaret = Text.intercalate " || " . map formatVersionIntervalCaret . V.versionIntervals . V.toVersionIntervals
+
+formatVersionIntervalCaret :: V.VersionInterval -> Text
+formatVersionIntervalCaret vi = case vi of
+  (V.LowerBound lv V.InclusiveBound, V.UpperBound uv V.ExclusiveBound) ->
+    if isCaretOK lv uv
+    then "^>=" <> formatV lv
+    else formatVersionInterval ">=" lv "<" uv
+  (V.LowerBound lv V.InclusiveBound, V.UpperBound uv V.InclusiveBound) ->
+    formatVersionInterval ">=" lv "<=" uv
+  (V.LowerBound lv V.ExclusiveBound, V.UpperBound uv V.InclusiveBound) ->
+    formatVersionInterval ">" lv "<=" uv
+  (V.LowerBound lv V.ExclusiveBound, V.UpperBound uv V.ExclusiveBound) ->
+    formatVersionInterval ">" lv "<" uv
+  (V.LowerBound lv V.InclusiveBound, V.NoUpperBound) ->
+    ">=" <> formatV lv
+  (V.LowerBound lv V.ExclusiveBound, V.NoUpperBound) ->
+    ">" <> formatV lv
+  where
+    formatV v = pack $ concat $ intersperse "." $ map show $ V.versionBranch v
+    formatVersionInterval lop lv uop uv = lop <> formatV lv <> " && " <> uop <> formatV uv
+
+isCaretOK :: V.Version -> V.Version -> Bool
+isCaretOK inc_lv exc_uv = isCaretOK' (V.versionBranch inc_lv) (V.versionBranch exc_uv) where
+  isCaretOK' [] uv'          = uv' == [0,1]
+  isCaretOK' [x] uv'         = uv' == [x,1]
+  isCaretOK' (x : y : _) uv' = uv' == [x,y+1]
+
 
 
 data FormatConfig = FormatConfig { fconfFormatVersion :: FormatVersion
