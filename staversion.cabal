@@ -96,7 +96,7 @@ test-suite spec
   build-depends:        base, staversion, text, filepath, bytestring,
                         Cabal, semigroups,
                         hspec >=2.1.7,
-                        QuickCheck >=2.8.1 && <2.10
+                        QuickCheck >=2.8.1 && <2.11
 
 flag network-test
   description: Enable network tests.
