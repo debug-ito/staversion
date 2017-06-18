@@ -186,6 +186,9 @@ defFormatConfig = FormatConfig { fconfFormatVersion = selectResult $ head format
 formatVersions :: [SelectSpec FormatVersion]
 formatVersions = [ SelectSpec Format.formatVersionCabal "cabal"
                    ( "Let Cabal format VersionRanges"
+                   ),
+                   SelectSpec Format.formatVersionCabalCaret "cabal-caret"
+                   ( "Similar to 'cabal', but it uses the caret operator (^>=) if possible"
                    )
                  ]
 
