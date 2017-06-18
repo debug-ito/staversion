@@ -59,11 +59,11 @@ formatVersionIntervalCaret vi = case vi of
   (V.LowerBound lv V.InclusiveBound, V.UpperBound uv V.ExclusiveBound) ->
     if isCaretOK lv uv
     then "^>=" <> formatV lv
-    else fallback vi
-  _ -> fallback vi
+    else fallback
+  _ -> fallback
   where
     formatV v = pack $ concat $ intersperse "." $ map show $ V.versionBranch v
-    fallback vi = formatVersionCabal $ V.fromVersionIntervals $ fromJust $ V.mkVersionIntervals [vi]
+    fallback = formatVersionCabal $ V.fromVersionIntervals $ fromJust $ V.mkVersionIntervals [vi]
 
 isCaretOK :: V.Version -> V.Version -> Bool
 isCaretOK inc_lv exc_uv = isCaretOK' (V.versionBranch inc_lv) (V.versionBranch exc_uv) where
