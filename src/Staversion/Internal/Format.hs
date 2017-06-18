@@ -17,6 +17,7 @@ import Data.Function (on)
 import Data.List (intersperse)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
+import Data.Maybe (fromJust)
 import Data.Monoid (mempty, mconcat, (<>))
 import Data.Text (Text, pack)
 import qualified Data.Text as Text
@@ -51,27 +52,18 @@ formatVersionCabal = pack . showVersionRange
 -- | Similar to 'formatVersionCabal', but it uses the \"caret\"
 -- operator (@^>=@) where possible.
 formatVersionCabalCaret :: FormatVersion
-formatVersionCabalCaret = Text.intercalate " || " . map formatVersionIntervalCaret . V.versionIntervals . V.toVersionIntervals
+formatVersionCabalCaret = Text.intercalate " || " . map formatVersionIntervalCaret . V.asVersionIntervals
 
 formatVersionIntervalCaret :: V.VersionInterval -> Text
 formatVersionIntervalCaret vi = case vi of
   (V.LowerBound lv V.InclusiveBound, V.UpperBound uv V.ExclusiveBound) ->
     if isCaretOK lv uv
     then "^>=" <> formatV lv
-    else formatVersionInterval ">=" lv "<" uv
-  (V.LowerBound lv V.InclusiveBound, V.UpperBound uv V.InclusiveBound) ->
-    formatVersionInterval ">=" lv "<=" uv
-  (V.LowerBound lv V.ExclusiveBound, V.UpperBound uv V.InclusiveBound) ->
-    formatVersionInterval ">" lv "<=" uv
-  (V.LowerBound lv V.ExclusiveBound, V.UpperBound uv V.ExclusiveBound) ->
-    formatVersionInterval ">" lv "<" uv
-  (V.LowerBound lv V.InclusiveBound, V.NoUpperBound) ->
-    ">=" <> formatV lv
-  (V.LowerBound lv V.ExclusiveBound, V.NoUpperBound) ->
-    ">" <> formatV lv
+    else fallback vi
+  _ -> fallback vi
   where
     formatV v = pack $ concat $ intersperse "." $ map show $ V.versionBranch v
-    formatVersionInterval lop lv uop uv = lop <> formatV lv <> " && " <> uop <> formatV uv
+    fallback vi = formatVersionCabal $ V.fromVersionIntervals $ fromJust $ V.mkVersionIntervals [vi]
 
 isCaretOK :: V.Version -> V.Version -> Bool
 isCaretOK inc_lv exc_uv = isCaretOK' (V.versionBranch inc_lv) (V.versionBranch exc_uv) where
