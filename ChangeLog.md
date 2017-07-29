@@ -1,5 +1,11 @@
 # Revision history for staversion
 
+## 0.2.1.1  -- 2017-07-29
+
+* Support `megaparsec-6.0`, with compatibility wrapper "Staversion.Internal.Megaparsec".
+* Support `Cabal-2.0`, with compatibility wrapper "Staversion.Internal.Version".
+
+
 ## 0.2.1.0  -- 2017-06-18
 
 * Add `--format-version` option.
