@@ -21,9 +21,8 @@ import Data.Monoid (mconcat)
 import Data.Text (pack, Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Text.Megaparsec as P
-import qualified Text.Megaparsec.Text as P
 
+import qualified Staversion.Internal.Megaparsec as P
 import Staversion.Internal.Query
   ( PackageName, ErrorMsg
   )
