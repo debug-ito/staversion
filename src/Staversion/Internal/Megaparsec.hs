@@ -7,14 +7,12 @@
 -- 
 module Staversion.Internal.Megaparsec
        ( module Text.Megaparsec,
+         Parser,
 
 #if MIN_VERSION_megaparsec(6,0,0)
          module Text.Megaparsec.Char,
-         Parser,
          string,
          string'
-#else
-         module Text.Megaparsec.Text
 #endif
        ) where
 
@@ -26,7 +24,7 @@ import Data.Void (Void)
 import Text.Megaparsec.Char hiding (string, string')
 import qualified Text.Megaparsec.Char as MC
 
-type Parser = Parsec Void Text
+type Parser = Parsec (ErrorFancy Void) Text
 
 liftToString :: Monad m => (Text -> m Text) -> String -> m String
 liftToString f = fmap unpack . f . pack
@@ -43,7 +41,9 @@ string' = liftToString MC.string'
 
 #else
 
-import Text.Megaparsec.Text
+import Data.Text (Text)
+
+type Parser = Parsec Dec Text
 
 #endif
 
