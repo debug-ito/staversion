@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- |
 -- Module: Staversion.Internal.Megaparsec
 -- Description: Megaparsec compatibility wrapper
@@ -6,17 +7,20 @@
 -- 
 module Staversion.Internal.Megaparsec
        ( module Text.Megaparsec,
-         -- module Text.Megaparsec.Text
 
+#if MIN_VERSION_megaparsec(6,0,0)
          module Text.Megaparsec.Char,
          Parser,
          string,
          string'
+#else
+         module Text.Megaparsec.Text
+#endif
        ) where
 
 import Text.Megaparsec
--- import Text.Megaparsec.Text
 
+#if MIN_VERSION_megaparsec(6,0,0)
 import Data.Text (Text, pack, unpack)
 import Data.Void (Void)
 import Text.Megaparsec.Char hiding (string, string')
@@ -36,3 +40,10 @@ string = liftToString MC.string
 -- | 'string'' combatible with Megaparsec 5.
 string' :: String -> Parser String
 string' = liftToString MC.string'
+
+#else
+
+import Text.Megaparsec.Text
+
+#endif
+
