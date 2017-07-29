@@ -16,7 +16,7 @@ import qualified Staversion.Internal.Version as V
 
 
 ver :: [Int] -> Version
-ver vs = Version vs []
+ver = V.mkVersion
 
 verMaybe :: [Int] -> Maybe Version
 verMaybe [] = Nothing

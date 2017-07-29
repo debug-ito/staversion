@@ -19,6 +19,8 @@ import Staversion.Internal.BuildPlan
   )
 import Staversion.Internal.Version (Version)
 
+import Staversion.Internal.TestUtil (ver)
+
 
 main :: IO ()
 main = hspec spec
@@ -32,19 +34,19 @@ packageVersion_spec :: Spec
 packageVersion_spec = describe "packageVersion" $ do
   forBuildPlanMap "conpact_build_plan" $ \loader -> do
     specify "drawille -> 0.1.0.6" $ do
-      loadVersion "drawille" loader `shouldReturn` Just (Version [0,1,0,6] [])
+      loadVersion "drawille" loader `shouldReturn` Just (ver [0,1,0,6])
     specify "unknown -> Nothing" $ do
       loadVersion "unknown" loader `shouldReturn` Nothing
     specify "ghc -> 7.10.3" $ do
-      loadVersion "ghc" loader `shouldReturn` Just (Version [7,10,3] [])
+      loadVersion "ghc" loader `shouldReturn` Just (ver [7,10,3])
     specify "base -> 4.8.2.0" $ do
-      loadVersion "base" loader `shouldReturn` Just (Version [4,8,2,0] [])
+      loadVersion "base" loader `shouldReturn` Just (ver [4,8,2,0])
 
   forBuildPlanMap "lts-4.2" $ \loader -> do
     specify "conduit -> 1.2.6.1" $ do
-      loadVersion "conduit" loader `shouldReturn` Just (Version [1,2,6,1] [])
+      loadVersion "conduit" loader `shouldReturn` Just (ver [1,2,6,1])
     specify "transformers -> 0.4.2.0" $ do
-      loadVersion "transformers" loader `shouldReturn` Just (Version [0,4,2,0] [])
+      loadVersion "transformers" loader `shouldReturn` Just (ver [0,4,2,0])
 
 
 forBuildPlanMap :: String -> (IO BuildPlanMap -> Spec) -> Spec
@@ -71,5 +73,5 @@ loadBuildPlan_spec = describe "loadBuildPlan" $ do
   it "reads local file after disambiguation" $ do
     bp_man <- mockBuildPlanManager 4 2
     bp <- either (\e -> error ("Error: " ++ e)) return =<< loadBuildPlan bp_man [] (SourceStackage "lts")
-    packageVersion bp "base" `shouldBe` (Just $ Version [4,8,2,0] [])
+    packageVersion bp "base" `shouldBe` (Just $ ver [4,8,2,0])
     buildPlanSource bp `shouldBe` SourceStackage "lts-4.2"
