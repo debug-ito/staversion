@@ -21,8 +21,9 @@ module Staversion.Internal.Version
          -- * Compatibility
          mkVersion,
          versionNumbers,
-         showVersion,
          -- * Util
+         BaseVersion,
+         showBaseVersion,
          parseVersionText
        ) where
 
@@ -33,14 +34,17 @@ import Data.Version (parseVersion)
 import qualified Data.Version as BaseV
 import Text.ParserCombinators.ReadP (readP_to_S)
 
+-- | A Version type by "Data.Version".
+type BaseVersion = BaseV.Version
+
 mkVersion :: [Int] -> V.Version
 mkVersion = V.mkVersion
 
 versionNumbers :: V.Version -> [Int]
 versionNumbers = V.versionNumbers
 
-showVersion :: V.Version -> String
-showVersion = V.showVersion
+showBaseVersion :: BaseVersion -> String
+showBaseVersion = BaseV.showVersion
 
 baseVToV :: BaseV.Version -> V.Version
 baseVToV = mkVersion . BaseV.versionBranch

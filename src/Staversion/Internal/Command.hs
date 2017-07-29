@@ -34,7 +34,7 @@ import Staversion.Internal.Query
     parseQuery,
     PackageSource(..)
   )
-import Staversion.Internal.Version (showVersion)
+import Staversion.Internal.Version (showBaseVersion)
 
 -- | Command from the user.
 data Command =
@@ -203,7 +203,7 @@ programDescription parser =
               Opt.progDesc ( "Look for version numbers for Haskell packages in specific stackage resolvers"
                              ++ " (or possibly other package sources)"
                            ),
-              Opt.footer ("Version: " ++ (showVersion MyInfo.version))
+              Opt.footer ("Version: " ++ (showBaseVersion MyInfo.version))
             ]
 
 parseCommandArgs :: IO Command
