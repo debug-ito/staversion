@@ -24,14 +24,15 @@ import Data.Void (Void)
 import Text.Megaparsec.Char hiding (string, string')
 import qualified Text.Megaparsec.Char as MC
 
+-- | See: https://github.com/fpco/stackage/issues/2666#issuecomment-318472919
 type Parser = Parsec (ErrorFancy Void) Text
 
 liftToString :: Monad m => (Text -> m Text) -> String -> m String
 liftToString f = fmap unpack . f . pack
 
 -- | 'string' combatible with Megaparsec 5. In Megaparsec 6, 'string'
--- function takes and produces 'Text' if we use 'Text' 'Stream',
--- probably for better performance.
+-- function takes and produces 'Text' if we use 'Text' as the 'Stream'
+-- type, probably for better performance.
 string :: String -> Parser String
 string = liftToString MC.string
 
@@ -43,6 +44,7 @@ string' = liftToString MC.string'
 
 import Data.Text (Text)
 
+-- | From "Text.Megaparsec.Text".
 type Parser = Parsec Dec Text
 
 #endif
