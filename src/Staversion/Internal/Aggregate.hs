@@ -94,8 +94,8 @@ aggPvpMinor = aggPvpGeneral $ makeUpper where
 aggPvpGeneral :: ([Int] -> [Int]) -> Aggregator
 aggPvpGeneral makeUpper = V.simplifyVersionRange . foldr1 V.unionVersionRanges . fmap toRange . NL.nub . NL.sort where
   toRange v = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [(V.LowerBound norm_v V.InclusiveBound, V.UpperBound vu V.ExclusiveBound)] where
-    norm_v = makeVersion $ normalizeTralingZeroes $ V.versionBranch v
-    vu = makeVersion $ makeUpper $ V.versionBranch norm_v
+    norm_v = V.mkVersion $ normalizeTralingZeroes $ V.versionNumbers v
+    vu = V.mkVersion $ makeUpper $ V.versionNumbers norm_v
 
 normalizeTralingZeroes :: [Int] -> [Int]
 normalizeTralingZeroes [] = []

@@ -63,11 +63,11 @@ formatVersionIntervalCaret vi = case vi of
     else fallback
   _ -> fallback
   where
-    formatV v = pack $ concat $ intersperse "." $ map show $ V.versionBranch v
+    formatV v = pack $ concat $ intersperse "." $ map show $ V.versionNumbers v
     fallback = formatVersionCabal $ V.fromVersionIntervals $ fromJust $ V.mkVersionIntervals [vi]
 
 isCaretOK :: V.Version -> V.Version -> Bool
-isCaretOK inc_lv exc_uv = isCaretOK' (V.versionBranch inc_lv) (V.versionBranch exc_uv) where
+isCaretOK inc_lv exc_uv = isCaretOK' (V.versionNumbers inc_lv) (V.versionNumbers exc_uv) where
   isCaretOK' [] uv'          = uv' == [0,1]
   isCaretOK' [x] uv'         = uv' == [x,1]
   isCaretOK' (x : y : _) uv' = uv' == [x,y+1]
