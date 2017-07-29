@@ -14,7 +14,6 @@ import Control.Applicative ((<$>), (<*>), optional, some, (<|>))
 import Data.Function (on)
 import Data.Monoid (mconcat, (<>))
 import Data.Text (pack)
-import Data.Version (showVersion)
 import qualified Options.Applicative as Opt
 import qualified Paths_staversion as MyInfo
 import System.Directory (getHomeDirectory)
@@ -35,6 +34,7 @@ import Staversion.Internal.Query
     parseQuery,
     PackageSource(..)
   )
+import Staversion.Internal.Version (showVersion)
 
 -- | Command from the user.
 data Command =

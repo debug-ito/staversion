@@ -19,11 +19,11 @@ import Data.Aeson (FromJSON(..), Value(..), (.:), eitherDecode)
 import qualified Data.ByteString.Lazy as BSL
 import Data.List (sort, reverse)
 import Data.Text (unpack)
-import Data.Version (Version)
 
 import Staversion.Internal.BuildPlan.Version (unVersionJSON)
 import Staversion.Internal.Query (ErrorMsg, PackageName)
 import Staversion.Internal.HTTP (Manager, fetchURL, OurHttpException)
+import Staversion.Internal.Version (Version)
 
 data RegisteredVersions = RegisteredVersions { regPreferredVersions :: [Version]
                                                -- ^ Sorted list of preferred versions of the package.

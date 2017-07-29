@@ -35,16 +35,16 @@ import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
 import Data.Text (unpack)
 import Data.Traversable (traverse)
-import Data.Version (Version, makeVersion)
-import Distribution.Version (VersionRange)
 import qualified Distribution.Text as DT
-import qualified Distribution.Version as V
 import qualified Text.PrettyPrint as Pretty
 
 import Staversion.Internal.Cabal (Target(..))
 import Staversion.Internal.Query (PackageName, ErrorMsg)
 import Staversion.Internal.Log (LogEntry(..), LogLevel(..))
 import Staversion.Internal.Result (Result(..), AggregatedResult(..), ResultBody, ResultBody'(..), resultSourceDesc)
+import Staversion.Internal.Version (Version, mkVersion, VersionRange)
+import qualified Staversion.Internal.Version as V
+
 
 -- | Aggregate some 'Version's into a 'VersionRange'.
 type Aggregator = NonEmpty Version -> VersionRange

@@ -23,8 +23,6 @@ import Data.Text (Text, pack)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TL
 import Data.Text.Lazy.Builder (Builder, toLazyText, fromText, fromString)
-import Distribution.Version (VersionRange)
-import qualified Distribution.Version as V
 
 import Staversion.Internal.Aggregate
   ( groupAllPreservingOrderBy,
@@ -41,6 +39,9 @@ import Staversion.Internal.Result
   )
 import Staversion.Internal.Cabal (Target(..))
 import Staversion.Internal.Log (LogEntry)
+import Staversion.Internal.Version (VersionRange)
+import qualified Staversion.Internal.Version as V
+
 
 -- | Format for 'VersionRange'.
 type FormatVersion = VersionRange -> Text

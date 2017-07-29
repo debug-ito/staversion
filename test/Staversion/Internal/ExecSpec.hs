@@ -1,6 +1,5 @@
 module Staversion.Internal.ExecSpec (main,spec) where
 
-import Data.Version (Version(Version))
 import Data.Either (isLeft)
 import Data.IORef (readIORef)
 import Data.List (isInfixOf)
@@ -26,6 +25,8 @@ import Staversion.Internal.Result
   )
 import Staversion.Internal.Log (defaultLogger, _mockLogger, Logger(loggerThreshold), LogLevel(..), LogEntry(..))
 import Staversion.Internal.Cabal (Target(..))
+import Staversion.Internal.Version (Version)
+
 
 import Staversion.Internal.TestUtil (ver, simpleResultBody, verPairs)
 

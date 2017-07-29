@@ -5,7 +5,6 @@ import Data.List (isInfixOf)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
 import Data.Monoid (All(..))
-import qualified Distribution.Version as V
 import Test.Hspec
 
 import Staversion.Internal.Aggregate
@@ -32,6 +31,7 @@ import Staversion.Internal.TestUtil
     vors, vors',
     vint
   )
+import qualified Staversion.Internal.Version as V
 
 main :: IO ()
 main = hspec spec

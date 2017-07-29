@@ -1,7 +1,6 @@
 module Staversion.Internal.BuildPlanSpec (main,spec) where
 
 import Data.Text (Text, pack)
-import Data.Version (Version(..))
 import Data.Word (Word)
 import System.FilePath ((</>), (<.>))
 import Test.Hspec
@@ -18,6 +17,8 @@ import Staversion.Internal.BuildPlan
     loadBuildPlan,
     buildPlanSource
   )
+import Staversion.Internal.Version (Version)
+
 
 main :: IO ()
 main = hspec spec

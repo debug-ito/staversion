@@ -8,11 +8,12 @@ module Staversion.Internal.TestUtil
        ) where
 
 import Data.Maybe (fromJust)
-import Data.Version (Version(..))
-import qualified Distribution.Version as V
 import Staversion.Internal.Query ( PackageName
                                  )
 import Staversion.Internal.Result (ResultBody, ResultBody'(..))
+import Staversion.Internal.Version (Version)
+import qualified Staversion.Internal.Version as V
+
 
 ver :: [Int] -> Version
 ver vs = Version vs []

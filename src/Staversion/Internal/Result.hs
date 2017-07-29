@@ -17,13 +17,12 @@ module Staversion.Internal.Result
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Monoid ((<>))
 import Data.Text (Text)
-import Data.Version (Version)
-import Distribution.Version (VersionRange, thisVersion)
 import Staversion.Internal.Query
   ( Query, PackageSource, ErrorMsg, PackageName,
     sourceDesc
   )
 import Staversion.Internal.Cabal (Target)
+import Staversion.Internal.Version (Version, VersionRange, thisVersion)
 
 -- | Result for a query.
 data Result = Result { resultIn :: ResultSource,

@@ -34,7 +34,6 @@ import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Monoid (Monoid, (<>), mconcat)
 import Data.Text (Text, unpack)
 import Data.Traversable (Traversable(traverse))
-import Data.Version (Version)
 import Data.Word (Word)
 import qualified Data.Yaml as Yaml
 import System.FilePath ((</>), (<.>))
@@ -62,6 +61,8 @@ import Staversion.Internal.BuildPlan.Stackage
     fetchBuildPlanYAML
   )
 import Staversion.Internal.BuildPlan.Version (unVersionJSON)
+import Staversion.Internal.Version (Version)
+
 
 -- | A data structure that keeps a map between package names and their
 -- versions.

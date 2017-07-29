@@ -13,14 +13,8 @@ import Control.Applicative (empty, pure)
 import Data.Aeson (FromJSON(..), Value(..))
 import Data.Maybe (listToMaybe)
 import Data.Text (Text, unpack)
-import Data.Version (Version, parseVersion)
-import Text.ParserCombinators.ReadP (readP_to_S)
 
--- | Parse a version text. There must not be any trailing characters
--- after a valid version text.
-parseVersionText :: Text -> Maybe Version
-parseVersionText = extractResult . (readP_to_S parseVersion) . unpack where
-  extractResult = listToMaybe . map fst . filter (\pair -> snd pair == "")
+import Staversion.Internal.Version (parseVersionText, Version)
 
 -- | a wrapper around 'Version' for JSON I/F
 newtype VersionJSON = VersionJSON { unVersionJSON :: Version } deriving (Show,Eq,Ord)

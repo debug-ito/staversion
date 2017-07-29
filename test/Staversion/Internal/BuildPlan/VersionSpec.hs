@@ -1,9 +1,9 @@
 module Staversion.Internal.BuildPlan.VersionSpec (main,spec) where
 
 import Data.Text (pack)
-import Data.Version (Version(..))
 import Test.Hspec
 
+import Staversion.Internal.Version (Version)
 import Staversion.Internal.BuildPlan.Version (parseVersionText)
 
 main :: IO ()
