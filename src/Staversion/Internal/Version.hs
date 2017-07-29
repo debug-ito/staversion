@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- |
 -- Module: Staversion.Internal.Version
 -- Description: Compatibility wrapper for Distribution.Version
@@ -37,12 +38,6 @@ import Text.ParserCombinators.ReadP (readP_to_S)
 -- | A Version type by "Data.Version".
 type BaseVersion = BaseV.Version
 
-mkVersion :: [Int] -> V.Version
-mkVersion = V.mkVersion
-
-versionNumbers :: V.Version -> [Int]
-versionNumbers = V.versionNumbers
-
 showBaseVersion :: BaseVersion -> String
 showBaseVersion = BaseV.showVersion
 
@@ -55,3 +50,19 @@ parseVersionText :: Text -> Maybe V.Version
 parseVersionText = extractResult . (readP_to_S parseVersion) . unpack where
   extractResult = fmap baseVToV . listToMaybe . map fst . filter (\pair -> snd pair == "")
 
+#if MIN_VERSION_Cabal(2,0,0)
+mkVersion :: [Int] -> V.Version
+mkVersion = V.mkVersion
+
+versionNumbers :: V.Version -> [Int]
+versionNumbers = V.versionNumbers
+
+#else
+
+mkVersion :: [Int] -> V.Version
+mkVersion vs = V.Version vs []
+
+versionNumbers :: V.Version -> [Int]
+versionNumbers = V.versionBranch
+
+#endif
