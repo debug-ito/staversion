@@ -1,5 +1,10 @@
 # Revision history for staversion
 
+## 0.2.1.2  -- 2017-07-29
+
+* Fix build and test with `megaparsec-4`.
+
+
 ## 0.2.1.1  -- 2017-07-29
 
 * Support `megaparsec-6.0`, with compatibility wrapper "Staversion.Internal.Megaparsec".
