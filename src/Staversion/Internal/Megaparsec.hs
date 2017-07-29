@@ -17,9 +17,10 @@ module Staversion.Internal.Megaparsec
        ) where
 
 import Text.Megaparsec
+import Data.Text (Text)
 
 #if MIN_VERSION_megaparsec(6,0,0)
-import Data.Text (Text, pack, unpack)
+import Data.Text (pack, unpack)
 import Data.Void (Void)
 import Text.Megaparsec.Char hiding (string, string')
 import qualified Text.Megaparsec.Char as MC
@@ -40,12 +41,15 @@ string = liftToString MC.string
 string' :: String -> Parser String
 string' = liftToString MC.string'
 
-#else
-
-import Data.Text (Text)
+#elif MIN_VERSION_megaparsec(5,0,0)
 
 -- | From "Text.Megaparsec.Text".
 type Parser = Parsec Dec Text
+
+#else
+
+-- | From "Text.Megaparsec.Text"
+type Parser = Parsec Text
 
 #endif
 
