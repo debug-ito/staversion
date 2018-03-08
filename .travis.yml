@@ -49,42 +49,55 @@ matrix:
   - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 HAPPYVER=1.19.5 ALEXVER=3.1.7
     compiler: ": #GHC 8.0.1"
     addons: {apt: {packages: [ghc,cabal-install-1.24,ghc-8.0.1,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
+  - env: BUILD=cabal GHCVER=8.2.2 CABALVER=2.0.0.1 HAPPYVER=1.19.8 ALEXVER=3.2.3
+    compiler: ": #GHC 8.2.2"
+    addons: {apt: {packages: [ghc,cabal-install-2.0,ghc-8.2.2], sources: [hvr-ghc]}}
+
 
   # Build with the newest GHC and cabal-install. This is an accepted failure,
   # see below.
-  - env: BUILD=cabal GHCVER=head  CABALVER=head HAPPYVER=1.19.5 ALEXVER=3.1.7
+  - env: BUILD=cabal GHCVER=head  CABALVER=head HAPPYVER=1.19.9 ALEXVER=3.2.3
     compiler: ": #GHC HEAD"
-    addons: {apt: {packages: [ghc,cabal-install-head,ghc-head,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
+    addons: {apt: {packages: [ghc,cabal-install-head,ghc-head,happy-1.19.9,alex-3.2.3], sources: [hvr-ghc]}}
 
   # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
   # variable, such as using --stack-yaml to point to a different file.
   - env: BUILD=stack ARGS=""
     compiler: ": #stack default"
-    addons: {apt: {packages: [ghc,ghc-7.10.3], sources: [hvr-ghc]}}
+    addons: {apt: {packages: [ghc,ghc-8.2.2], sources: [hvr-ghc]}}
 
   #- env: BUILD=stack ARGS="--resolver lts-2"
-  #  compiler: ": #stack 7.8.4"
+  #  compiler: ": #stack lts-2"
   #  addons: {apt: {packages: [ghc,ghc-7.8.4], sources: [hvr-ghc]}}
   #
   #- env: BUILD=stack ARGS="--resolver lts-3"
-  #  compiler: ": #stack 7.10.2"
+  #  compiler: ": #stack lts-3"
   #  addons: {apt: {packages: [ghc,ghc-7.10.2], sources: [hvr-ghc]}}
 
   - env: BUILD=stack ARGS="--resolver lts-4"
-    compiler: ": #stack 7.10.3"
+    compiler: ": #stack lts-4"
     addons: {apt: {packages: [ghc,ghc-7.10.3], sources: [hvr-ghc]}}
 
-  - env: BUILD=stack ARGS="--resolver lts-6"
-    compiler: ": #stack 7.10.3"
-    addons: {apt: {packages: [ghc,ghc-7.10.3], sources: [hvr-ghc]}}
+  # - env: BUILD=stack ARGS="--resolver lts-6"
+  #   compiler: ": #stack 7.10.3"
+  #   addons: {apt: {packages: [ghc,ghc-7.10.3], sources: [hvr-ghc]}}
 
   - env: BUILD=stack ARGS="--resolver lts-7"
-    compiler: ": #stack 8.0.1"
+    compiler: ": #stack lts-7"
     addons: {apt: {packages: [ghc,ghc-8.0.1], sources: [hvr-ghc]}}
 
-  - env: BUILD=stack ARGS="--resolver lts-8"
-    compiler: ": #stack 8.0.2"
+  # - env: BUILD=stack ARGS="--resolver lts-8"
+  #   compiler: ": #stack lts-8"
+  #   addons: {apt: {packages: [ghc,ghc-8.0.2], sources: [hvr-ghc]}}
+
+  - env: BUILD=stack ARGS="--resolver lts-9"
+    compiler: ": #stack lts-9"
     addons: {apt: {packages: [ghc,ghc-8.0.2], sources: [hvr-ghc]}}
+
+  - env: BUILD=stack ARGS="--resolver lts-10"
+    compiler: ": #stack lts-10"
+    addons: {apt: {packages: [ghc,ghc-8.2.2], sources: [hvr-ghc]}}
+
 
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
@@ -97,27 +110,35 @@ matrix:
     os: osx
 
   #- env: BUILD=stack ARGS="--resolver lts-2"
-  #  compiler: ": #stack 7.8.4 osx"
+  #  compiler: ": #stack lts-2 osx"
   #  os: osx
 
   #- env: BUILD=stack ARGS="--resolver lts-3"
-  #  compiler: ": #stack 7.10.2 osx"
+  #  compiler: ": #stack lts-3 osx"
   #  os: osx
 
   - env: BUILD=stack ARGS="--resolver lts-4"
-    compiler: ": #stack 7.10.3 osx"
+    compiler: ": #stack lts-4 osx"
     os: osx
 
-  - env: BUILD=stack ARGS="--resolver lts-6"
-    compiler: ": #stack 7.10.3 osx"
-    os: osx
+  # - env: BUILD=stack ARGS="--resolver lts-6"
+  #   compiler: ": #stack lts-6 osx"
+  #   os: osx
 
   - env: BUILD=stack ARGS="--resolver lts-7"
-    compiler: ": #stack 8.0.1 osx"
+    compiler: ": #stack lts-7 osx"
     os: osx
 
-  - env: BUILD=stack ARGS="--resolver lts-8"
-    compiler: ": #stack 8.0.2 osx"
+  # - env: BUILD=stack ARGS="--resolver lts-8"
+  #   compiler: ": #stack lts-8 osx"
+  #   os: osx
+
+  - env: BUILD=stack ARGS="--resolver lts-9"
+    compiler: ": #stack lts-9 osx"
+    os: osx
+
+  - env: BUILD=stack ARGS="--resolver lts-10"
+    compiler: ": #stack lts-10 osx"
     os: osx
 
   - env: BUILD=stack ARGS="--resolver nightly"
@@ -125,7 +146,7 @@ matrix:
     os: osx
 
   allow_failures:
-  - env: BUILD=cabal GHCVER=head  CABALVER=head HAPPYVER=1.19.5 ALEXVER=3.1.7
+  - env: BUILD=cabal GHCVER=head  CABALVER=head HAPPYVER=1.19.9 ALEXVER=3.2.3
   - env: BUILD=stack ARGS="--resolver nightly"
 
 before_install:
