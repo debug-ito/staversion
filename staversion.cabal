@@ -1,5 +1,5 @@
 name:                   staversion
-version:                0.2.1.2
+version:                0.3.0.0
 author:                 Toshio Ito <debug.ito@gmail.com>
 maintainer:             Toshio Ito <debug.ito@gmail.com>
 license:                BSD3
@@ -47,26 +47,26 @@ library
   other-modules:        Paths_staversion,
                         Staversion.Internal.HTTP,
                         Staversion.Internal.Megaparsec
-  build-depends:        base >=4.8 && <4.10,
-                        unordered-containers >=0.2.3 && <0.3,
-                        aeson >=0.8.0 && <1.3,
-                        text >=0.11.3 && <1.3,
-                        bytestring >=0.10.0 && <0.11,
-                        yaml >=0.8.3 && <0.9,
-                        filepath >=1.3.0 && <1.5,
-                        directory >=1.2.0 && <1.4,
-                        optparse-applicative >=0.11.0 && <0.15,
-                        containers >=0.5.5 && <0.6,
-                        http-client >=0.4.18 && <0.6,
-                        http-client-tls >=0.2.2 && <0.4,
-                        http-types >=0.8.6 && <0.10,
-                        transformers >=0.3.0 && <0.6,
-                        transformers-compat >=0.4.0 && <0.6,
-                        megaparsec >=4.2.0 && <6.1,
-                        semigroups >=0.18.0.1 && <0.19,
-                        Cabal >=1.22.6.0 && <2.1,
-                        pretty >=1.1.2.0 && <1.2,
-                        ansi-wl-pprint >=0.6.7.3 && <0.7
+  build-depends:        base
+                      , unordered-containers
+                      , aeson
+                      , text
+                      , bytestring
+                      , yaml
+                      , filepath
+                      , directory
+                      , optparse-applicative
+                      , containers
+                      , http-client
+                      , http-client-tls
+                      , http-types
+                      , transformers
+                      , transformers-compat
+                      , megaparsec
+                      , semigroups
+                      , Cabal
+                      , pretty
+                      , ansi-wl-pprint
 
 executable staversion
   default-language:     Haskell2010
@@ -97,8 +97,8 @@ test-suite spec
                         Staversion.Internal.TestUtil
   build-depends:        base, staversion, text, filepath, bytestring,
                         Cabal, semigroups,
-                        hspec >=2.1.7,
-                        QuickCheck >=2.8.1 && <2.11
+                        hspec,
+                        QuickCheck
 
 flag network-test
   description: Enable network tests.
