@@ -47,7 +47,7 @@ library
   other-modules:        Paths_staversion,
                         Staversion.Internal.HTTP,
                         Staversion.Internal.Megaparsec
-  build-depends:        base
+  build-depends:        base  >= 4.7 && < 5
                       , unordered-containers
                       , aeson
                       , text
@@ -76,7 +76,8 @@ executable staversion
   -- other-modules:        
   -- default-extensions:   
   -- other-extensions:     
-  build-depends:        base, staversion
+  build-depends:        base  >= 4.7 && < 5
+                      , staversion
 
 test-suite spec
   type:                 exitcode-stdio-1.0
@@ -95,10 +96,15 @@ test-suite spec
                         Staversion.Internal.CabalSpec,
                         Staversion.Internal.AggregateSpec,
                         Staversion.Internal.TestUtil
-  build-depends:        base, staversion, text, filepath, bytestring,
-                        Cabal, semigroups,
-                        hspec,
-                        QuickCheck
+  build-depends:        base >= 4.7 && < 5
+                      , staversion
+                      , text
+                      , filepath
+                      , bytestring
+                      , Cabal
+                      , semigroups
+                      , hspec
+                      , QuickCheck
 
 flag network-test
   description: Enable network tests.
@@ -115,8 +121,13 @@ test-suite network-test
     buildable:          False
   -- other-extensions:     
   other-modules:        Staversion.Internal.TestUtil
-  build-depends:        base, staversion, http-client, http-client-tls, bytestring, Cabal,
-                        hspec
+  build-depends:        base >= 4.7 && < 5
+                      , staversion
+                      , http-client
+                      , http-client-tls
+                      , bytestring
+                      , Cabal
+                      , hspec
 
                         
 source-repository head
