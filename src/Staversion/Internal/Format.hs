@@ -64,7 +64,7 @@ formatVersionIntervalCaret vi = case vi of
   _ -> fallback
   where
     formatV v = pack $ concat $ intersperse "." $ map show $ V.versionNumbers v
-    fallback = formatVersionCabal $ V.fromVersionIntervals $ fromJust $ V.mkVersionIntervals [vi]
+    fallback = formatVersionCabal $ V.fromVersionIntervals $ V.mkVersionIntervals [vi]
 
 isCaretOK :: V.Version -> V.Version -> Bool
 isCaretOK inc_lv exc_uv = isCaretOK' (V.versionNumbers inc_lv) (V.versionNumbers exc_uv) where

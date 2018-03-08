@@ -45,6 +45,6 @@ vors' (v:rest) = vor v $ vors' rest
 
 -- | Version interval. vint x y = [x, y)
 vint :: [Int] -> [Int] ->V.VersionRange
-vint vl vu = fromJust $ fmap V.fromVersionIntervals $ V.mkVersionIntervals [interval] where
+vint vl vu = V.fromVersionIntervals $ V.mkVersionIntervals [interval] where
   interval = (V.LowerBound (ver vl) V.InclusiveBound, V.UpperBound (ver vu) V.ExclusiveBound)
 

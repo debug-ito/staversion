@@ -17,10 +17,10 @@ module Staversion.Internal.Version
          V.unionVersionRanges,
          V.simplifyVersionRange,
          V.fromVersionIntervals,
-         V.mkVersionIntervals,
          V.asVersionIntervals,
          -- * Compatibility
          mkVersion,
+         mkVersionIntervals,
          versionNumbers,
          -- * Util
          BaseVersion,
@@ -28,7 +28,7 @@ module Staversion.Internal.Version
          parseVersionText
        ) where
 
-import Data.Maybe (listToMaybe)
+import Data.Maybe (listToMaybe, fromJust)
 import Data.Text (Text, unpack)
 import qualified Distribution.Version as V
 import Data.Version (parseVersion)
@@ -64,5 +64,18 @@ mkVersion vs = V.Version vs []
 
 versionNumbers :: V.Version -> [Int]
 versionNumbers = V.versionBranch
+
+#endif
+
+
+#if MIN_VERSION_Cabal(2,2,0)
+
+mkVersionIntervals :: [V.VersionInterval] -> V.VersionIntervals
+mkVersionIntervals = V.mkVersionIntervals
+
+#else
+
+mkVersionIntervals :: [V.VersionInterval] -> V.VersionIntervals
+mkVersionIntervals = fromJust . V.mkVersionIntervals
 
 #endif
