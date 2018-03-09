@@ -1,5 +1,12 @@
 # Revision history for staversion
 
+## 0.2.1.3  -- 2018-03-09
+
+* Support `aeson-1.3.0.0`, `base-4.10.0.0`, `Cabal-2.2.0.0`,
+  `http-types-0.12.1`, `megaparsec-6.4.1`, `QuickCheck-2.11.3`,
+  `transformers-0.6.0.6`
+
+
 ## 0.2.1.2  -- 2017-07-29
 
 * Fix build and test with `megaparsec-4`.
