@@ -32,6 +32,7 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.HashMap.Strict as HM
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Monoid (Monoid, (<>), mconcat)
+import Data.Semigroup (Semigroup)
 import Data.Text (Text, unpack)
 import Data.Traversable (Traversable(traverse))
 import Data.Word (Word)
@@ -66,7 +67,7 @@ import Staversion.Internal.Version (Version)
 
 -- | A data structure that keeps a map between package names and their
 -- versions.
-newtype BuildPlanMap = BuildPlanMap (HM.HashMap PackageName Version) deriving (Monoid)
+newtype BuildPlanMap = BuildPlanMap (HM.HashMap PackageName Version) deriving (Semigroup,Monoid)
 
 instance FromJSON BuildPlanMap where
   parseJSON (Object object) = (\p1 p2 -> BuildPlanMap $ p1 <> p2) <$> core_packages <*> other_packages where
