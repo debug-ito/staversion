@@ -1,5 +1,10 @@
 # Revision history for staversion
 
+## 0.2.1.4  -- 2018-03-26
+
+* Support `base-4.11.0.0`.
+
+
 ## 0.2.1.3  -- 2018-03-09
 
 * Support `aeson-1.3.0.0`, `base-4.10.0.0`, `Cabal-2.2.0.0`,
