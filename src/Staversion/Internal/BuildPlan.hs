@@ -176,6 +176,7 @@ loadBuildPlan man names (SourceStackYaml file) = do
   case eresolver of
    Left err -> return $ Left err
    Right resolver -> loadBuildPlan man names (SourceStackage resolver)
+loadBuildPlan _ _ SourceStackDefault = undefined -- TODO
 
 loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM BuildPlan
 loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where

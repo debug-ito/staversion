@@ -28,6 +28,9 @@ data PackageSource = SourceStackage Resolver -- ^ stackage.
                    | SourceStackYaml FilePath
                      -- ^ stack.yaml file. Its \"resolver\" field is
                      -- used as the package source.
+                   | SourceStackDefault
+                     -- ^ the resolver that the @stack@ command would
+                     -- use by default.
                    deriving (Show,Eq,Ord)
 
 -- | Query for package version(s).
@@ -42,6 +45,7 @@ sourceDesc :: PackageSource -> Text
 sourceDesc (SourceStackage r) = pack r
 sourceDesc SourceHackage = "latest in hackage"
 sourceDesc (SourceStackYaml p) = pack p
+sourceDesc SourceStackDefault = "default stack resolver"
 
 parseQuery :: String -> Query
 parseQuery s = if ".cabal" `isSuffixOf` s

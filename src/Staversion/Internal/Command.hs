@@ -81,7 +81,7 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
                                Opt.value (defBuildPlanDir def_comm),
                                Opt.showDefault
                              ]
-  sources = some $ resolver <|> hackage <|> stack_explicit
+  sources = some $ resolver <|> hackage <|> stack_explicit <|> stack_default
   resolver = fmap SourceStackage $ Opt.strOption
              $ mconcat [ Opt.long "resolver",
                          Opt.short 'r',
@@ -100,6 +100,12 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
                                         ),
                                Opt.metavar "FILE"
                              ]
+  stack_default = Opt.flag' SourceStackDefault
+                  $ mconcat [ Opt.long "stack-default",
+                              Opt.short 'S',
+                              Opt.help ( "Search the resolver that 'stack' command would use by default."
+                                       )
+                            ]
   queries = some $ parseQuery <$> (query_package <|> query_cabal)
   query_package = Opt.strArgument
                   $ mconcat [ Opt.help "Name of package whose version you want to check.",
