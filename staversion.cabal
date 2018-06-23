@@ -20,7 +20,8 @@ extra-source-files:     README.md, ChangeLog.md,
                         test/data/doctest.cabal_test,
                         test/data/conduit.cabal_test,
                         test/data/foobar.cabal_test,
-                        test/data/braces.cabal_test
+                        test/data/braces.cabal_test,
+                        test/data/stack_sample.yaml
                         
 homepage:               https://github.com/debug-ito/staversion
 bug-reports:            https://github.com/debug-ito/staversion/issues

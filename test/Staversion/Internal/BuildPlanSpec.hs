@@ -70,8 +70,14 @@ mockBuildPlanManager lts_major lts_minor = do
 
 loadBuildPlan_spec :: Spec
 loadBuildPlan_spec = describe "loadBuildPlan" $ do
+  let expRight = either (\e -> error ("Error: " ++ e)) return
   it "reads local file after disambiguation" $ do
     bp_man <- mockBuildPlanManager 4 2
-    bp <- either (\e -> error ("Error: " ++ e)) return =<< loadBuildPlan bp_man [] (SourceStackage "lts")
+    bp <- expRight =<< loadBuildPlan bp_man [] (SourceStackage "lts")
     packageVersion bp "base" `shouldBe` (Just $ ver [4,8,2,0])
+    buildPlanSource bp `shouldBe` SourceStackage "lts-4.2"
+  it "reads the given stack.yaml for resolver" $ do
+    bp_man <- mockBuildPlanManager 4 2
+    bp <- expRight =<< loadBuildPlan bp_man [] (SourceStackYaml ("test" </> "data" </> "stack_sample.yaml"))
+    packageVersion bp "optparse-applicative" `shouldBe` (Just $ ver [0,12,0,0])
     buildPlanSource bp `shouldBe` SourceStackage "lts-4.2"
