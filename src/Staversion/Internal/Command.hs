@@ -96,7 +96,7 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
   stack_explicit = fmap SourceStackYaml $ Opt.strOption
                    $ mconcat [ Opt.long "stack",
                                Opt.help ( "Path to stack.yaml file."
-                                          ++ " It searches package versions of the resolver of the specified stack.yaml file."
+                                          ++ " It searches for package versions of the resolver of the specified stack.yaml file."
                                         ),
                                Opt.metavar "FILE"
                              ]
