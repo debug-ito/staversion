@@ -61,6 +61,7 @@ import Staversion.Internal.BuildPlan.Stackage
     PartialResolver(..), ExactResolver(..),
     fetchBuildPlanYAML
   )
+import qualified Staversion.Internal.BuildPlan.StackYaml as StackYaml
 import Staversion.Internal.BuildPlan.Version (unVersionJSON)
 import Staversion.Internal.Version (Version)
 
@@ -170,7 +171,11 @@ loadBuildPlan man names SourceHackage = runExceptT impl where
   doFetch http_man name = do
     logDebug' ("Ask hackage for the latest version of " ++ unpack name)
     ExceptT $ fetchPreferredVersions http_man name
-loadBuildPlan _ _ (SourceStackYaml _) = undefined -- TODO
+loadBuildPlan man names (SourceStackYaml file) = do
+  eresolver <- StackYaml.readResolver file
+  case eresolver of
+   Left err -> return $ Left err
+   Right resolver -> loadBuildPlan man names (SourceStackage resolver)
 
 loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM BuildPlan
 loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where
