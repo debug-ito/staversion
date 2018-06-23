@@ -170,6 +170,7 @@ loadBuildPlan man names SourceHackage = runExceptT impl where
   doFetch http_man name = do
     logDebug' ("Ask hackage for the latest version of " ++ unpack name)
     ExceptT $ fetchPreferredVersions http_man name
+loadBuildPlan _ _ (SourceStackYaml _) = undefined -- TODO
 
 loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM BuildPlan
 loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where

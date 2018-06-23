@@ -25,6 +25,9 @@ type Resolver = String
 -- | Source of packages.
 data PackageSource = SourceStackage Resolver -- ^ stackage.
                    | SourceHackage -- ^ hackage (latest)
+                   | SourceStackYaml FilePath
+                     -- ^ stack.yaml file. Its \"resolver\" field is
+                     -- used as the package source.
                    deriving (Show,Eq,Ord)
 
 -- | Query for package version(s).
@@ -38,6 +41,7 @@ type ErrorMsg = String
 sourceDesc :: PackageSource -> Text
 sourceDesc (SourceStackage r) = pack r
 sourceDesc SourceHackage = "latest in hackage"
+sourceDesc (SourceStackYaml p) = pack p
 
 parseQuery :: String -> Query
 parseQuery s = if ".cabal" `isSuffixOf` s

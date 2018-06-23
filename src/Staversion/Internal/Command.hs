@@ -81,7 +81,7 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
                                Opt.value (defBuildPlanDir def_comm),
                                Opt.showDefault
                              ]
-  sources = some $ resolver <|> hackage
+  sources = some $ resolver <|> hackage <|> stack_explicit
   resolver = fmap SourceStackage $ Opt.strOption
              $ mconcat [ Opt.long "resolver",
                          Opt.short 'r',
@@ -93,6 +93,13 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
                         Opt.short 'H',
                         Opt.help "Search hackage.org for the latest version."
                       ]
+  stack_explicit = fmap SourceStackYaml $ Opt.strOption
+                   $ mconcat [ Opt.long "stack",
+                               Opt.help ( "Path to stack.yaml file."
+                                          ++ " It searches package versions of the resolver of the specified stack.yaml file."
+                                        ),
+                               Opt.metavar "FILE"
+                             ]
   queries = some $ parseQuery <$> (query_package <|> query_cabal)
   query_package = Opt.strArgument
                   $ mconcat [ Opt.help "Name of package whose version you want to check.",
