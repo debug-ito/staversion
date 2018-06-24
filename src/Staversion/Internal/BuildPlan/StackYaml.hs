@@ -49,10 +49,12 @@ configLocation :: Logger
                -> IO (Either ErrorMsg FilePath)
 configLocation logger command = fmap (configLocationFromText =<<) $ getProcessOutput logger command
 
+-- TODO: コマンド実行に失敗した時の例外をキャッチする。あと、どうもstderrはinheritになっているな。
+
 getProcessOutput :: Logger -> String -> IO (Either ErrorMsg Text)
 getProcessOutput _ command = fmap (return . pack) $ readCreateProcess cmd ""
   where
-    cmd = shell command
+    cmd = shell (command <> " path")
 
 configLocationFromText :: Text -> Either ErrorMsg FilePath
 configLocationFromText input = toEither $ findField =<< T.lines input
