@@ -18,12 +18,11 @@ import Control.Monad (void)
 import Data.Char (isSpace)
 import Data.Monoid ((<>))
 import Data.Yaml (FromJSON(..), Value(..), (.:), decodeEither)
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import qualified Data.Text as T
 import qualified Data.ByteString as BS
 import System.Process
-  ( withCreateProcess, shell, CreateProcess(std_in, std_out, std_err),
-    StdStream(CreatePipe, NoStream)
+  ( shell, readCreateProcess
   )
 import Text.Megaparsec (runParser, Parsec)
 import Text.Megaparsec.Char (satisfy, space)
@@ -51,14 +50,9 @@ configLocation :: Logger
 configLocation logger command = fmap (configLocationFromText =<<) $ getProcessOutput logger command
 
 getProcessOutput :: Logger -> String -> IO (Either ErrorMsg Text)
-getProcessOutput logger command = withCreateProcess cmd handleProcess
+getProcessOutput _ command = fmap (return . pack) $ readCreateProcess cmd ""
   where
-    cmd = (shell command) { std_in = NoStream,
-                            std_out = CreatePipe,
-                            std_err = NoStream
-                          }
-    handleProcess Nothing (Just out) Nothing ph = undefined -- TODO
-    handleProcess _ _ _ _ = return $ Left ("Unexpected process handles. Maybe it's bug in System.Process.")
+    cmd = shell command
 
 configLocationFromText :: Text -> Either ErrorMsg FilePath
 configLocationFromText input = toEither $ findField =<< T.lines input
