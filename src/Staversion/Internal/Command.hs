@@ -40,6 +40,8 @@ import Staversion.Internal.Version (showBaseVersion)
 data Command =
   Command { commBuildPlanDir :: FilePath,
             -- ^ path to the directory where build plan files are stored.
+            commStackCommand :: String,
+            -- ^ shell command to invoke @stack@ tool.
             commLogger :: Logger,
             -- ^ the logger
             commSources :: [PackageSource],
@@ -50,10 +52,8 @@ data Command =
             -- ^ if 'True', it accesses the Internet to query build plans etc.
             commAggregator :: Maybe Aggregator,
             -- ^ if 'Just', do aggregation over the results.
-            commFormatConfig :: FormatConfig,
+            commFormatConfig :: FormatConfig
             -- ^ config for the formatter
-            commStackCommand :: String
-            -- ^ shell command to invoke @stack@ tool.
           }
 
 -- | Default values for 'Command'.
@@ -67,9 +67,8 @@ defCommand = DefCommand <$> def_build_plan_dir where
     return $ home </> ".stack" </> "build-plan"
 
 commandParser :: DefCommand -> Opt.Parser Command
-commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
-                         <*> queries <*> network <*> aggregate <*> format_config
-                         <*> stack_command where
+commandParser def_comm = Command <$> build_plan_dir <*> stack_command <*> logger <*> sources
+                         <*> queries <*> network <*> aggregate <*> format_config where
   logger = makeLogger <$> is_verbose
   makeLogger True = defaultLogger { loggerThreshold = Just LogDebug }
   makeLogger False = defaultLogger
