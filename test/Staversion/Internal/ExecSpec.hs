@@ -136,7 +136,8 @@ baseCommand = Command { commBuildPlanDir = "test" </> "data",
                         commQueries = [],
                         commAllowNetwork = False,
                         commAggregator = Nothing,
-                        commFormatConfig = defFormatConfig
+                        commFormatConfig = defFormatConfig,
+                        commStackCommand = "stack"
                       }
 
 spec_processCommand_disambiguates :: Spec

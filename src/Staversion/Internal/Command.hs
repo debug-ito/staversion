@@ -50,8 +50,10 @@ data Command =
             -- ^ if 'True', it accesses the Internet to query build plans etc.
             commAggregator :: Maybe Aggregator,
             -- ^ if 'Just', do aggregation over the results.
-            commFormatConfig :: FormatConfig
+            commFormatConfig :: FormatConfig,
             -- ^ config for the formatter
+            commStackCommand :: String
+            -- ^ shell command to invoke @stack@ tool.
           }
 
 -- | Default values for 'Command'.
@@ -66,7 +68,8 @@ defCommand = DefCommand <$> def_build_plan_dir where
 
 commandParser :: DefCommand -> Opt.Parser Command
 commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
-                         <*> queries <*> network <*> aggregate <*> format_config where
+                         <*> queries <*> network <*> aggregate <*> format_config
+                         <*> stack_command where
   logger = makeLogger <$> is_verbose
   makeLogger True = defaultLogger { loggerThreshold = Just LogDebug }
   makeLogger False = defaultLogger
@@ -132,6 +135,13 @@ commandParser def_comm = Command <$> build_plan_dir <*> logger <*> sources
                                Opt.helpDoc $ Just $ docFormatVersions "FORMAT",
                                Opt.value $ fconfFormatVersion defFormatConfig
                              ]
+  stack_command = Opt.strOption
+                  $ mconcat [ Opt.long "stack-command",
+                              Opt.help "Shell command for stack tool.",
+                              Opt.metavar "COMMAND",
+                              Opt.value "stack",
+                              Opt.showDefault
+                            ]
 
 maybeReader :: String -> (String -> Maybe a) -> Opt.ReadM a
 maybeReader metavar mfunc = do

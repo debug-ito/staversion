@@ -24,7 +24,7 @@ import Staversion.Internal.Aggregate (aggregateResults)
 import Staversion.Internal.BuildPlan
   ( BuildPlan, packageVersion, buildPlanSource,
     newBuildPlanManager, loadBuildPlan,
-    BuildPlanManager
+    BuildPlanManager, manStackCommand
   )
 import Staversion.Internal.Command
   ( parseCommandArgs,
@@ -64,10 +64,15 @@ data ResolvedQuery = RQueryOne PackageName
 processCommand :: Command -> IO [Result]
 processCommand = _processCommandWithCustomBuildPlanManager return
 
+makeBuildPlanManager :: Command -> IO BuildPlanManager
+makeBuildPlanManager comm = do
+  man <- newBuildPlanManager (commBuildPlanDir comm) (commLogger comm) (commAllowNetwork comm)
+  return $ man { manStackCommand = commStackCommand comm }
+
 _processCommandWithCustomBuildPlanManager :: (BuildPlanManager -> IO BuildPlanManager) -> Command -> IO [Result]
 _processCommandWithCustomBuildPlanManager customBPM comm = impl where
   impl = do
-    bp_man <- customBPM =<< newBuildPlanManager (commBuildPlanDir comm) (commLogger comm) (commAllowNetwork comm)
+    bp_man <- customBPM =<< makeBuildPlanManager comm
     query_pairs <- resolveQueries' logger $ commQueries comm
     fmap concat $ mapM (processQueriesIn bp_man query_pairs) $ commSources comm
   logger = commLogger comm

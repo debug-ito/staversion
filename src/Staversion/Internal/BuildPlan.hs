@@ -12,6 +12,7 @@ module Staversion.Internal.BuildPlan
          buildPlanSource,
          BuildPlanManager,
          newBuildPlanManager,
+         manStackCommand,
          loadBuildPlan,
          -- * Low-level APIs
          BuildPlanMap,
@@ -104,12 +105,19 @@ instance HasVersions BuildPlan where
 -- | Stateful manager for 'BuildPlan's.
 data BuildPlanManager =
   BuildPlanManager { manBuildPlanDir :: FilePath,
-                     -- ^ path to the directory where build plans are hold.
+                     -- ^ (accessor function) path to the directory
+                     -- where build plans are hold.
                      manHttpManager :: Maybe Manager,
-                     -- ^ low-level HTTP connection manager. If 'Nothing', it won't fetch build plans over the network.
+                     -- ^ (accessor function) low-level HTTP
+                     -- connection manager. If 'Nothing', it won't
+                     -- fetch build plans over the network.
                      manDisambiguator :: IORef (Maybe Disambiguator),
-                     -- ^ cache of resolver disambigutor
-                     manLogger :: Logger
+                     -- ^ (accessor function) cache of resolver
+                     -- disambigutor
+                     manLogger :: Logger,
+                     manStackCommand :: String
+                     -- ^ (accessor function) Shell command for the
+                     -- @stack@ tool.
                    }
 
 newBuildPlanManager :: FilePath -- ^ path to the directory where build plans are hold.
@@ -124,7 +132,8 @@ newBuildPlanManager plan_dir logger enable_network = do
   return $ BuildPlanManager { manBuildPlanDir = plan_dir,
                               manHttpManager = mman,
                               manDisambiguator = disam,
-                              manLogger = logger
+                              manLogger = logger,
+                              manStackCommand = "stack"
                             }
 
 type LoadM = ExceptT ErrorMsg IO
