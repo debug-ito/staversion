@@ -14,20 +14,21 @@ module Staversion.Internal.BuildPlan.StackYaml
        ) where
 
 import Control.Applicative (empty, many, some)
-import Control.Monad (void)
+import Control.Monad (void, when)
 import Data.Char (isSpace)
 import Data.Monoid ((<>))
 import Data.Yaml (FromJSON(..), Value(..), (.:), decodeEither)
 import Data.Text (Text, pack)
 import qualified Data.Text as T
 import qualified Data.ByteString as BS
+import System.Exit (ExitCode(ExitFailure))
 import System.Process
-  ( shell, readCreateProcess
+  ( shell, readCreateProcessWithExitCode
   )
 import Text.Megaparsec (runParser, Parsec)
 import Text.Megaparsec.Char (satisfy, space)
 
-import Staversion.Internal.Log (Logger)
+import Staversion.Internal.Log (Logger, logWarn)
 import Staversion.Internal.Query (Resolver, ErrorMsg)
 
 newtype Resolver' = Resolver' { unResolver' :: Resolver }
@@ -50,11 +51,24 @@ configLocation :: Logger
 configLocation logger command = fmap (configLocationFromText =<<) $ getProcessOutput logger command
 
 -- TODO: コマンド実行に失敗した時の例外をキャッチする。あと、どうもstderrはinheritになっているな。
+-- debug output出す
 
 getProcessOutput :: Logger -> String -> IO (Either ErrorMsg Text)
-getProcessOutput _ command = fmap (return . pack) $ readCreateProcess cmd ""
+getProcessOutput logger command = handleResult =<< readCreateProcessWithExitCode cmd ""
   where
-    cmd = shell (command <> " path")
+    cmd_str = command <> " path"
+    cmd = shell cmd_str
+    warnErr err = when (length err /= 0) $ logWarn logger err
+    handleResult (code, out, err) = do
+      case code of
+       ExitFailure c -> do
+         let code_err = "'" <> cmd_str <> "' returns non-zero exit code: " <> show c
+         logWarn logger code_err
+         warnErr err
+         return $ Left code_err
+       _ -> do
+         warnErr err
+         return $ Right $ pack out
 
 configLocationFromText :: Text -> Either ErrorMsg FilePath
 configLocationFromText input = toEither $ findField =<< T.lines input
