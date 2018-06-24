@@ -21,6 +21,10 @@ import Data.Yaml (FromJSON(..), Value(..), (.:), decodeEither)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.ByteString as BS
+import System.Process
+  ( withCreateProcess, shell, CreateProcess(std_in, std_out, std_err),
+    StdStream(CreatePipe, NoStream)
+  )
 import Text.Megaparsec (runParser, Parsec)
 import Text.Megaparsec.Char (satisfy, space)
 
@@ -44,7 +48,17 @@ readResolver file = fmap (fmap unResolver' . decodeEither) $ BS.readFile file
 configLocation :: Logger
                -> String -- ^ shell command for @stack@
                -> IO (Either ErrorMsg FilePath)
-configLocation = undefined -- TODO.
+configLocation logger command = fmap (configLocationFromText =<<) $ getProcessOutput logger command
+
+getProcessOutput :: Logger -> String -> IO (Either ErrorMsg Text)
+getProcessOutput logger command = withCreateProcess cmd handleProcess
+  where
+    cmd = (shell command) { std_in = NoStream,
+                            std_out = CreatePipe,
+                            std_err = NoStream
+                          }
+    handleProcess Nothing (Just out) Nothing ph = undefined -- TODO
+    handleProcess _ _ _ _ = return $ Left ("Unexpected process handles. Maybe it's bug in System.Process.")
 
 configLocationFromText :: Text -> Either ErrorMsg FilePath
 configLocationFromText input = toEither $ findField =<< T.lines input
