@@ -13,10 +13,16 @@ module Staversion.Internal.BuildPlan.StackYaml
          configLocationFromText
        ) where
 
-import Control.Applicative (empty)
+import Control.Applicative (empty, many, some)
+import Control.Monad (void)
+import Data.Char (isSpace)
+import Data.Monoid ((<>))
 import Data.Yaml (FromJSON(..), Value(..), (.:), decodeEither)
 import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.ByteString as BS
+import Text.Megaparsec (runParser, Parsec)
+import Text.Megaparsec.Char (satisfy, space)
 
 import Staversion.Internal.Log (Logger)
 import Staversion.Internal.Query (Resolver, ErrorMsg)
@@ -41,4 +47,28 @@ configLocation :: Logger
 configLocation = undefined -- TODO.
 
 configLocationFromText :: Text -> Either ErrorMsg FilePath
-configLocationFromText = undefined
+configLocationFromText input = toEither $ findField =<< T.lines input
+  where
+    fieldName = "config-location"
+    findField :: Text -> [FilePath]
+    findField line = do
+      (fname, fvalue) <- maybe [] return $ parseField line
+      if fname == fieldName
+        then return $ T.unpack fvalue
+        else []
+    toEither :: [FilePath] -> Either ErrorMsg FilePath
+    toEither [] = Left ("Cannot find '" <> T.unpack fieldName <> "' field in stack path")
+    toEither (r:_) = Right r
+    parseField :: Text -> Maybe (Text, Text)
+    parseField = either (const Nothing) return . runParser parser ""
+    parser :: Parsec () Text (Text,Text)
+    parser = do
+      space
+      fname <- term
+      void $ many $ satisfy isSep
+      fval <- term
+      return (fname, fval)
+      where
+        isSep c = c == ':' || isSpace c
+        term = fmap T.pack $ some $ satisfy (not . isSep)
+      
