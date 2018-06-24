@@ -185,7 +185,11 @@ loadBuildPlan man names (SourceStackYaml file) = do
   case eresolver of
    Left err -> return $ Left err
    Right resolver -> loadBuildPlan man names (SourceStackage resolver)
-loadBuildPlan _ _ SourceStackDefault = undefined -- TODO
+loadBuildPlan man names SourceStackDefault = do
+  efile <- StackYaml.configLocation (manLogger man) (manStackCommand man)
+  case efile of
+   Left err -> return $ Left err
+   Right f -> loadBuildPlan man names (SourceStackYaml f)
 
 loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM BuildPlan
 loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where
