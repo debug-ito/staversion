@@ -9,11 +9,13 @@
 -- "Staversion.Internal.BuildPlan" and test modules.
 module Staversion.Internal.BuildPlan.StackYaml
        ( readResolver,
-         configLocation
+         configLocation,
+         configLocationFromText
        ) where
 
 import Control.Applicative (empty)
 import Data.Yaml (FromJSON(..), Value(..), (.:), decodeEither)
+import Data.Text (Text)
 import qualified Data.ByteString as BS
 
 import Staversion.Internal.Log (Logger)
@@ -37,3 +39,6 @@ configLocation :: Logger
                -> String -- ^ shell command for @stack@
                -> IO (Either ErrorMsg FilePath)
 configLocation = undefined -- TODO.
+
+configLocationFromText :: Text -> Either ErrorMsg FilePath
+configLocationFromText = undefined

@@ -86,12 +86,13 @@ test-suite spec
   hs-source-dirs:       test
   ghc-options:          -Wall -fno-warn-unused-imports -fno-warn-orphans "-with-rtsopts=-M512m"
   main-is:              Spec.hs
-  default-extensions:   OverloadedStrings
+  default-extensions:   OverloadedStrings, QuasiQuotes
   -- other-extensions:     
   other-modules:        Staversion.Internal.BuildPlanSpec,
                         Staversion.Internal.BuildPlan.StackageSpec,
                         Staversion.Internal.BuildPlan.HackageSpec,
                         Staversion.Internal.BuildPlan.VersionSpec,
+                        Staversion.Internal.BuildPlan.StackYamlSpec,
                         Staversion.Internal.ExecSpec,
                         Staversion.Internal.FormatSpec,
                         Staversion.Internal.CabalSpec,
@@ -100,7 +101,8 @@ test-suite spec
   build-depends:        base, staversion, text, filepath, bytestring,
                         Cabal, semigroups,
                         hspec >=2.1.7,
-                        QuickCheck >=2.8.1 && <2.12
+                        QuickCheck >=2.8.1 && <2.12,
+                        heredoc
 
 flag network-test
   description: Enable network tests.
