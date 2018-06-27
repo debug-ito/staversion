@@ -28,7 +28,7 @@ import System.Process
 import Text.Megaparsec (runParser, Parsec)
 import Text.Megaparsec.Char (satisfy, space)
 
-import Staversion.Internal.Log (Logger, logWarn)
+import Staversion.Internal.Log (Logger, logWarn, logDebug)
 import Staversion.Internal.Query (Resolver, ErrorMsg)
 
 newtype Resolver' = Resolver' { unResolver' :: Resolver }
@@ -48,10 +48,13 @@ readResolver file = fmap (fmap unResolver' . decodeEither) $ BS.readFile file
 configLocation :: Logger
                -> String -- ^ shell command for @stack@
                -> IO (Either ErrorMsg FilePath)
-configLocation logger command = fmap (configLocationFromText =<<) $ getProcessOutput logger command
+configLocation logger command = do
+  pout <- getProcessOutput logger command
+  case configLocationFromText =<< pout of
+   e@(Right path) -> logDebug logger ("Project stack config: " <> path) >> return e
+   e -> return e
 
 -- TODO: コマンド実行に失敗した時の例外をキャッチする。あと、どうもstderrはinheritになっているな。
--- debug output出す
 
 getProcessOutput :: Logger -> String -> IO (Either ErrorMsg Text)
 getProcessOutput logger command = handleResult =<< readCreateProcessWithExitCode cmd ""
