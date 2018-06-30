@@ -98,6 +98,7 @@ test-suite spec
                         Staversion.Internal.FormatSpec,
                         Staversion.Internal.CabalSpec,
                         Staversion.Internal.AggregateSpec,
+                        Staversion.Internal.CommandSpec,
                         Staversion.Internal.TestUtil
   build-depends:        base, staversion, text, filepath, bytestring,
                         Cabal, semigroups,
