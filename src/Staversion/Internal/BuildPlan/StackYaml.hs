@@ -25,11 +25,10 @@ import System.Exit (ExitCode(ExitFailure))
 import System.Process
   ( shell, readCreateProcessWithExitCode
   )
-import Text.Megaparsec (runParser, Parsec)
-import Text.Megaparsec.Char (satisfy, space)
 
 import Staversion.Internal.Log (Logger, logWarn, logDebug)
 import Staversion.Internal.Query (Resolver, ErrorMsg)
+import Staversion.Internal.Megaparsec (Parser, runParser, satisfy, space)
 
 newtype Resolver' = Resolver' { unResolver' :: Resolver }
                   deriving (Show,Eq,Ord)
@@ -87,7 +86,7 @@ configLocationFromText input = toEither $ findField =<< T.lines input
     toEither (r:_) = Right r
     parseField :: Text -> Maybe (Text, Text)
     parseField = either (const Nothing) return . runParser parser ""
-    parser :: Parsec () Text (Text,Text)
+    parser :: Parser (Text,Text)
     parser = do
       space
       fname <- term
