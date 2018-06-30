@@ -177,9 +177,14 @@ loadBuildPlan man names SourceHackage = runExceptT impl where
     build_plan_map <- (mconcat . zipWith registeredVersionToBuildPlanMap names) <$> mapM (doFetch http_man) names
     return $ BuildPlan { buildPlanMap = build_plan_map, buildPlanSource = SourceHackage }
   logDebug' msg = liftIO $ logDebug (manLogger man) msg
+  logWarn' msg = liftIO $ logWarn (manLogger man) msg
   doFetch http_man name = do
     logDebug' ("Ask hackage for the latest version of " ++ unpack name)
-    ExceptT $ fetchPreferredVersions http_man name
+    reg_ver <- ExceptT $ fetchPreferredVersions http_man name
+    case latestVersion reg_ver of
+     Nothing -> logWarn' ("Cannot find package version of " ++ unpack name ++ ". Maybe it's not on hackage.")
+     Just _ -> return ()
+    return reg_ver
 loadBuildPlan man names (SourceStackYaml file) = do
   eresolver <- StackYaml.readResolver file
   case eresolver of
