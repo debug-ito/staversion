@@ -22,7 +22,7 @@ import Data.Text (unpack)
 
 import Staversion.Internal.BuildPlan.Version (unVersionJSON)
 import Staversion.Internal.Query (ErrorMsg, PackageName)
-import Staversion.Internal.HTTP (Manager, fetchURL, OurHttpException)
+import Staversion.Internal.HTTP (Manager, fetchURL, OurHttpException, asStatusFailureException)
 import Staversion.Internal.Version (Version)
 
 data RegisteredVersions = RegisteredVersions { regPreferredVersions :: [Version]
@@ -47,5 +47,11 @@ fetchPreferredVersions :: Manager -> PackageName -> IO (Either ErrorMsg Register
 fetchPreferredVersions man text_name = Exception.handle handler $ parsePreferredVersionsJSON <$> fetchURL man url where
   name = unpack text_name
   url = "http://hackage.haskell.org/package/" ++ name ++ "/preferred.json"
-  handler :: OurHttpException -> IO (Either ErrorMsg a)
-  handler e = return $ Left ("HTTP error while fetching versions of " ++ name ++ " in hackage: " ++ show e)
+  handler :: OurHttpException -> IO (Either ErrorMsg RegisteredVersions)
+  handler e = case asStatusFailureException e of
+    Nothing -> return $ Left err
+    Just code -> case code of
+      404 -> return $ Right $ RegisteredVersions []
+      _ -> return $ Left err
+    where
+      err = "HTTP error while fetching versions of " ++ name ++ " in hackage: " ++ show e

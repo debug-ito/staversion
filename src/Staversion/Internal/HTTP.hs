@@ -12,7 +12,8 @@ module Staversion.Internal.HTTP
        ( Manager,
          OurHttpException,
          niceHTTPManager,
-         fetchURL
+         fetchURL,
+         asStatusFailureException
        ) where
 
 import Control.Applicative ((<$>))
@@ -55,3 +56,10 @@ fetchURL man url = doFetch `catch` rethrower where
     else return ()
   rethrower :: H.HttpException -> IO a
   rethrower e = throwIO $ OtherHttpException e
+
+asStatusFailureException :: OurHttpException
+                         -> Maybe Int -- ^ HTTP status code
+asStatusFailureException (StatusFailureException _ res) = Just code
+  where
+    code = fromEnum $ H.responseStatus res
+asStatusFailureException _ = Nothing
