@@ -64,7 +64,7 @@ library
                         http-types >=0.8.6 && <0.13,
                         transformers >=0.3.0 && <0.6,
                         transformers-compat >=0.4.0 && <0.7,
-                        megaparsec >=4.2.0 && <6.5,
+                        megaparsec >=4.2.0 && <6.6,
                         semigroups >=0.18.0.1 && <0.19,
                         Cabal >=1.22.6.0 && <2.3,
                         pretty >=1.1.2.0 && <1.2,
