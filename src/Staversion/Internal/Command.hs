@@ -7,7 +7,8 @@
 module Staversion.Internal.Command
        ( Command(..),
          parseCommandArgs,
-         defFormatConfig
+         defFormatConfig,
+         _parseCommandStrings
        ) where
 
 import Control.Applicative ((<$>), (<*>), optional, some, (<|>))
@@ -230,3 +231,12 @@ programDescription parser =
 
 parseCommandArgs :: IO Command
 parseCommandArgs = Opt.execParser . programDescription . commandParser =<< defCommand
+
+-- | Just for testing.
+_parseCommandStrings :: [String] -> IO (Maybe Command)
+_parseCommandStrings args = fmap (doParse . programDescription . commandParser) defCommand
+  where
+    doParse pinfo = Opt.getParseResult $ Opt.execParserPure prefs pinfo args
+    prefs = Opt.prefs mempty
+
+
