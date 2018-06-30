@@ -11,7 +11,7 @@ module Staversion.Internal.Command
          _parseCommandStrings
        ) where
 
-import Control.Applicative ((<$>), (<*>), optional, some, (<|>))
+import Control.Applicative ((<$>), (<*>), optional, some, (<|>), many)
 import Data.Function (on)
 import Data.Monoid (mconcat, (<>))
 import Data.Text (pack)
@@ -84,7 +84,12 @@ commandParser def_comm = Command <$> build_plan_dir <*> stack_command <*> logger
                                Opt.value (defBuildPlanDir def_comm),
                                Opt.showDefault
                              ]
-  sources = some $ resolver <|> hackage <|> stack_explicit <|> stack_default
+  withDefault :: Functor m => [a] -> m [a] -> m [a]
+  withDefault def_vals = fmap applyDef
+    where
+      applyDef [] = def_vals
+      applyDef vs = vs
+  sources = withDefault [SourceStackDefault] $ many $ resolver <|> hackage <|> stack_explicit <|> stack_default
   resolver = fmap SourceStackage $ Opt.strOption
              $ mconcat [ Opt.long "resolver",
                          Opt.short 'r',
@@ -107,6 +112,7 @@ commandParser def_comm = Command <$> build_plan_dir <*> stack_command <*> logger
                   $ mconcat [ Opt.long "stack-default",
                               Opt.short 'S',
                               Opt.help ( "Search the resolver that 'stack' command would use by default."
+                                         ++ " This option is implied if there is no options about package source (e.g. -r and -H)."
                                        )
                             ]
   queries = some $ parseQuery <$> (query_package <|> query_cabal)
