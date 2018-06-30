@@ -32,6 +32,15 @@ staversion mainly focuses on package versions in stackage, i.e. it answers to qu
 
 staversion first reads build plan YAML files that are stored locally in your computer, then it tries to fetch them over network.
 
+## Package version of your current stack project
+
+If you omit `--resolver` (`-r`) option (or explicitly specify `--stack-default` (`-S`) option), staversion reads `stack.yaml` of your current project, and searches for package versions in the resolver specified in the `stack.yaml`.
+
+    $ staversion conduit
+    ------ default stack resolver (lts-10.8)
+    conduit ==1.2.13.1
+
+
 ## Package version in Hackage
 
 You can also look up the latest version numbers hosted on hackage with `--hackage` (`-H`) option.
