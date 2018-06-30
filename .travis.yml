@@ -98,6 +98,10 @@ matrix:
     compiler: ": #stack lts-10"
     addons: {apt: {packages: [ghc,ghc-8.2.2], sources: [hvr-ghc]}}
 
+  - env: BUILD=stack ARGS="--resolver lts-11"
+    compiler: ": #stack lts-11"
+    addons: {apt: {packages: [libgmp-dev]}}
+
 
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
