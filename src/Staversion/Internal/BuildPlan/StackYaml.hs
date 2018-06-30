@@ -54,8 +54,6 @@ configLocation logger command = do
    e@(Right path) -> logDebug logger ("Project stack config: " <> path) >> return e
    e -> return e
 
--- TODO: コマンド実行に失敗した時の例外をキャッチする。あと、どうもstderrはinheritになっているな。
-
 getProcessOutput :: Logger -> String -> IO (Either ErrorMsg Text)
 getProcessOutput logger command = handleResult =<< readCreateProcessWithExitCode cmd ""
   where
@@ -65,10 +63,11 @@ getProcessOutput logger command = handleResult =<< readCreateProcessWithExitCode
     handleResult (code, out, err) = do
       case code of
        ExitFailure c -> do
-         let code_err = "'" <> cmd_str <> "' returns non-zero exit code: " <> show c
+         let code_err = "'" <> cmd_str <> "' returns non-zero exit code: " <> show c <> "."
+             hint = "It requires the 'stack' tool. Maybe you have to specify the command by --stack-command option."
          logWarn logger code_err
          warnErr err
-         return $ Left code_err
+         return $ Left (code_err <> "\n" <> hint)
        _ -> do
          warnErr err
          return $ Right $ pack out
