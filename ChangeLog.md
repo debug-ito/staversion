@@ -1,5 +1,14 @@
 # Revision history for staversion
 
+## 0.2.2.0  -- 2018-07-01
+
+* Add `--stack` and `--stack-default` (`-S`) options (#4).
+* Now `--stack-default` option is implied if there is no package source specified (#4).
+* Support `aeson-1.4` and `megaparsec-6.5.0`.
+* [Bug fix] `-H` option: It now proceed if hackage returns 404
+  error. That is probably because the user specified a package not on
+  hackage, so it's not fatal.
+
 ## 0.2.1.4  -- 2018-03-26
 
 * Support `base-4.11.0.0`.
