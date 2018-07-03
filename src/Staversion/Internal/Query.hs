@@ -36,6 +36,8 @@ data PackageSource = SourceStackage Resolver -- ^ stackage.
 -- | Query for package version(s).
 data Query = QueryName PackageName
            | QueryCabalFile FilePath
+           | QueryStackYaml FilePath
+           | QueryStackYamlDefault
            deriving (Show,Eq,Ord)
 
 type ErrorMsg = String
