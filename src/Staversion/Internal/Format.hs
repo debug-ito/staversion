@@ -104,19 +104,23 @@ makeQueryBlocks fconf = uncurry prependLines . foldr f ([], []) where
   f ret (blocks, rlines) = case (aggResultFor ret, aggResultBody ret) of
     (_, Right (SimpleResultBody name mver)) -> (blocks, (versionLine (fconfFormatVersion fconf) name mver) : rlines)
     (_, Right (CabalResultBody file target pairs)) -> (cabalFileSuccessBlock fconf file target pairs : prependLines blocks rlines, [])
-    ((QueryName name), Left _) -> (blocks, (packageErrorLine name) : rlines)
-    ((QueryCabalFile file), Left _) -> (cabalFileErrorBlock file : prependLines blocks rlines, [])
+    (query, Left _) -> case makeQueryErrorReport query of
+      Left line -> (blocks, line : rlines)
+      Right block -> (block : prependLines blocks rlines, [])
 
 versionLine :: FormatVersion -> PackageName -> Maybe VersionRange -> ResultLine
 versionLine _ name Nothing = Left $ "-- " <> fromText name <> " N/A"
 versionLine format_version name (Just ver_range) = Right $ fromText name <> " " <> (fromText $ format_version ver_range)
 
-packageErrorLine :: PackageName -> ResultLine
-packageErrorLine name = Left $ "-- " <> fromText name <> " ERROR"
+makeQueryErrorReport :: Query -> Either ResultLine ResultBlock
+makeQueryErrorReport (QueryName name) = Left $ Left $ "-- " <> fromText name <> " ERROR"
+makeQueryErrorReport (QueryCabalFile file) = Right $ errorReportBlock file
+makeQueryErrorReport (QueryStackYaml file) = Right $ errorReportBlock file
+makeQueryErrorReport QueryStackYamlDefault = Right $ errorReportBlock "default stack.yaml"
 
-cabalFileErrorBlock :: FilePath -> ResultBlock
-cabalFileErrorBlock file = RBLines [Left line] where
-  line = "-- " <> fromString file <> " ERROR"
+errorReportBlock :: String -> ResultBlock
+errorReportBlock label = RBLines [Left line] where
+  line = "-- " <> fromString label <> " ERROR"
 
 cabalFileSuccessBlock :: FormatConfig -> FilePath -> Target -> [(PackageName, Maybe VersionRange)] -> ResultBlock
 cabalFileSuccessBlock fconf file target pairs = RBHead header [RBLines $ map (uncurry $ versionLine $ fconfFormatVersion fconf) pairs] where
