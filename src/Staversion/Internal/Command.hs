@@ -121,7 +121,7 @@ commandParser def_comm = Command <$> build_plan_dir <*> stack_command <*> logger
                               Opt.metavar "PACKAGE_NAME"
                             ]
   query_cabal = Opt.strArgument
-                $ mconcat [ Opt.help "(EXPERIMENTAL) .cabal file name. It checks versions of packages in build-deps lists.",
+                $ mconcat [ Opt.help ".cabal file name. It checks versions of packages in build-deps lists.",
                             Opt.metavar "CABAL_FILEPATH"
                           ]
   query_stack_yaml = Opt.strArgument
