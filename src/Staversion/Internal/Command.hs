@@ -115,7 +115,7 @@ commandParser def_comm = Command <$> build_plan_dir <*> stack_command <*> logger
                                          ++ " This option is implied if there is no options about package source (e.g. -r and -H)."
                                        )
                             ]
-  queries = some $ parseQuery <$> (query_package <|> query_cabal)
+  queries = withDefault [QueryStackYamlDefault] $ many $ parseQuery <$> (query_package <|> query_cabal <|> query_stack_yaml)
   query_package = Opt.strArgument
                   $ mconcat [ Opt.help "Name of package whose version you want to check.",
                               Opt.metavar "PACKAGE_NAME"
@@ -124,6 +124,15 @@ commandParser def_comm = Command <$> build_plan_dir <*> stack_command <*> logger
                 $ mconcat [ Opt.help "(EXPERIMENTAL) .cabal file name. It checks versions of packages in build-deps lists.",
                             Opt.metavar "CABAL_FILEPATH"
                           ]
+  query_stack_yaml = Opt.strArgument
+                     $ mconcat [ Opt.help ( "Path to stack.yaml file."
+                                            ++ " It checks versions of packages in build-deps of all cabal projects listed in the stack.yaml."
+                                            ++ " If you just type 'stack.yaml',"
+                                            ++ " it means the default configuration that 'stack' command would use by default."
+                                            ++ " 'stack.yaml' is implied if there is no query argument."
+                                          ),
+                                 Opt.metavar "STACK_YAML_FILEPATH"
+                               ]
   network = not <$> no_network
   no_network = Opt.switch $ mconcat [ Opt.long "no-network",
                                       Opt.help "Forbid network access."

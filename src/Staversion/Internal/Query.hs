@@ -50,6 +50,11 @@ sourceDesc (SourceStackYaml p) = pack p
 sourceDesc SourceStackDefault = "default stack resolver"
 
 parseQuery :: String -> Query
-parseQuery s = if ".cabal" `isSuffixOf` s
-               then QueryCabalFile s
-               else QueryName $ pack s
+parseQuery s =
+  if s == "stack.yaml"
+  then QueryStackYamlDefault
+  else if "stack.yaml" `isSuffixOf` s
+       then QueryStackYaml s
+       else if ".cabal" `isSuffixOf` s
+            then QueryCabalFile s
+            else QueryName $ pack s
