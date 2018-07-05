@@ -8,6 +8,7 @@ module Staversion.Internal.StackConfig
        ( -- * StackConfig
          StackConfig,
          newStackConfig,
+         scCommand,
          readResolver,
          configLocation,
          -- * For tests
@@ -36,11 +37,12 @@ import Staversion.Internal.Megaparsec (Parser, runParser, satisfy, space)
 data StackConfig =
   StackConfig
   { scCommand :: String,
+    -- ^ (accessor) shell command for @stack@ tool.
     scLogger :: Logger
   }
 
-newStackConfig :: String -> Logger -> StackConfig
-newStackConfig = StackConfig
+newStackConfig :: Logger -> StackConfig
+newStackConfig = StackConfig "stack"
 
 
 newtype Resolver' = Resolver' { unResolver' :: Resolver }

@@ -12,7 +12,7 @@ module Staversion.Internal.BuildPlan
          buildPlanSource,
          BuildPlanManager,
          newBuildPlanManager,
-         manStackCommand,
+         setStackCommand,
          loadBuildPlan,
          -- * Low-level APIs
          BuildPlanMap,
@@ -62,7 +62,8 @@ import Staversion.Internal.BuildPlan.Stackage
     PartialResolver(..), ExactResolver(..),
     fetchBuildPlanYAML
   )
-import qualified Staversion.Internal.BuildPlan.StackYaml as StackYaml
+import Staversion.Internal.StackConfig (StackConfig)
+import qualified Staversion.Internal.StackConfig as StackConfig
 import Staversion.Internal.BuildPlan.Version (unVersionJSON)
 import Staversion.Internal.Version (Version)
 
@@ -115,9 +116,7 @@ data BuildPlanManager =
                      -- ^ (accessor function) cache of resolver
                      -- disambigutor
                      manLogger :: Logger,
-                     manStackCommand :: String
-                     -- ^ (accessor function) Shell command for the
-                     -- @stack@ tool.
+                     manStackConfig :: StackConfig
                    }
 
 newBuildPlanManager :: FilePath -- ^ path to the directory where build plans are hold.
@@ -133,8 +132,11 @@ newBuildPlanManager plan_dir logger enable_network = do
                               manHttpManager = mman,
                               manDisambiguator = disam,
                               manLogger = logger,
-                              manStackCommand = "stack"
+                              manStackConfig = StackConfig.newStackConfig logger
                             }
+
+setStackCommand :: String -> BuildPlanManager -> BuildPlanManager
+setStackCommand com man = man { manStackConfig = (manStackConfig man) { StackConfig.scCommand = com } }
 
 type LoadM = ExceptT ErrorMsg IO
 
@@ -186,12 +188,12 @@ loadBuildPlan man names SourceHackage = runExceptT impl where
      Just _ -> return ()
     return reg_ver
 loadBuildPlan man names (SourceStackYaml file) = do
-  eresolver <- StackYaml.readResolver file
+  eresolver <- StackConfig.readResolver file
   case eresolver of
    Left err -> return $ Left err
    Right resolver -> loadBuildPlan man names (SourceStackage resolver)
 loadBuildPlan man names SourceStackDefault = do
-  efile <- StackYaml.configLocation (manLogger man) (manStackCommand man)
+  efile <- StackConfig.configLocation $ manStackConfig man
   case efile of
    Left err -> return $ Left err
    Right f -> loadBuildPlan man names (SourceStackYaml f)

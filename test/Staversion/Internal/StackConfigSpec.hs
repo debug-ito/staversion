@@ -1,11 +1,11 @@
 {-# LANGUAGE QuasiQuotes, OverloadedStrings #-}
-module Staversion.Internal.BuildPlan.StackYamlSpec (main,spec) where
+module Staversion.Internal.StackConfigSpec (main,spec) where
 
 import Data.Text (Text)
 import Test.Hspec
 import Text.Heredoc (here)
 
-import Staversion.Internal.BuildPlan.StackYaml (configLocationFromText)
+import Staversion.Internal.StackConfig (configLocationFromText)
 
 main :: IO ()
 main = hspec spec

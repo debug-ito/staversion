@@ -34,7 +34,6 @@ library
   other-extensions:     CPP, DeriveDataTypeable, TupleSections
   exposed-modules:      Staversion.Internal.BuildPlan,
                         Staversion.Internal.BuildPlan.Stackage,
-                        Staversion.Internal.BuildPlan.StackYaml,
                         Staversion.Internal.BuildPlan.Hackage,
                         Staversion.Internal.BuildPlan.Version,
                         Staversion.Internal.Query,
@@ -94,7 +93,7 @@ test-suite spec
                         Staversion.Internal.BuildPlan.StackageSpec,
                         Staversion.Internal.BuildPlan.HackageSpec,
                         Staversion.Internal.BuildPlan.VersionSpec,
-                        Staversion.Internal.BuildPlan.StackYamlSpec,
+                        Staversion.Internal.StackConfigSpec,
                         Staversion.Internal.ExecSpec,
                         Staversion.Internal.FormatSpec,
                         Staversion.Internal.CabalSpec,
