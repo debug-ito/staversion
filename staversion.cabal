@@ -45,7 +45,8 @@ library
                         Staversion.Internal.Exec,
                         Staversion.Internal.Format,
                         Staversion.Internal.Aggregate,
-                        Staversion.Internal.Version
+                        Staversion.Internal.Version,
+                        Staversion.Internal.StackConfig
   other-modules:        Paths_staversion,
                         Staversion.Internal.HTTP,
                         Staversion.Internal.Megaparsec
