@@ -10,6 +10,7 @@ module Staversion.Internal.StackConfig
          newStackConfig,
          scCommand,
          readResolver,
+         readProjectCabals,
          configLocation,
          -- * For tests
          configLocationFromText
@@ -61,6 +62,12 @@ readStackYaml :: FilePath -> IO (Either ErrorMsg StackYaml)
 readStackYaml file = fmap (fmap setPath . decodeEither) $ BS.readFile file
   where
     setPath sy = sy { stackYamlPath = file }
+
+readProjectCabals :: FilePath
+                  -- ^ path to stack.yaml
+                  -> IO (Either ErrorMsg [FilePath])
+                  -- ^ paths to all .cabal files of the stack projects.
+readProjectCabals = undefined
 
 -- | Read the @resolver@ field in stack.yaml.
 readResolver :: FilePath -- ^ path to stack.yaml
