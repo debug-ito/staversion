@@ -165,13 +165,16 @@ loadBuildPlan :: BuildPlanManager
               -> PackageSource
               -> IO (Either ErrorMsg BuildPlan)
               -- ^ the second result is the real (disambiguated) PackageSource.
-loadBuildPlan man _ (SourceStackage resolver) = runExceptT impl where
+loadBuildPlan man names s = runExceptT $ loadBuildPlanM man names s
+
+loadBuildPlanM :: BuildPlanManager -> [PackageName] -> PackageSource -> LoadM BuildPlan
+loadBuildPlanM man _ (SourceStackage resolver) = impl where
   impl = loadBuildPlan_stackageLocalFile man resolver `loggedElse'` do
     e_resolver <- tryDisambiguate man =<< getPresolver
     loadBuildPlan_stackageLocalFile man (formatExactResolverString e_resolver) `loggedElse'` loadBuildPlan_stackageNetwork man e_resolver
   getPresolver = maybeToLoadM ("Invalid resolver format for stackage.org: " ++ resolver) $ parseResolverString resolver
   loggedElse' = loggedElse $ manLogger man
-loadBuildPlan man names SourceHackage = runExceptT impl where
+loadBuildPlanM man names SourceHackage = impl where
   impl = do
     http_man <- httpManagerM man
     build_plan_map <- (mconcat . zipWith registeredVersionToBuildPlanMap names) <$> mapM (doFetch http_man) names
@@ -185,16 +188,15 @@ loadBuildPlan man names SourceHackage = runExceptT impl where
      Nothing -> logWarn' ("Cannot find package version of " ++ unpack name ++ ". Maybe it's not on hackage.")
      Just _ -> return ()
     return reg_ver
-loadBuildPlan man names (SourceStackYaml file) = do
-  eresolver <- StackConfig.readResolver file
-  case eresolver of
-   Left err -> return $ Left err
-   Right resolver -> loadBuildPlan man names (SourceStackage resolver)
-loadBuildPlan man names SourceStackDefault = do
-  efile <- StackConfig.configLocation $ manStackConfig man
-  case efile of
-   Left err -> return $ Left err
-   Right f -> loadBuildPlan man names (SourceStackYaml f)
+loadBuildPlanM man names (SourceStackYaml file) = loadBuildPlan_sourceStack man names $ Just file
+loadBuildPlanM man names SourceStackDefault = loadBuildPlan_sourceStack man names $ Nothing
+
+loadBuildPlan_sourceStack :: BuildPlanManager -> [PackageName] -> Maybe FilePath -> LoadM BuildPlan
+loadBuildPlan_sourceStack man names mfile = do
+  resolver <- ExceptT $ StackConfig.readResolver sconf mfile
+  loadBuildPlanM man names $ SourceStackage resolver
+  where
+    sconf = manStackConfig man
 
 loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM BuildPlan
 loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where
