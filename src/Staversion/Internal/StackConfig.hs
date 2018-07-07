@@ -15,7 +15,7 @@ module Staversion.Internal.StackConfig
          configLocationFromText
        ) where
 
-import Control.Applicative (empty, many, some)
+import Control.Applicative (empty, many, some, (<$>), (<*>))
 import Control.Monad (void, when)
 import Data.Char (isSpace)
 import Data.Monoid ((<>))
@@ -44,18 +44,28 @@ data StackConfig =
 newStackConfig :: Logger -> StackConfig
 newStackConfig = StackConfig "stack"
 
+-- | @stack.yaml@ content
+data StackYaml =
+  StackYaml
+  { stackYamlPath :: FilePath,
+    stackYamlResolver :: Resolver,
+    stackYamlPackages :: [FilePath]
+  }
+  deriving (Show,Eq,Ord)
 
-newtype Resolver' = Resolver' { unResolver' :: Resolver }
-                  deriving (Show,Eq,Ord)
-
-instance FromJSON Resolver' where
-  parseJSON (Object o) = fmap Resolver' $ o .: "resolver"
+instance FromJSON StackYaml where
+  parseJSON (Object o) = StackYaml "" <$> (o .: "resolver") <*> (o .: "packages")
   parseJSON _ = empty
+
+readStackYaml :: FilePath -> IO (Either ErrorMsg StackYaml)
+readStackYaml file = fmap (fmap setPath . decodeEither) $ BS.readFile file
+  where
+    setPath sy = sy { stackYamlPath = file }
 
 -- | Read the @resolver@ field in stack.yaml.
 readResolver :: FilePath -- ^ path to stack.yaml
              -> IO (Either ErrorMsg Resolver)
-readResolver file = fmap (fmap unResolver' . decodeEither) $ BS.readFile file
+readResolver file = (fmap . fmap) stackYamlResolver $ readStackYaml file
 
 -- | Get the path to stack.yaml that @stack@ uses as the current
 -- config.
