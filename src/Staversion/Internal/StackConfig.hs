@@ -45,12 +45,23 @@ data StackConfig =
 newStackConfig :: Logger -> StackConfig
 newStackConfig = StackConfig "stack"
 
+-- | Element of @packages@ field. If the path is for the main project
+-- (i.e. @extra-dep@ is false), it's 'Just'. Otherwise, it's
+-- 'Nothing'.
+newtype ProjectPath = ProjectPath { unProjectPath :: Maybe FilePath }
+                      deriving (Show,Eq,Ord)
+
+instance FromJSON ProjectPath where
+  parseJSON (String s) = return $ ProjectPath $ Just $ T.unpack s
+  parseJSON (Object _) = return $ ProjectPath $ Nothing
+  parseJSON _ = empty
+
 -- | @stack.yaml@ content
 data StackYaml =
   StackYaml
   { stackYamlPath :: FilePath,
     stackYamlResolver :: Resolver,
-    stackYamlPackages :: [FilePath]
+    stackYamlPackages :: [ProjectPath]
   }
   deriving (Show,Eq,Ord)
 
@@ -63,8 +74,13 @@ readStackYaml file = fmap (fmap setPath . decodeEither) $ BS.readFile file
   where
     setPath sy = sy { stackYamlPath = file }
 
-readProjectCabals :: FilePath
-                  -- ^ path to stack.yaml
+findProjectCabals :: Logger -> StackYaml
+                  -> IO [FilePath] -- ^ paths to all project .cabal files.
+findProjectCabals = undefined
+
+readProjectCabals :: StackConfig
+                  -> Maybe FilePath
+                  -- ^ path to stack.yaml. If 'Nothing', the default stack.yaml is used.
                   -> IO (Either ErrorMsg [FilePath])
                   -- ^ paths to all .cabal files of the stack projects.
 readProjectCabals = undefined
