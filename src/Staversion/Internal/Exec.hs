@@ -24,7 +24,7 @@ import Staversion.Internal.Aggregate (aggregateResults)
 import Staversion.Internal.BuildPlan
   ( BuildPlan, packageVersion, buildPlanSource,
     newBuildPlanManager, loadBuildPlan,
-    BuildPlanManager, setStackCommand
+    BuildPlanManager, manStackConfig
   )
 import Staversion.Internal.Command
   ( parseCommandArgs,
@@ -41,6 +41,7 @@ import Staversion.Internal.Result
     singletonResult
   )
 import Staversion.Internal.Cabal (BuildDepends(..), loadCabalFile)
+import Staversion.Internal.StackConfig (newStackConfig, scCommand)
 
 main :: IO ()
 main = do
@@ -67,7 +68,9 @@ processCommand = _processCommandWithCustomBuildPlanManager return
 makeBuildPlanManager :: Command -> IO BuildPlanManager
 makeBuildPlanManager comm = do
   man <- newBuildPlanManager (commBuildPlanDir comm) (commLogger comm) (commAllowNetwork comm)
-  return $ setStackCommand (commStackCommand comm) man
+  return $ man { manStackConfig = sconf }
+  where
+    sconf = (newStackConfig $ commLogger comm) { scCommand = commStackCommand comm }
 
 _processCommandWithCustomBuildPlanManager :: (BuildPlanManager -> IO BuildPlanManager) -> Command -> IO [Result]
 _processCommandWithCustomBuildPlanManager customBPM comm = impl where

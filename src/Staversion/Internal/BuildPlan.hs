@@ -12,7 +12,7 @@ module Staversion.Internal.BuildPlan
          buildPlanSource,
          BuildPlanManager,
          newBuildPlanManager,
-         setStackCommand,
+         manStackConfig,
          loadBuildPlan,
          -- * Low-level APIs
          BuildPlanMap,
@@ -117,6 +117,7 @@ data BuildPlanManager =
                      -- disambigutor
                      manLogger :: Logger,
                      manStackConfig :: StackConfig
+                     -- ^ (accessor function)
                    }
 
 newBuildPlanManager :: FilePath -- ^ path to the directory where build plans are hold.
@@ -134,9 +135,6 @@ newBuildPlanManager plan_dir logger enable_network = do
                               manLogger = logger,
                               manStackConfig = StackConfig.newStackConfig logger
                             }
-
-setStackCommand :: String -> BuildPlanManager -> BuildPlanManager
-setStackCommand com man = man { manStackConfig = (manStackConfig man) { StackConfig.scCommand = com } }
 
 type LoadM = ExceptT ErrorMsg IO
 
