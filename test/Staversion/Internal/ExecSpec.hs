@@ -111,6 +111,26 @@ spec_processCommand_basic = describe "processCommand" $ do
                                                                      ]
                    ]
     processCommand comm `shouldReturn` expected
+  specify "QueryStackYaml, SourceStackYaml" $ do
+    let stack_yaml = "test" </> "data" </> "stack" </> "stack_sample.yaml"
+        source = SourceStackYaml stack_yaml
+        real_source = SourceStackage "lts-4.2"
+        query = QueryStackYaml stack_yaml
+        comm = baseCommand { commQueries = [query],
+                             commSources = [source]
+                           }
+        exp_cabal_file = "test" </> "data" </> "stack" </> "simple.cabal"
+        expRBody pairs = CabalResultBody exp_cabal_file TargetLibrary $ verPairs pairs
+        expected = Result { resultIn = ResultSource source (Just real_source),
+                            resultFor = query,
+                            resultBody = Right $ expRBody
+                                         [ ("base", [4,8,2,0]),
+                                           ("hashable", [1,2,4,0]),
+                                           ("parsers", [0,12,3])
+                                         ]
+                          }
+    got_results <- processCommand comm
+    got_results `shouldBe` [expected]
         
 
 singleCase :: PackageSource -> Query -> Either ErrorMsg ResultBody -> IO ()
