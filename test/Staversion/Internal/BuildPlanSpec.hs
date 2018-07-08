@@ -78,6 +78,6 @@ loadBuildPlan_spec = describe "loadBuildPlan" $ do
     buildPlanSource bp `shouldBe` SourceStackage "lts-4.2"
   it "reads the given stack.yaml for resolver" $ do
     bp_man <- mockBuildPlanManager 4 2
-    bp <- expRight =<< loadBuildPlan bp_man [] (SourceStackYaml ("test" </> "data" </> "stack_sample.yaml"))
+    bp <- expRight =<< loadBuildPlan bp_man [] (SourceStackYaml ("test" </> "data" </> "stack" </> "stack_sample.yaml"))
     packageVersion bp "optparse-applicative" `shouldBe` (Just $ ver [0,12,0,0])
     buildPlanSource bp `shouldBe` SourceStackage "lts-4.2"
