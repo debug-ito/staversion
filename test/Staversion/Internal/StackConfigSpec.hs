@@ -1,19 +1,32 @@
 {-# LANGUAGE QuasiQuotes, OverloadedStrings #-}
 module Staversion.Internal.StackConfigSpec (main,spec) where
 
+import Data.IORef (IORef, readIORef)
 import Data.Text (Text)
+import System.FilePath ((</>))
 import Test.Hspec
 import Text.Heredoc (here)
 
-import Staversion.Internal.StackConfig (configLocationFromText)
+import Staversion.Internal.Log
+  ( LogEntry(..), _mockLogger, LogLevel(..), logLevel
+  )
+import Staversion.Internal.StackConfig
+  ( StackConfig,
+    configLocationFromText,
+    newStackConfig,
+    readProjectCabals
+  )
 
 main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = describe "configLocationFromText" $ do
-  it "should load config-location field" $ do
-    configLocationFromText sample `shouldBe` Right "/home/debugito/programs/git/staversion/stack.yaml"
+spec = do
+  describe "configLocationFromText" $ do
+    it "should load config-location field" $ do
+      configLocationFromText sample `shouldBe` Right "/home/debugito/programs/git/staversion/stack.yaml"
+  spec_readProjectCabals
+    
 
 sample :: Text
 sample = [here|stack-root: /home/debugito/.stack
@@ -40,3 +53,22 @@ local-hpc-root: /home/debugito/programs/git/staversion/.stack-work/install/x86_6
 local-bin-path: /home/debugito/.local/bin
 ghc-paths: /home/debugito/.stack/programs/x86_64-linux
 |]
+
+stackConfigForTest :: IO (StackConfig, IORef [LogEntry])
+stackConfigForTest = do
+  (logger, logs) <- _mockLogger
+  return (newStackConfig logger, logs)
+
+gotLogs :: LogLevel -> IORef [LogEntry] -> IO [LogEntry]
+gotLogs threshold logs = do
+  got_logs <- readIORef logs
+  return $ filter ((>= threshold) . logLevel) got_logs
+
+spec_readProjectCabals :: Spec
+spec_readProjectCabals = describe "readProjectCabals" $ do
+  let base_dir = "test" </> "data" </> "stack"
+  specify "simple" $ do
+    (sconf, logs) <- stackConfigForTest
+    got <- readProjectCabals sconf $ Just (base_dir </> "stack_sample.yaml")
+    got `shouldBe` Right [base_dir </> "." </> "simple.cabal"]
+    gotLogs LogWarn logs `shouldReturn` []
