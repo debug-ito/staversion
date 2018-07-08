@@ -1,0 +1,7 @@
+resolver: lts-11.2
+packages:
+- foo
+- location: bar
+  extra-dep: true
+- location: .
+  extra-dep: true

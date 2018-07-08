@@ -21,8 +21,12 @@ extra-source-files:     README.md, ChangeLog.md,
                         test/data/conduit.cabal_test,
                         test/data/foobar.cabal_test,
                         test/data/braces.cabal_test,
-                        test/data/stack/stack_sample.yaml,
-                        test/data/stack/simple.cabal
+                        test/data/stack/simple.cabal,
+                        test/data/stack/stack_complex_packages.yaml,
+                        test/data/stack/foo/foo.cabal,
+                        test/data/stack/bar/bar.cabal,
+                        test/data/stack/stack_multi.yaml,
+                        test/data/stack/stack_sample.yaml
                         
 homepage:               https://github.com/debug-ito/staversion
 bug-reports:            https://github.com/debug-ito/staversion/issues
