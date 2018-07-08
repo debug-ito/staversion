@@ -75,8 +75,8 @@ spec_readProjectCabals = describe "readProjectCabals" $ do
   specify "multiple projects" $ do
     (sconf, logs) <- stackConfigForTest
     got <- readProjectCabals sconf $ Just (base_dir </> "stack_multi.yaml")
-    got `shouldBe` Right [ base_dir </> "foo" </> "foo.cabal",
-                           base_dir </> "bar" </> "bar.cabal"
+    got `shouldBe` Right [ base_dir </> "bar" </> "bar.cabal",
+                           base_dir </> "foo" </> "foo.cabal"
                          ]
     gotLogs LogWarn logs `shouldReturn` []
   specify "complex packages field" $ do

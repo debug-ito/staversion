@@ -19,12 +19,15 @@ import Control.Applicative (empty, many, some, (<$>), (<*>))
 import Control.Monad (void, when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Char (isSpace)
+import Data.List (isSuffixOf)
 import Data.Monoid ((<>))
 import Data.Yaml (FromJSON(..), Value(..), (.:), decodeEither)
 import Data.Text (Text, pack)
 import qualified Data.Text as T
 import qualified Data.ByteString as BS
+import System.Directory (getDirectoryContents)
 import System.Exit (ExitCode(ExitFailure))
+import System.FilePath ((</>), takeDirectory)
 import System.Process
   ( shell, readCreateProcessWithExitCode
   )
@@ -49,7 +52,7 @@ newStackConfig = StackConfig "stack"
 -- | Element of @packages@ field. If the path is for the main project
 -- (i.e. @extra-dep@ is false), it's 'Just'. Otherwise, it's
 -- 'Nothing'.
-newtype ProjectPath = ProjectPath { unProjectPath :: Maybe FilePath }
+newtype ProjectPath = ProjectPath (Maybe FilePath)
                       deriving (Show,Eq,Ord)
 
 instance FromJSON ProjectPath where
@@ -75,16 +78,38 @@ readStackYaml file = toEIO $ fmap (fmap setPath . decodeEither) $ BS.readFile fi
   where
     setPath sy = sy { stackYamlPath = file }
 
-findProjectCabals :: Logger -> StackYaml
+findProjectCabal :: Logger -> FilePath -> ProjectPath -> IO [FilePath]
+findProjectCabal _ _ (ProjectPath Nothing) = return []
+findProjectCabal logger base_path (ProjectPath (Just project_path)) = do
+  all_files <- getDirectoryContents (base_path </> project_path)
+  return $ map (\f -> base_path </> project_path </> f) $ filter isCabalFile all_files
+  where
+    isCabalFile f = ".cabal" `isSuffixOf` f
+
+findProjectCabals :: Logger
+                  -> StackYaml
                   -> IO [FilePath] -- ^ paths to all project .cabal files.
-findProjectCabals = undefined
+findProjectCabals logger stack_yaml = fmap concat $ mapM (findProjectCabal logger base_path) packages
+  where
+    base_path = takeDirectory $ stackYamlPath stack_yaml
+    packages = stackYamlPackages stack_yaml
 
 readProjectCabals :: StackConfig
                   -> Maybe FilePath
                   -- ^ path to stack.yaml. If 'Nothing', the default stack.yaml is used.
                   -> IO (Either ErrorMsg [FilePath])
                   -- ^ paths to all .cabal files of the stack projects.
-readProjectCabals = undefined -- TODO このへんから。テストもかくべし。
+readProjectCabals s f = runEIO $ readProjectCabalsEIO s f
+
+readProjectCabalsEIO :: StackConfig -> Maybe FilePath -> EIO [FilePath]
+readProjectCabalsEIO sconf (Just stack_yaml_file) = do
+  stack_yaml <- readStackYaml stack_yaml_file
+  liftIO $ findProjectCabals logger stack_yaml
+  where
+    logger = scLogger sconf
+readProjectCabalsEIO sconf Nothing = do
+  stack_yaml_file <- configLocation sconf
+  readProjectCabalsEIO sconf $ Just stack_yaml_file
 
 -- | Read the @resolver@ field in stack.yaml.
 readResolver :: StackConfig
