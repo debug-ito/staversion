@@ -81,9 +81,13 @@ readStackYaml file = toEIO $ fmap (fmap setPath . decodeEither) $ BS.readFile fi
 findProjectCabal :: Logger -> FilePath -> ProjectPath -> IO [FilePath]
 findProjectCabal _ _ (ProjectPath Nothing) = return []
 findProjectCabal logger base_path (ProjectPath (Just project_path)) = do
-  all_files <- getDirectoryContents (base_path </> project_path)
-  return $ map (\f -> base_path </> project_path </> f) $ filter isCabalFile all_files
+  all_files <- getDirectoryContents project_fullpath
+  let result_files = map (\f -> project_fullpath </> f) $ filter isCabalFile all_files
+  when (length result_files == 0) $ do
+    logWarn logger ("No .cabal file is found in " <> project_fullpath)
+  return result_files
   where
+    project_fullpath = base_path </> project_path
     isCabalFile f = ".cabal" `isSuffixOf` f
 
 findProjectCabals :: Logger
