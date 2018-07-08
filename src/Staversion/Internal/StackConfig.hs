@@ -17,7 +17,6 @@ module Staversion.Internal.StackConfig
 
 import Control.Applicative (empty, many, some, (<$>), (<*>))
 import Control.Monad (void, when)
-import Control.Monad.Trans.Except (ExceptT(..), runExceptT)
 import Control.Monad.IO.Class (liftIO)
 import Data.Char (isSpace)
 import Data.Monoid ((<>))
@@ -30,6 +29,7 @@ import System.Process
   ( shell, readCreateProcessWithExitCode
   )
 
+import Staversion.Internal.EIO (EIO, toEIO, runEIO, eitherToEIO)
 import Staversion.Internal.Log (Logger, logWarn, logDebug)
 import Staversion.Internal.Query (Resolver, ErrorMsg)
 import Staversion.Internal.Megaparsec (Parser, runParser, satisfy, space)
@@ -70,13 +70,8 @@ instance FromJSON StackYaml where
   parseJSON (Object o) = StackYaml "" <$> (o .: "resolver") <*> (o .: "packages")
   parseJSON _ = empty
 
-type EIO = ExceptT ErrorMsg IO
-
-pureEIO :: Either ErrorMsg a -> EIO a
-pureEIO = ExceptT . return
-
 readStackYaml :: FilePath -> EIO StackYaml
-readStackYaml file = ExceptT $ fmap (fmap setPath . decodeEither) $ BS.readFile file
+readStackYaml file = toEIO $ fmap (fmap setPath . decodeEither) $ BS.readFile file
   where
     setPath sy = sy { stackYamlPath = file }
 
@@ -89,14 +84,14 @@ readProjectCabals :: StackConfig
                   -- ^ path to stack.yaml. If 'Nothing', the default stack.yaml is used.
                   -> IO (Either ErrorMsg [FilePath])
                   -- ^ paths to all .cabal files of the stack projects.
-readProjectCabals = undefined
+readProjectCabals = undefined -- TODO このへんから。テストもかくべし。
 
 -- | Read the @resolver@ field in stack.yaml.
 readResolver :: StackConfig
              -> Maybe FilePath
              -- ^ path to stack.yaml. If 'Nothing', the default stack.yaml is used.
              -> IO (Either ErrorMsg Resolver)
-readResolver sconf mfile = runExceptT $ case mfile of
+readResolver sconf mfile = runEIO $ case mfile of
   Just file -> doRead file
   Nothing -> doRead =<< configLocation sconf
   where
@@ -107,14 +102,14 @@ readResolver sconf mfile = runExceptT $ case mfile of
 configLocation :: StackConfig -> EIO FilePath
 configLocation sconfig = do
   pout <- getProcessOutput sconfig
-  path <- pureEIO $ configLocationFromText pout
+  path <- eitherToEIO $ configLocationFromText pout
   liftIO $ logDebug logger ("Project stack config: " <> path)
   return path
   where
     logger = scLogger sconfig
 
 getProcessOutput :: StackConfig -> EIO Text
-getProcessOutput sconfig = ExceptT $ handleResult =<< readCreateProcessWithExitCode cmd ""
+getProcessOutput sconfig = toEIO $ handleResult =<< readCreateProcessWithExitCode cmd ""
   where
     logger = scLogger sconfig
     command = scCommand sconfig

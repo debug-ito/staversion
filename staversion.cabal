@@ -48,7 +48,8 @@ library
                         Staversion.Internal.StackConfig
   other-modules:        Paths_staversion,
                         Staversion.Internal.HTTP,
-                        Staversion.Internal.Megaparsec
+                        Staversion.Internal.Megaparsec,
+                        Staversion.Internal.EIO
   build-depends:        base >=4.8 && <4.12,
                         unordered-containers >=0.2.3 && <0.3,
                         aeson >=0.8.0 && <1.5,

@@ -23,7 +23,6 @@ module Staversion.Internal.BuildPlan
 
 import Control.Applicative (empty, (<$>), (<*>))
 import Control.Exception (throwIO, catchJust, IOException, catch)
-import Control.Monad.Trans.Except (runExceptT, ExceptT(..))
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad (mapM)
 import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
@@ -42,6 +41,9 @@ import System.FilePath ((</>), (<.>))
 import qualified System.IO.Error as IOE
 import Text.Read (readMaybe)
 
+import Staversion.Internal.EIO
+  ( EIO, maybeToEIO, runEIO, toEIO, loggedElse
+  )
 import Staversion.Internal.Log
   ( Logger, logDebug, logWarn
   )
@@ -136,26 +138,11 @@ newBuildPlanManager plan_dir logger enable_network = do
                               manStackConfig = StackConfig.newStackConfig logger
                             }
 
-type LoadM = ExceptT ErrorMsg IO
+httpManagerM :: BuildPlanManager -> EIO Manager
+httpManagerM = maybeToEIO "It is not allowed to access network." . manHttpManager
 
-loggedElse :: Logger
-           -> LoadM a -- ^ first action tried.
-           -> LoadM a -- ^ the action executed if the first action returns 'Left'.
-           -> LoadM a
-loggedElse logger first second = ExceptT $ do
-  eret <- runExceptT first
-  case eret of
-   Right _ -> return eret
-   Left e -> logWarn logger e >> runExceptT second
-
-maybeToLoadM :: ErrorMsg -> Maybe a -> LoadM a
-maybeToLoadM msg = ExceptT . return . maybe (Left msg) Right
-
-httpManagerM :: BuildPlanManager -> LoadM Manager
-httpManagerM = maybeToLoadM "It is not allowed to access network." . manHttpManager
-
-httpExceptionToLoadM :: String -> LoadM a -> LoadM a
-httpExceptionToLoadM context action = ExceptT $ (runExceptT action) `catch` handler where
+httpExceptionToEIO :: String -> EIO a -> EIO a
+httpExceptionToEIO context action = toEIO $ (runEIO action) `catch` handler where
   handler :: OurHttpException -> IO (Either ErrorMsg a)
   handler e = return $ Left (context ++ ": " ++ show e)
 
@@ -165,14 +152,14 @@ loadBuildPlan :: BuildPlanManager
               -> PackageSource
               -> IO (Either ErrorMsg BuildPlan)
               -- ^ the second result is the real (disambiguated) PackageSource.
-loadBuildPlan man names s = runExceptT $ loadBuildPlanM man names s
+loadBuildPlan man names s = runEIO $ loadBuildPlanM man names s
 
-loadBuildPlanM :: BuildPlanManager -> [PackageName] -> PackageSource -> LoadM BuildPlan
+loadBuildPlanM :: BuildPlanManager -> [PackageName] -> PackageSource -> EIO BuildPlan
 loadBuildPlanM man _ (SourceStackage resolver) = impl where
   impl = loadBuildPlan_stackageLocalFile man resolver `loggedElse'` do
     e_resolver <- tryDisambiguate man =<< getPresolver
     loadBuildPlan_stackageLocalFile man (formatExactResolverString e_resolver) `loggedElse'` loadBuildPlan_stackageNetwork man e_resolver
-  getPresolver = maybeToLoadM ("Invalid resolver format for stackage.org: " ++ resolver) $ parseResolverString resolver
+  getPresolver = maybeToEIO ("Invalid resolver format for stackage.org: " ++ resolver) $ parseResolverString resolver
   loggedElse' = loggedElse $ manLogger man
 loadBuildPlanM man names SourceHackage = impl where
   impl = do
@@ -183,7 +170,7 @@ loadBuildPlanM man names SourceHackage = impl where
   logWarn' msg = liftIO $ logWarn (manLogger man) msg
   doFetch http_man name = do
     logDebug' ("Ask hackage for the latest version of " ++ unpack name)
-    reg_ver <- ExceptT $ fetchPreferredVersions http_man name
+    reg_ver <- toEIO $ fetchPreferredVersions http_man name
     case latestVersion reg_ver of
      Nothing -> logWarn' ("Cannot find package version of " ++ unpack name ++ ". Maybe it's not on hackage.")
      Just _ -> return ()
@@ -191,15 +178,15 @@ loadBuildPlanM man names SourceHackage = impl where
 loadBuildPlanM man names (SourceStackYaml file) = loadBuildPlan_sourceStack man names $ Just file
 loadBuildPlanM man names SourceStackDefault = loadBuildPlan_sourceStack man names $ Nothing
 
-loadBuildPlan_sourceStack :: BuildPlanManager -> [PackageName] -> Maybe FilePath -> LoadM BuildPlan
+loadBuildPlan_sourceStack :: BuildPlanManager -> [PackageName] -> Maybe FilePath -> EIO BuildPlan
 loadBuildPlan_sourceStack man names mfile = do
-  resolver <- ExceptT $ StackConfig.readResolver sconf mfile
+  resolver <- toEIO $ StackConfig.readResolver sconf mfile
   loadBuildPlanM man names $ SourceStackage resolver
   where
     sconf = manStackConfig man
 
-loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> LoadM BuildPlan
-loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError doLoad (return . Left) where
+loadBuildPlan_stackageLocalFile :: BuildPlanManager -> Resolver -> EIO BuildPlan
+loadBuildPlan_stackageLocalFile man resolver = toEIO $ catchJust handleIOError doLoad (return . Left) where
   yaml_file = manBuildPlanDir man </> resolver <.> "yaml"
   doLoad = do
     logDebug (manLogger man) ("Read " ++ yaml_file ++ " for build plan.")
@@ -212,12 +199,12 @@ loadBuildPlan_stackageLocalFile man resolver = ExceptT $ catchJust handleIOError
                   | otherwise = Just $ makeErrorMsg e ("some error.")
   makeErrorMsg exception body = "Loading build plan for package resolver '" ++ resolver ++ "' failed: " ++ body ++ "\n" ++ show exception
 
-tryDisambiguate :: BuildPlanManager -> PartialResolver -> LoadM ExactResolver
+tryDisambiguate :: BuildPlanManager -> PartialResolver -> EIO ExactResolver
 tryDisambiguate _ (PartialExact e) = return e
 tryDisambiguate bp_man presolver = impl where
   impl = do
-    disam <- httpExceptionToLoadM "Failed to download disambiguator" $ getDisambiguator
-    maybeToLoadM ("Cannot disambiguate the resolver: " ++ show presolver) $ disam presolver
+    disam <- httpExceptionToEIO "Failed to download disambiguator" $ getDisambiguator
+    maybeToEIO ("Cannot disambiguate the resolver: " ++ show presolver) $ disam presolver
   getDisambiguator = do
     m_disam <- liftIO $ readIORef $ manDisambiguator bp_man
     case m_disam of
@@ -225,18 +212,18 @@ tryDisambiguate bp_man presolver = impl where
      Nothing -> do
        http_man <- httpManagerM bp_man
        logDebug' "Fetch resolver disambiguator from network..."
-       got_d <- ExceptT $ fetchDisambiguator http_man
+       got_d <- toEIO $ fetchDisambiguator http_man
        logDebug' "Successfully fetched resolver disambiguator."
        liftIO $ writeIORef (manDisambiguator bp_man) $ Just got_d
        return got_d
   logDebug' = liftIO . logDebug (manLogger bp_man)
   
-loadBuildPlan_stackageNetwork :: BuildPlanManager -> ExactResolver -> LoadM BuildPlan
+loadBuildPlan_stackageNetwork :: BuildPlanManager -> ExactResolver -> EIO BuildPlan
 loadBuildPlan_stackageNetwork man e_resolver = do
   http_man <- httpManagerM man
   liftIO $ logDebug (manLogger man) ("Fetch build plan from network: resolver = " ++ show e_resolver)
-  yaml_data <- httpExceptionToLoadM ("Downloading build plan failed: " ++ show e_resolver) $ liftIO $ fetchBuildPlanYAML http_man e_resolver
-  makeBuildPlan <$> (ExceptT $ return $ parseBuildPlanMapYAML $ BSL.toStrict yaml_data)
+  yaml_data <- httpExceptionToEIO ("Downloading build plan failed: " ++ show e_resolver) $ liftIO $ fetchBuildPlanYAML http_man e_resolver
+  makeBuildPlan <$> (toEIO $ return $ parseBuildPlanMapYAML $ BSL.toStrict yaml_data)
   where
     makeBuildPlan bp_map = BuildPlan { buildPlanMap = bp_map,
                                        buildPlanSource = SourceStackage $ formatExactResolverString e_resolver
