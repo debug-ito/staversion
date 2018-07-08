@@ -41,7 +41,7 @@ import Staversion.Internal.Result
     singletonResult
   )
 import Staversion.Internal.Cabal (BuildDepends(..), loadCabalFile)
-import Staversion.Internal.StackConfig (newStackConfig, scCommand)
+import Staversion.Internal.StackConfig (StackConfig, newStackConfig, scCommand)
 
 main :: IO ()
 main = do
@@ -65,12 +65,13 @@ data ResolvedQuery = RQueryOne PackageName
 processCommand :: Command -> IO [Result]
 processCommand = _processCommandWithCustomBuildPlanManager return
 
+stackConfigFromCommand :: Command -> StackConfig
+stackConfigFromCommand comm = (newStackConfig $ commLogger comm) { scCommand = commStackCommand comm }
+
 makeBuildPlanManager :: Command -> IO BuildPlanManager
 makeBuildPlanManager comm = do
   man <- newBuildPlanManager (commBuildPlanDir comm) (commLogger comm) (commAllowNetwork comm)
-  return $ man { manStackConfig = sconf }
-  where
-    sconf = (newStackConfig $ commLogger comm) { scCommand = commStackCommand comm }
+  return $ man { manStackConfig = stackConfigFromCommand comm }
 
 _processCommandWithCustomBuildPlanManager :: (BuildPlanManager -> IO BuildPlanManager) -> Command -> IO [Result]
 _processCommandWithCustomBuildPlanManager customBPM comm = impl where
