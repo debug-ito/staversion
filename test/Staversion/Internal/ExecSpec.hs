@@ -119,7 +119,7 @@ spec_processCommand_basic = describe "processCommand" $ do
         comm = baseCommand { commQueries = [query],
                              commSources = [source]
                            }
-        exp_cabal_file = "test" </> "data" </> "stack" </> "simple.cabal"
+        exp_cabal_file = "test" </> "data" </> "stack" </> "." </> "simple.cabal"
         expRBody pairs = CabalResultBody exp_cabal_file TargetLibrary $ verPairs pairs
         expected = Result { resultIn = ResultSource source (Just real_source),
                             resultFor = query,
