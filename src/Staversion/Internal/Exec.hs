@@ -13,6 +13,7 @@ module Staversion.Internal.Exec
 
 import Control.Applicative ((<$>))
 import Control.Monad (mapM_, when)
+import Control.Monad.IO.Class (liftIO)
 import Data.Either (rights)
 import Data.Function (on)
 import Data.List (groupBy, nub)
@@ -30,6 +31,7 @@ import Staversion.Internal.Command
   ( parseCommandArgs,
     Command(..)
   )
+import Staversion.Internal.EIO (EIO, runEIO, toEIO)
 import Staversion.Internal.Format (formatAggregatedResults)
 import qualified Staversion.Internal.Format as Format
 import Staversion.Internal.Log (logDebug, logError, Logger, putLogEntry)
@@ -41,7 +43,9 @@ import Staversion.Internal.Result
     singletonResult
   )
 import Staversion.Internal.Cabal (BuildDepends(..), loadCabalFile)
-import Staversion.Internal.StackConfig (StackConfig, newStackConfig, scCommand)
+import Staversion.Internal.StackConfig
+  ( StackConfig, newStackConfig, scCommand, readProjectCabals
+  )
 
 main :: IO ()
 main = do
@@ -77,9 +81,10 @@ _processCommandWithCustomBuildPlanManager :: (BuildPlanManager -> IO BuildPlanMa
 _processCommandWithCustomBuildPlanManager customBPM comm = impl where
   impl = do
     bp_man <- customBPM =<< makeBuildPlanManager comm
-    query_pairs <- resolveQueries' logger $ commQueries comm
+    query_pairs <- resolveQueries' logger stack_conf $ commQueries comm
     fmap concat $ mapM (processQueriesIn bp_man query_pairs) $ commSources comm
   logger = commLogger comm
+  stack_conf = stackConfigFromCommand comm
   processQueriesIn bp_man query_pairs source = do
     let queried_names = nub $ concat $ map (getQueriedPackageNames) $ rights $ map snd $ query_pairs
     logDebug logger ("Retrieve package source " ++ show source)
@@ -105,26 +110,38 @@ realSource :: Either e BuildPlan -> Maybe PackageSource
 realSource (Left _) = Nothing
 realSource (Right bp) = Just $ buildPlanSource bp
 
-resolveQueries' :: Logger -> [Query] -> IO [(Query, Either ErrorMsg ResolvedQuery)]
-resolveQueries' logger = fmap concat . mapM resolveToList where
+resolveQueries' :: Logger -> StackConfig -> [Query] -> IO [(Query, Either ErrorMsg ResolvedQuery)]
+resolveQueries' logger sconf queries = fmap concat $ mapM resolveToList queries where
   resolveToList query = do
-    eret <- resolveQuery logger query
+    eret <- resolveQuery logger sconf query
     case eret of
      Right rqueries -> return $ map (\rq -> (query, Right rq)) rqueries
      Left err -> return $ [(query, Left err)]
 
-resolveQuery :: Logger -> Query -> IO (Either ErrorMsg [ResolvedQuery])
-resolveQuery _ (QueryName name) = return $ Right $ [RQueryOne name]
-resolveQuery logger (QueryCabalFile file) = do
-  logDebug logger ("Load " ++ file ++ " for build-depends fields.")
-  e_rquery <- (fmap . fmap) processBuildDependsList $ loadCabalFile file
-  reportError e_rquery
-  return e_rquery
+resolveQuery :: Logger -> StackConfig -> Query -> IO (Either ErrorMsg [ResolvedQuery])
+resolveQuery logger sconf query = reportError =<< (runEIO $ resolveQueryEIO logger sconf query)
   where
-    processBuildDependsList = map (RQueryCabal file) . filter ((0 <) . length . depsPackages)
-    reportError e_rquery = case e_rquery of
-      Left err -> logError logger err
-      Right _ -> return ()
+    reportError eret = do
+      case eret of
+       Left err -> logError logger err
+       Right _ -> return ()
+      return eret
+
+resolveQueryEIO :: Logger -> StackConfig -> Query -> EIO [ResolvedQuery]
+resolveQueryEIO logger sconf query =
+  case query of
+   QueryName name -> return $ [RQueryOne name]
+   QueryCabalFile file -> doCabalFile file
+   QueryStackYaml file -> doStackYaml (Just file)
+   QueryStackYamlDefault -> doStackYaml Nothing
+  where
+    doCabalFile file = do
+      liftIO $ logDebug logger ("Load " ++ file ++ " for build-depends fields.")
+      fmap (processBuildDependsList file) $ toEIO $ loadCabalFile file
+    processBuildDependsList file = map (RQueryCabal file) . filter ((0 <) . length . depsPackages)
+    doStackYaml mstack_yaml = fmap concat $ mapM recurse =<< (toEIO $ readProjectCabals sconf mstack_yaml)
+      where
+        recurse f = resolveQueryEIO logger sconf (QueryCabalFile f)
 
 searchVersions :: BuildPlan -> ResolvedQuery -> ResultBody
 searchVersions build_plan (RQueryOne package_name) = SimpleResultBody package_name $ packageVersion build_plan package_name
