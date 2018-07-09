@@ -76,6 +76,33 @@ You can also specify .cabal files in the query. In that case, staversion reads `
     
     (snip)
 
+## Package version for stack projects
+
+You can also specify stack.yaml file in the query. In that case, staversion reads its `packages` field and treats all .cabal files under those package directories as the query.
+
+    $ staversion --hackage ./staversion/stack.yaml 
+    ------ latest in hackage
+    -- ./staversion/./staversion.cabal - library
+    base ==4.11.1.0,
+    unordered-containers ==0.2.9.0,
+    aeson ==1.4.0.0,
+    text ==1.2.3.0,
+    
+    (snip)
+
+"stack.yaml" in the query has a special meaning. It means the default stack.yaml of your current project. The "stack.yaml" does not have to be in the working directory. This query is implied by default if you pass no query arguments.
+
+    $ staversion --hackage stack.yaml
+    ------ latest in hackage
+    -- /home/toshio/programs/git/staversion/./staversion.cabal - library
+    base ==4.11.1.0,
+    unordered-containers ==0.2.9.0,
+    aeson ==1.4.0.0,
+    text ==1.2.3.0,
+    
+    (snip)
+
+
 ## Package version ranges over different resolvers
 
 With `--aggregate` (`-a`) option, you can aggregate version numbers in different resolvers into a version range using the given aggregation rule.
