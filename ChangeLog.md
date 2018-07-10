@@ -1,5 +1,13 @@
 # Revision history for staversion
 
+## 0.2.3.0  -- 2018-07-10
+
+* Now it reads "stack.yaml" file as a query (#4).
+* Now if no query argument is specified, "stack.yaml" is implied by default.
+* Now it warns if it gets no result. This is necessary now that it's
+  not an error to specify no query argument.
+
+
 ## 0.2.2.0  -- 2018-07-01
 
 * Add `--stack` and `--stack-default` (`-S`) options (#4).
