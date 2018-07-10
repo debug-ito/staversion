@@ -93,10 +93,16 @@ findProjectCabal logger base_path (ProjectPath (Just project_path)) = do
 findProjectCabals :: Logger
                   -> StackYaml
                   -> IO [FilePath] -- ^ paths to all project .cabal files.
-findProjectCabals logger stack_yaml = fmap concat $ mapM (findProjectCabal logger base_path) packages
+findProjectCabals logger stack_yaml = do
+  cabals <- fmap concat $ mapM (findProjectCabal logger base_path) packages
+  warnEmpty cabals
+  return cabals
   where
-    base_path = takeDirectory $ stackYamlPath stack_yaml
+    stack_yaml_path = stackYamlPath stack_yaml
+    base_path = takeDirectory $ stack_yaml_path
     packages = stackYamlPackages stack_yaml
+    warnEmpty [] = logWarn logger ("No project .cabal files found in " <> stack_yaml_path)
+    warnEmpty _ = return ()
 
 readProjectCabals :: StackConfig
                   -> Maybe FilePath
