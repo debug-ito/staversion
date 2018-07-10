@@ -131,7 +131,24 @@ spec_processCommand_basic = describe "processCommand" $ do
                           }
     got_results <- processCommand comm
     got_results `shouldBe` [expected]
-        
+  specify "QueryStackYaml (no packages), SourceStackage" $ do
+    (logger, logs) <- _mockLogger
+    let stack_yaml = "test" </> "data" </> "stack" </> "stack_empty_packages.yaml"
+        source = SourceStackage "conpact_build_plan"
+        query = QueryStackYaml stack_yaml
+        comm = baseCommand { commQueries = [query],
+                             commSources = [source],
+                             commLogger = logger
+                           }
+    got <- processCommand comm
+    got `shouldBe` []
+    let match :: LogEntry -> Bool
+        match ent = (level == LogWarn) && ("no result" `isInfixOf` msg) && ("Try --help" `isInfixOf` msg)
+          where
+            level = logLevel ent
+            msg = logMessage ent
+    got_logs <- readIORef logs
+    (length $ filter match got_logs) `shouldBe` 1
 
 singleCase :: PackageSource -> Query -> Either ErrorMsg ResultBody -> IO ()
 singleCase src query exp_ret_vers = singleCase' src query (`shouldBe` exp_ret_vers)

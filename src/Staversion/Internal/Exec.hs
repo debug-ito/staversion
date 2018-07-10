@@ -34,7 +34,7 @@ import Staversion.Internal.Command
 import Staversion.Internal.EIO (EIO, runEIO, toEIO)
 import Staversion.Internal.Format (formatAggregatedResults)
 import qualified Staversion.Internal.Format as Format
-import Staversion.Internal.Log (logDebug, logError, Logger, putLogEntry)
+import Staversion.Internal.Log (logDebug, logError, logWarn, Logger, putLogEntry)
 import Staversion.Internal.Query
   ( Query(..), PackageSource(..), PackageName, ErrorMsg
   )
@@ -82,7 +82,9 @@ _processCommandWithCustomBuildPlanManager customBPM comm = impl where
   impl = do
     bp_man <- customBPM =<< makeBuildPlanManager comm
     query_pairs <- resolveQueries' logger stack_conf $ commQueries comm
-    fmap concat $ mapM (processQueriesIn bp_man query_pairs) $ commSources comm
+    results <- fmap concat $ mapM (processQueriesIn bp_man query_pairs) $ commSources comm
+    warnEmpty results
+    return results
   logger = commLogger comm
   stack_conf = stackConfigFromCommand comm
   processQueriesIn bp_man query_pairs source = do
@@ -105,6 +107,8 @@ _processCommandWithCustomBuildPlanManager customBPM comm = impl where
                }
   logBuildPlanResult (Right _) = logDebug logger ("Successfully retrieved build plan.")
   logBuildPlanResult (Left error_msg) = logError logger ("Failed to load build plan: " ++ error_msg)
+  warnEmpty [] = logWarn logger "Got no result. Try --help option."
+  warnEmpty _ = return ()
 
 realSource :: Either e BuildPlan -> Maybe PackageSource
 realSource (Left _) = Nothing

@@ -26,7 +26,8 @@ extra-source-files:     README.md, ChangeLog.md,
                         test/data/stack/foo/foo.cabal,
                         test/data/stack/bar/bar.cabal,
                         test/data/stack/stack_multi.yaml,
-                        test/data/stack/stack_sample.yaml
+                        test/data/stack/stack_sample.yaml,
+                        test/data/stack/stack_empty_packages.yaml
                         
 homepage:               https://github.com/debug-ito/staversion
 bug-reports:            https://github.com/debug-ito/staversion/issues
