@@ -88,6 +88,7 @@ findProjectCabal logger base_path (ProjectPath (Just project_path)) = do
   return result_files
   where
     project_fullpath = base_path </> project_path
+    isCabalFile :: FilePath -> Bool
     isCabalFile f = ".cabal" `isSuffixOf` f
 
 findProjectCabals :: Logger
