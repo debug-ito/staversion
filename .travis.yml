@@ -43,12 +43,12 @@ matrix:
   #- env: BUILD=cabal GHCVER=7.8.4 CABALVER=1.18 HAPPYVER=1.19.5 ALEXVER=3.1.7
   #  compiler: ": #GHC 7.8.4"
   #  addons: {apt: {packages: [ghc,cabal-install-1.18,ghc-7.8.4,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
-  - env: BUILD=cabal GHCVER=7.10.3 CABALVER=1.22 HAPPYVER=1.19.5 ALEXVER=3.1.7
-    compiler: ": #GHC 7.10.3"
-    addons: {apt: {packages: [ghc,cabal-install-1.22,ghc-7.10.3,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
-  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 HAPPYVER=1.19.5 ALEXVER=3.1.7
-    compiler: ": #GHC 8.0.1"
-    addons: {apt: {packages: [ghc,cabal-install-1.24,ghc-8.0.1,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
+  # - env: BUILD=cabal GHCVER=7.10.3 CABALVER=1.22 HAPPYVER=1.19.5 ALEXVER=3.1.7
+  #   compiler: ": #GHC 7.10.3"
+  #   addons: {apt: {packages: [ghc,cabal-install-1.22,ghc-7.10.3,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
+  # - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 HAPPYVER=1.19.5 ALEXVER=3.1.7
+  #   compiler: ": #GHC 8.0.1"
+  #   addons: {apt: {packages: [ghc,cabal-install-1.24,ghc-8.0.1,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
   - env: BUILD=cabal GHCVER=8.2.2 CABALVER=2.0 HAPPYVER=1.19.5 ALEXVER=3.1.7
     compiler: ": #GHC 8.2.2"
     addons: {apt: {packages: [cabal-install-2.0,ghc-8.2.2,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
@@ -74,17 +74,17 @@ matrix:
   #  compiler: ": #stack lts-3"
   #  addons: {apt: {packages: [ghc,ghc-7.10.2], sources: [hvr-ghc]}}
 
-  - env: BUILD=stack ARGS="--resolver lts-4"
-    compiler: ": #stack lts-4"
-    addons: {apt: {packages: [ghc,ghc-7.10.3], sources: [hvr-ghc]}}
+  # - env: BUILD=stack ARGS="--resolver lts-4"
+  #   compiler: ": #stack lts-4"
+  #   addons: {apt: {packages: [ghc,ghc-7.10.3], sources: [hvr-ghc]}}
 
   # - env: BUILD=stack ARGS="--resolver lts-6"
   #   compiler: ": #stack 7.10.3"
   #   addons: {apt: {packages: [ghc,ghc-7.10.3], sources: [hvr-ghc]}}
 
-  - env: BUILD=stack ARGS="--resolver lts-7"
-    compiler: ": #stack lts-7"
-    addons: {apt: {packages: [ghc,ghc-8.0.1], sources: [hvr-ghc]}}
+  # - env: BUILD=stack ARGS="--resolver lts-7"
+  #   compiler: ": #stack lts-7"
+  #   addons: {apt: {packages: [ghc,ghc-8.0.1], sources: [hvr-ghc]}}
 
   # - env: BUILD=stack ARGS="--resolver lts-8"
   #   compiler: ": #stack lts-8"
@@ -125,17 +125,17 @@ matrix:
   #  compiler: ": #stack lts-3 osx"
   #  os: osx
 
-  - env: BUILD=stack ARGS="--resolver lts-4"
-    compiler: ": #stack lts-4 osx"
-    os: osx
+  # - env: BUILD=stack ARGS="--resolver lts-4"
+  #   compiler: ": #stack lts-4 osx"
+  #   os: osx
 
   # - env: BUILD=stack ARGS="--resolver lts-6"
   #   compiler: ": #stack lts-6 osx"
   #   os: osx
 
-  - env: BUILD=stack ARGS="--resolver lts-7"
-    compiler: ": #stack lts-7 osx"
-    os: osx
+  # - env: BUILD=stack ARGS="--resolver lts-7"
+  #   compiler: ": #stack lts-7 osx"
+  #   os: osx
 
   # - env: BUILD=stack ARGS="--resolver lts-8"
   #   compiler: ": #stack lts-8 osx"
