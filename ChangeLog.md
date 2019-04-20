@@ -1,5 +1,21 @@
 # Revision history for staversion
 
+## 0.2.3.1  -- 2019-04-20
+
+* Support the following major versions of dependencies.
+
+    * base-4.12
+    * yaml-0.9
+    * yaml-0.10
+    * yaml-0.11
+    * containers-0.6
+    * http-client-0.6
+    * megaparsec-7.0
+    * Cabal-2.4
+    * QuickCheck-2.12
+    * QuickCheck-2.13
+
+
 ## 0.2.3.0  -- 2018-07-10
 
 * Now it reads "stack.yaml" file as a query (#4).
