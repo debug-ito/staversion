@@ -9,6 +9,10 @@ module Staversion.Internal.Megaparsec
        ( module Text.Megaparsec,
          Parser,
 
+#if MIN_VERSION_megaparsec(7,0,0)
+         anyChar,
+#endif
+
 #if MIN_VERSION_megaparsec(6,0,0)
          module Text.Megaparsec.Char,
          string,
@@ -53,3 +57,9 @@ type Parser = Parsec Text
 
 #endif
 
+#if MIN_VERSION_megaparsec(7,0,0)
+
+anyChar :: Parser Char
+anyChar = anySingle
+
+#endif
