@@ -8,12 +8,14 @@ module Staversion.Internal.EIO
        ( EIO,
          runEIO,
          toEIO,
+         toEIOShow,
          loggedElse,
          maybeToEIO,
          eitherToEIO
        ) where
 
 import Control.Monad.Trans.Except (runExceptT, ExceptT(..))
+import qualified Data.Bifunctor as Bi
 
 import Staversion.Internal.Log (Logger, logWarn)
 import Staversion.Internal.Query (ErrorMsg)
@@ -25,6 +27,9 @@ runEIO = runExceptT
 
 toEIO :: IO (Either ErrorMsg a) -> EIO a
 toEIO = ExceptT
+
+toEIOShow :: Show e => IO (Either e a) -> EIO a
+toEIOShow = toEIO . fmap (Bi.first show)
 
 loggedElse :: Logger
            -> EIO a -- ^ first action tried.

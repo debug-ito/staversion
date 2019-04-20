@@ -21,7 +21,7 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Char (isSpace)
 import Data.List (isSuffixOf)
 import Data.Monoid ((<>))
-import Data.Yaml (FromJSON(..), Value(..), (.:), decodeEither)
+import Data.Yaml (FromJSON(..), Value(..), (.:), decodeEither')
 import Data.Text (Text, pack)
 import qualified Data.Text as T
 import qualified Data.ByteString as BS
@@ -32,7 +32,7 @@ import System.Process
   ( shell, readCreateProcessWithExitCode
   )
 
-import Staversion.Internal.EIO (EIO, toEIO, runEIO, eitherToEIO)
+import Staversion.Internal.EIO (EIO, toEIO, runEIO, eitherToEIO, toEIOShow)
 import Staversion.Internal.Log (Logger, logWarn, logDebug)
 import Staversion.Internal.Query (Resolver, ErrorMsg)
 import Staversion.Internal.Megaparsec (Parser, runParser, satisfy, space)
@@ -74,7 +74,7 @@ instance FromJSON StackYaml where
   parseJSON _ = empty
 
 readStackYaml :: FilePath -> EIO StackYaml
-readStackYaml file = toEIO $ fmap (fmap setPath . decodeEither) $ BS.readFile file
+readStackYaml file = toEIOShow $ fmap (fmap setPath . decodeEither') $ BS.readFile file
   where
     setPath sy = sy { stackYamlPath = file }
 

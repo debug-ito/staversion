@@ -124,7 +124,8 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
                          commQueries = [QueryName "base"],
                          commAllowNetwork = True,
                          commAggregator = Nothing,
-                         commFormatConfig = defFormatConfig
+                         commFormatConfig = defFormatConfig,
+                         commStackCommand = "stack"
                        }
     [ret] <- processCommand comm
     (resultSourceQueried . resultIn) ret `shouldBe` SourceStackage "lts-3"
@@ -145,7 +146,8 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
                          commQueries = [QueryName "base"],
                          commAllowNetwork = True,
                          commAggregator = Nothing,
-                         commFormatConfig = defFormatConfig
+                         commFormatConfig = defFormatConfig,
+                         commStackCommand = "stack"
                        }
     [ret] <- processCommand comm
     (resultSourceQueried . resultIn) ret `shouldBe` SourceHackage
