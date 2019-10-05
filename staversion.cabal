@@ -73,7 +73,7 @@ library
                         transformers-compat >=0.4.0 && <0.7,
                         megaparsec >=4.2.0 && <7.1,
                         semigroups >=0.18.0.1 && <0.19,
-                        Cabal >=1.22.6.0 && <2.5,
+                        Cabal >=1.22.6.0 && <3.1,
                         pretty >=1.1.2.0 && <1.2,
                         ansi-wl-pprint >=0.6.7.3 && <0.7,
                         process >=1.2.3.0 && <1.7
