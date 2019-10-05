@@ -35,7 +35,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
 import Data.Text (unpack)
 import Data.Traversable (traverse)
-import qualified Distribution.Text as DT
+import qualified Distribution.Pretty as DP
 import qualified Text.PrettyPrint as Pretty
 
 import Staversion.Internal.Cabal (Target(..))
@@ -51,7 +51,7 @@ type Aggregator = NonEmpty Version -> VersionRange
 
 -- | Let Cabal convert 'VersionRange' to 'String'
 showVersionRange :: VersionRange -> String
-showVersionRange = Pretty.render . DT.disp
+showVersionRange = Pretty.render . DP.pretty
 
 groupAllPreservingOrderBy :: (a -> a -> Bool)
                              -- ^ The comparator that determines if the two elements are in the same group.
