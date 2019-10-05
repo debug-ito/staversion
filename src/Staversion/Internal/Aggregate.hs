@@ -35,14 +35,13 @@ import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NL
 import Data.Text (unpack)
 import Data.Traversable (traverse)
-import qualified Distribution.Pretty as DP
 import qualified Text.PrettyPrint as Pretty
 
 import Staversion.Internal.Cabal (Target(..))
 import Staversion.Internal.Query (PackageName, ErrorMsg)
 import Staversion.Internal.Log (LogEntry(..), LogLevel(..))
 import Staversion.Internal.Result (Result(..), AggregatedResult(..), ResultBody, ResultBody'(..), resultSourceDesc)
-import Staversion.Internal.Version (Version, mkVersion, VersionRange)
+import Staversion.Internal.Version (Version, mkVersion, VersionRange, docVersionRange)
 import qualified Staversion.Internal.Version as V
 
 
@@ -51,7 +50,7 @@ type Aggregator = NonEmpty Version -> VersionRange
 
 -- | Let Cabal convert 'VersionRange' to 'String'
 showVersionRange :: VersionRange -> String
-showVersionRange = Pretty.render . DP.pretty
+showVersionRange = Pretty.render . docVersionRange
 
 groupAllPreservingOrderBy :: (a -> a -> Bool)
                              -- ^ The comparator that determines if the two elements are in the same group.
