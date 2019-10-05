@@ -15,9 +15,8 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-
-## resolver: lts-10.8
-resolver: lts-12.26
+resolver: lts-10.8
+## resolver: lts-12.26
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -41,8 +40,7 @@ packages:
 - '.'
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
-extra-deps:
-- optparse-applicative-0.15.1.0
+extra-deps: []
 
 #### Confirmed on 2018-03-09
 ## - aeson-1.3.0.0
