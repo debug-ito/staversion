@@ -1,5 +1,13 @@
 # Revision history for staversion
 
+## 0.2.3.2  -- 2019-10-05
+
+* Support the following major versions of dependencies.
+
+    * Cabal-3.0
+    * optparse-applicative-0.15
+    * semigroups-0.19
+
 ## 0.2.3.1  -- 2019-04-20
 
 * Support the following major versions of dependencies.
