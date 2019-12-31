@@ -1,5 +1,9 @@
 # Revision history for staversion
 
+## 0.2.3.3  --
+
+* Confirm test with `megaparsec-8.0.0`
+
 ## 0.2.3.2  -- 2019-10-05
 
 * Support the following major versions of dependencies.

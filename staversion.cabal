@@ -1,5 +1,5 @@
 name:                   staversion
-version:                0.2.3.2
+version:                0.2.3.3
 author:                 Toshio Ito <debug.ito@gmail.com>
 maintainer:             Toshio Ito <debug.ito@gmail.com>
 license:                BSD3
@@ -71,7 +71,7 @@ library
                         http-types >=0.8.6 && <0.13,
                         transformers >=0.3.0 && <0.6,
                         transformers-compat >=0.4.0 && <0.7,
-                        megaparsec >=4.2.0 && <7.1,
+                        megaparsec >=4.2.0 && <8.1,
                         semigroups >=0.18.0.1 && <0.20,
                         Cabal >=1.22.6.0 && <3.1,
                         pretty >=1.1.2.0 && <1.2,
