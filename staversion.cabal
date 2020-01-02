@@ -56,7 +56,7 @@ library
                         Staversion.Internal.HTTP,
                         Staversion.Internal.Megaparsec,
                         Staversion.Internal.EIO
-  build-depends:        base >=4.8 && <4.13,
+  build-depends:        base >=4.8 && <4.14,
                         unordered-containers >=0.2.3 && <0.3,
                         aeson >=0.8.0 && <1.5,
                         text >=0.11.3 && <1.3,
