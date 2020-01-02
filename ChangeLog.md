@@ -1,8 +1,8 @@
 # Revision history for staversion
 
-## 0.2.3.3  --
+## 0.2.3.3  -- 2020-01-02
 
-* Confirm test with `megaparsec-8.0.0`
+* Confirm test with `megaparsec-8.0.0` and `base-4.13`.
 
 ## 0.2.3.2  -- 2019-10-05
 
