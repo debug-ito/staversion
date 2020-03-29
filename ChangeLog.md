@@ -1,5 +1,9 @@
 # Revision history for staversion
 
+## 0.2.3.4  -- 2020-03-29
+
+* Confirm test with `QuickCheck-2.14`.
+
 ## 0.2.3.3  -- 2020-01-02
 
 * Confirm test with `megaparsec-8.0.0` and `base-4.13`.
