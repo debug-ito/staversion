@@ -1,5 +1,9 @@
 # Revision history for staversion
 
+## 0.2.3.5  -- 2020-04-26
+
+* Confirm test with `Cabal-3.2`.
+
 ## 0.2.3.4  -- 2020-03-29
 
 * Confirm test with `QuickCheck-2.14`.
