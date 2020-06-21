@@ -1,5 +1,9 @@
 # Revision history for staversion
 
+## 0.2.3.7  -- 2020-06-21
+
+* Confirm test with `base-4.14.0.0`.
+
 ## 0.2.3.6  -- 2020-05-30
 
 * Confirm test with `http-client-0.7.0` and `aeson-1.5.0.0`.
