@@ -16,7 +16,6 @@ module Staversion.Internal.BuildPlan.Stackage
          formatExactResolverString,
          Disambiguator,
          fetchDisambiguator,
-         fetchBuildPlanYAML,
          -- * Low level API
          parseDisambiguator
        ) where
@@ -113,12 +112,3 @@ parseDisambiguator :: BSL.ByteString -- ^ disambiguation JSON text.
 parseDisambiguator input = toDisam <$> Aeson.decode input where
   toDisam _ (PartialExact e) = Just e
   toDisam dis_map key = M.lookup key (unDisamMap dis_map)
-
--- | Fetch build plan YAML data from the Internet.
-fetchBuildPlanYAML :: Manager -> ExactResolver -> IO BSL.ByteString
-fetchBuildPlanYAML man resolver = fetchURL man url where
-  resolver_str = formatResolverString $ PartialExact $ resolver
-  url = case resolver of
-    ExactLTS _ _ -> "https://raw.githubusercontent.com/fpco/lts-haskell/master/" ++ resolver_str ++ ".yaml"
-    ExactNightly _ _ _ -> "https://raw.githubusercontent.com/fpco/stackage-nightly/master/" ++ resolver_str ++ ".yaml"
-
