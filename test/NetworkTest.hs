@@ -20,10 +20,10 @@ import Staversion.Internal.BuildPlan
 import Staversion.Internal.BuildPlan.Hackage (fetchPreferredVersions, latestVersion)
 import Staversion.Internal.BuildPlan.Stackage
   ( fetchDisambiguator,
-    fetchBuildPlanYAML,
     PartialResolver(..), ExactResolver(..),
     parseResolverString
   )
+import qualified Staversion.Internal.BuildPlan.V1 as V1
 import Staversion.Internal.Command (Command(..), defFormatConfig)
 import Staversion.Internal.Exec (processCommand)
 import Staversion.Internal.Log (defaultLogger, Logger(loggerThreshold))
@@ -55,10 +55,10 @@ spec_Stackage = describe "BuildPlan.Stackage" $ beforeAll makeManager $ do
           Nothing -> expectationFailure "Unexpected disambiguation error."
   describe "fetchBuildPlanYAML" $ do
     it "fetches a LTS build plan" $ \man -> do
-      raw_yaml <- fetchBuildPlanYAML man (ExactLTS 2 22)
+      raw_yaml <- V1.fetchBuildPlanYAML man (ExactLTS 2 22)
       BSL.length raw_yaml `shouldSatisfy` (> 0)
     it "fetchces a nightly build plan" $ \man -> do
-      raw_yaml <- fetchBuildPlanYAML man (ExactNightly 2016 10 20)
+      raw_yaml <- V1.fetchBuildPlanYAML man (ExactNightly 2016 10 20)
       BSL.length raw_yaml `shouldSatisfy` (> 0)
 
 makeManager :: IO Manager
