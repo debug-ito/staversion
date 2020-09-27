@@ -9,7 +9,6 @@ import Staversion.Internal.Log (defaultLogger, loggerThreshold)
 import Staversion.Internal.Query (PackageName, PackageSource(..))
 import Staversion.Internal.BuildPlan
   ( BuildPlanMap, 
-    loadBuildPlanMapYAML, 
     packageVersion,
     BuildPlanManager,
     newBuildPlanManager,
@@ -17,6 +16,7 @@ import Staversion.Internal.BuildPlan
     loadBuildPlan,
     buildPlanSource
   )
+import Staversion.Internal.BuildPlan.V1 (loadBuildPlanMapYAML)
 import Staversion.Internal.Version (Version)
 
 import Staversion.Internal.TestUtil (ver)

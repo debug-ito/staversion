@@ -16,7 +16,6 @@ module Staversion.Internal.BuildPlan
          loadBuildPlan,
          -- * Low-level APIs
          BuildPlanMap,
-         loadBuildPlanMapYAML,
          -- * For tests
          _setLTSDisambiguator
        ) where
@@ -25,9 +24,7 @@ import Control.Applicative (empty, (<$>), (<*>))
 import Control.Exception (throwIO, catchJust, IOException, catch)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad (mapM)
-import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.HashMap.Strict as HM
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
@@ -36,7 +33,6 @@ import Data.Semigroup (Semigroup)
 import Data.Text (Text, unpack)
 import Data.Traversable (Traversable(traverse))
 import Data.Word (Word)
-import qualified Data.Yaml as Yaml
 import System.FilePath ((</>), (<.>))
 import qualified System.IO.Error as IOE
 import Text.Read (readMaybe)
@@ -52,6 +48,10 @@ import Staversion.Internal.Query
  ( PackageName, PackageSource(..),
    ErrorMsg, Resolver
  )
+import Staversion.Internal.BuildPlan.BuildPlanMap
+  ( BuildPlanMap, HasVersions(..)
+  )
+import qualified Staversion.Internal.BuildPlan.BuildPlanMap as BPMap
 import Staversion.Internal.BuildPlan.Hackage
   ( RegisteredVersions, latestVersion,
     fetchPreferredVersions
@@ -61,45 +61,18 @@ import Staversion.Internal.BuildPlan.Stackage
     fetchDisambiguator,
     parseResolverString,
     formatExactResolverString,
-    PartialResolver(..), ExactResolver(..),
-    fetchBuildPlanYAML
+    PartialResolver(..), ExactResolver(..)
   )
+import Staversion.Internal.BuildPlan.V1 as V1
 import Staversion.Internal.StackConfig (StackConfig)
 import qualified Staversion.Internal.StackConfig as StackConfig
-import Staversion.Internal.BuildPlan.Version (unVersionJSON)
 import Staversion.Internal.Version (Version)
 
-
--- | A data structure that keeps a map between package names and their
--- versions.
-newtype BuildPlanMap = BuildPlanMap (HM.HashMap PackageName Version) deriving (Semigroup,Monoid)
-
-instance FromJSON BuildPlanMap where
-  parseJSON (Object object) = (\p1 p2 -> BuildPlanMap $ p1 <> p2) <$> core_packages <*> other_packages where
-    core_packages = parseSysInfo =<< (object .: "system-info")
-    parseSysInfo (Object o) = parseCorePackages =<< (o .: "core-packages")
-    parseSysInfo _ = empty
-    parseCorePackages (Object o) = traverse (\v -> unVersionJSON <$> parseJSON v) o
-    parseCorePackages _ = empty
-
-    other_packages = parsePackages =<< (object .: "packages")
-    parsePackages (Object o) = traverse parsePackageObject o
-    parsePackages _ = empty
-    parsePackageObject (Object o) = unVersionJSON <$> (o .: "version")
-    parsePackageObject _ = empty
-  parseJSON _ = empty
 
 -- | A 'BuildPlanMap' associated with its 'PackageSource'.
 data BuildPlan = BuildPlan { buildPlanMap :: BuildPlanMap,
                              buildPlanSource :: PackageSource
                            }
-
--- | Types that have mapping between 'PackageName' and 'Version'.
-class HasVersions t where
-  packageVersion :: t -> PackageName -> Maybe Version
-
-instance HasVersions BuildPlanMap where
-  packageVersion (BuildPlanMap bp_map) name = HM.lookup name bp_map
 
 instance HasVersions BuildPlan where
   packageVersion bp = packageVersion (buildPlanMap bp)
@@ -190,7 +163,7 @@ loadBuildPlan_stackageLocalFile man resolver = toEIO $ catchJust handleIOError d
   yaml_file = manBuildPlanDir man </> resolver <.> "yaml"
   doLoad = do
     logDebug (manLogger man) ("Read " ++ yaml_file ++ " for build plan.")
-    e_build_plan_map <- loadBuildPlanMapYAML yaml_file
+    e_build_plan_map <- V1.loadBuildPlanMapYAML yaml_file
     return $ makeBuildPlan <$> e_build_plan_map
   makeBuildPlan bp_map = BuildPlan { buildPlanMap = bp_map, buildPlanSource = SourceStackage resolver }
   handleIOError :: IOException -> Maybe ErrorMsg
@@ -222,23 +195,15 @@ loadBuildPlan_stackageNetwork :: BuildPlanManager -> ExactResolver -> EIO BuildP
 loadBuildPlan_stackageNetwork man e_resolver = do
   http_man <- httpManagerM man
   liftIO $ logDebug (manLogger man) ("Fetch build plan from network: resolver = " ++ show e_resolver)
-  yaml_data <- httpExceptionToEIO ("Downloading build plan failed: " ++ show e_resolver) $ liftIO $ fetchBuildPlanYAML http_man e_resolver
-  makeBuildPlan <$> (toEIO $ return $ parseBuildPlanMapYAML $ BSL.toStrict yaml_data)
+  yaml_data <- httpExceptionToEIO ("Downloading build plan failed: " ++ show e_resolver) $ liftIO $ V1.fetchBuildPlanYAML http_man e_resolver
+  makeBuildPlan <$> (toEIO $ return $ V1.parseBuildPlanMapYAML $ BSL.toStrict yaml_data)
   where
     makeBuildPlan bp_map = BuildPlan { buildPlanMap = bp_map,
                                        buildPlanSource = SourceStackage $ formatExactResolverString e_resolver
                                      }
 
-parseBuildPlanMapYAML :: BS.ByteString -> Either ErrorMsg BuildPlanMap
-parseBuildPlanMapYAML = either (Left . toErrorMsg) Right  . Yaml.decodeEither' where
-  toErrorMsg parse_exception = "Error while parsing BuildPlanMap YAML: " ++ show parse_exception
-
--- | Load a 'BuildPlanMap' from a file.
-loadBuildPlanMapYAML :: FilePath -> IO (Either ErrorMsg BuildPlanMap)
-loadBuildPlanMapYAML yaml_file = parseBuildPlanMapYAML <$> BS.readFile yaml_file where -- TODO: make it memory-efficient!
-
 registeredVersionToBuildPlanMap :: PackageName -> RegisteredVersions -> BuildPlanMap
-registeredVersionToBuildPlanMap name rvers = BuildPlanMap $ HM.fromList $ pairs where
+registeredVersionToBuildPlanMap name rvers = BPMap.fromList $ pairs where
   pairs = case latestVersion rvers of
     Nothing -> []
     Just v -> [(name, v)]

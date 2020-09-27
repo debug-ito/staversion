@@ -39,6 +39,7 @@ library
   default-extensions:   OverloadedStrings
   other-extensions:     CPP, DeriveDataTypeable, TupleSections
   exposed-modules:      Staversion.Internal.BuildPlan,
+                        Staversion.Internal.BuildPlan.BuildPlanMap,
                         Staversion.Internal.BuildPlan.Stackage,
                         Staversion.Internal.BuildPlan.Hackage,
                         Staversion.Internal.BuildPlan.Version,
