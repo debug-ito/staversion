@@ -51,7 +51,7 @@ packageVersion_spec = describe "packageVersion" $ do
 
 forBuildPlanMap :: String -> (IO BuildPlanMap -> Spec) -> Spec
 forBuildPlanMap build_plan_base testWith = describe build_plan_base (testWith loader) where
-  loader = either error return =<< loadBuildPlanMapYAML ("test" </> "data" </> build_plan_base <.> "yaml")
+  loader = either error return =<< loadBuildPlanMapYAML ("test" </> "data" </> "build_plan_v1" </> build_plan_base <.> "yaml")
 
 loadVersion :: PackageName -> IO BuildPlanMap -> IO (Maybe Version)
 loadVersion package_name loader = do
@@ -65,7 +65,7 @@ mockBuildPlanManager lts_major lts_minor = do
   _setLTSDisambiguator bp_man lts_major lts_minor
   return bp_man
   where
-    build_plan_dir = "test" </> "data"
+    build_plan_dir = "test" </> "data" </> "build_plan_v1"
     logger = defaultLogger { loggerThreshold = Nothing }
 
 loadBuildPlan_spec :: Spec

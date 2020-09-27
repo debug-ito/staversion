@@ -167,7 +167,7 @@ singleCase' src query checker = do
                         }
 
 baseCommand :: Command
-baseCommand = Command { commBuildPlanDir = "test" </> "data",
+baseCommand = Command { commBuildPlanDir = "test" </> "data" </> "build_plan_v1",
                         commLogger = defaultLogger { loggerThreshold = Nothing },
                         commSources = [],
                         commQueries = [],

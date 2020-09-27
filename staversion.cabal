@@ -10,11 +10,11 @@ category:               Development
 cabal-version:          >= 1.10
 build-type:             Simple
 extra-source-files:     README.md, ChangeLog.md,
-                        test/data/conpact_build_plan.yaml,
                         -- Cabal's wild-card (*) doesn't match periods (.)
-                        test/data/lts-7.0_conpact.yaml,
-                        test/data/lts-4.2.yaml,
-                        test/data/lts-2.22_conpact.yaml,
+                        test/data/build_plan_v1/conpact_build_plan.yaml,
+                        test/data/build_plan_v1/lts-7.0_conpact.yaml,
+                        test/data/build_plan_v1/lts-4.2.yaml,
+                        test/data/build_plan_v1/lts-2.22_conpact.yaml,
                         test/data/snapshots.json,
                         test/data/aeson_preferred.json,
                         test/data/doctest.cabal_test,
