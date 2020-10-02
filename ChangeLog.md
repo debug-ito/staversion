@@ -9,6 +9,7 @@
 * Test files of v1 snapshot YAML files are moved to `build_plan_v1` directory.
 * Add `BuildPlan.Core` module.
 * Add `Eq` and `Show` instances to `BuildPlanMap` type.
+* Add `textSatisfying` to `Megaparsec` module.
 
 
 ## 0.2.3.7  -- 2020-06-21

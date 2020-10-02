@@ -8,6 +8,7 @@
 module Staversion.Internal.Megaparsec
        ( module Text.Megaparsec,
          Parser,
+         textSatisfying,
 
 #if MIN_VERSION_megaparsec(7,0,0)
          anyChar,
@@ -20,8 +21,11 @@ module Staversion.Internal.Megaparsec
 #endif
        ) where
 
-import Text.Megaparsec
+import Control.Applicative (many)
 import Data.Text (Text)
+import qualified Data.Text as T
+import Text.Megaparsec
+
 
 #if MIN_VERSION_megaparsec(6,0,0)
 import Data.Text (pack, unpack)
@@ -63,3 +67,12 @@ anyChar :: Parser Char
 anyChar = anySingle
 
 #endif
+
+
+textSatisfying :: (Char -> Bool) -> Parser Text
+#if MIN_VERSION_megaparsec(6,0,0)
+textSatisfying p = takeWhileP Nothing p
+#else
+textSatisfying p = T.pack $ many $ satisfy p
+#endif
+
