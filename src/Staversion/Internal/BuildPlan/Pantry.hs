@@ -12,9 +12,12 @@ module Staversion.Internal.BuildPlan.Pantry
   ) where
 
 import Control.Monad (void)
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
+import Data.Aeson (FromJSON(..), Value(..))
 import Data.Monoid ((<>))
 import Data.Text (pack)
+import qualified Data.Yaml as Yaml
 
 import Staversion.Internal.BuildPlan.BuildPlanMap
   ( BuildPlanMap,
@@ -44,6 +47,9 @@ data PantryBuildPlanMap =
 instance HasVersions PantryBuildPlanMap where
   packageVersion pbp = packageVersion (pantryMap pbp)
 
+instance FromJSON PantryBuildPlanMap where
+  parseJSON = undefined -- TODO
+
 -- | Combine 'PantryBuildPlanMap' and 'CoreBuildPlanMap' to make a
 -- complete 'BuildPlanMap'.
 toBuildPlanMap :: CoreBuildPlanMap -> PantryBuildPlanMap -> Either String BuildPlanMap
@@ -56,8 +62,10 @@ toBuildPlanMap cbp pbp =
     pcv = pantryCompiler pbp
 
 -- | Parse a YAML document for a 'CoreBuildPlanMap'.
-parseBuildPlanMapYAML :: BSL.ByteString -> Either ErrorMsg CoreBuildPlanMap
-parseBuildPlanMapYAML = undefined -- TODO
+parseBuildPlanMapYAML :: BS.ByteString -> Either ErrorMsg PantryBuildPlanMap
+parseBuildPlanMapYAML = either (Left . toErrorMsg) Right . Yaml.decodeEither'
+  where
+    toErrorMsg e = "Error while parsing PantryBuildPlanMap: " ++ show e
 
 -- | Fetch a Pantry build plan file from the Web.
 fetchBuildPlanMapYAML :: Manager -> ExactResolver -> IO BSL.ByteString
