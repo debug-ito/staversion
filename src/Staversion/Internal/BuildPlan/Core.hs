@@ -16,11 +16,12 @@ module Staversion.Internal.BuildPlan.Core
   ) where
 
 import qualified Data.ByteString.Lazy as BSL
+import Data.Hashable (Hashable(..))
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text)
 
 import Staversion.Internal.HTTP (Manager)
-import Staversion.Internal.Version (Version)
+import Staversion.Internal.Version (Version, versionNumbers)
 import Staversion.Internal.BuildPlan.BuildPlanMap (BuildPlanMap,  HasVersions(..))
 
 -- | Name of a compiler
@@ -33,6 +34,12 @@ data Compiler =
     compilerVersion :: Version
   }
   deriving (Show,Eq,Ord)
+
+instance Hashable Compiler where
+  hashWithSalt s c =
+    s `hashWithSalt` (compilerName c) `hashWithSalt` hashable_version
+    where
+      hashable_version = versionNumbers $ compilerVersion c
 
 -- | Build plan of the core packages for a compiler.
 data CoreBuildPlan =
