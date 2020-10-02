@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 -- |
 -- Module: Staversion.Internal.BuildPlan.Core
 -- Description: Build plan of core packages (those bundled with a compiler)
@@ -8,6 +9,7 @@ module Staversion.Internal.BuildPlan.Core
   ( -- * Types
     CoreBuildPlanMap(..),
     Compiler(..),
+    CompilerVersion(..),
     CompilerName,
     -- * GHC
     ghcName,
@@ -19,6 +21,7 @@ import qualified Data.ByteString.Lazy as BSL
 import Data.Hashable (Hashable(..))
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text)
+import GHC.Generics (Generic)
 
 import Staversion.Internal.HTTP (Manager)
 import Staversion.Internal.Version (Version, versionNumbers)
@@ -27,19 +30,31 @@ import Staversion.Internal.BuildPlan.BuildPlanMap (BuildPlanMap,  HasVersions(..
 -- | Name of a compiler
 type CompilerName = Text
 
--- | A compiler version.
+-- | Version of a compiler
+data CompilerVersion =
+  CVHead -- ^ the HEAD version
+  | CVNumbered Version -- ^ a numbered version.
+  deriving (Show,Eq,Ord,Generic)
+
+instance Hashable CompilerVersion where
+  hashWithSalt s CVHead = hashWithSalt s ()
+  hashWithSalt s (CVNumbered v) = hashWithSalt s $ versionNumbers v
+
+-- | A compiler with an explicit version.
 data Compiler =
   Compiler
   { compilerName :: CompilerName,
-    compilerVersion :: Version
+    compilerVersion :: CompilerVersion
   }
-  deriving (Show,Eq,Ord)
+  deriving (Show,Eq,Ord,Generic)
 
-instance Hashable Compiler where
-  hashWithSalt s c =
-    s `hashWithSalt` (compilerName c) `hashWithSalt` hashable_version
-    where
-      hashable_version = versionNumbers $ compilerVersion c
+instance Hashable Compiler
+
+-- instance Hashable Compiler where
+--   hashWithSalt s c =
+--     s `hashWithSalt` (compilerName c) `hashWithSalt` hashable_version
+--     where
+--       hashable_version = versionNumbers $ compilerVersion c
 
 -- | Build plan of the core packages for a compiler.
 data CoreBuildPlanMap =
