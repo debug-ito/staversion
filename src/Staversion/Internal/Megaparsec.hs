@@ -26,6 +26,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Text.Megaparsec
 
+-----------------------------------------------------
 
 #if MIN_VERSION_megaparsec(6,0,0)
 import Data.Text (pack, unpack)
@@ -61,6 +62,8 @@ type Parser = Parsec Text
 
 #endif
 
+-----------------------------------------------------
+
 #if MIN_VERSION_megaparsec(7,0,0)
 
 anyChar :: Parser Char
@@ -68,6 +71,7 @@ anyChar = anySingle
 
 #endif
 
+-----------------------------------------------------
 
 textSatisfying :: (Char -> Bool) -> Parser Text
 #if MIN_VERSION_megaparsec(6,0,0)
