@@ -1,5 +1,5 @@
 name:                   staversion
-version:                0.2.3.7
+version:                0.2.4.0
 author:                 Toshio Ito <debug.ito@gmail.com>
 maintainer:             Toshio Ito <debug.ito@gmail.com>
 license:                BSD3
@@ -44,6 +44,7 @@ library
                         Staversion.Internal.BuildPlan.Hackage,
                         Staversion.Internal.BuildPlan.Version,
                         Staversion.Internal.BuildPlan.V1,
+                        Staversion.Internal.BuildPlan.Core,
                         Staversion.Internal.Query,
                         Staversion.Internal.Result,
                         Staversion.Internal.Cabal,

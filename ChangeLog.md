@@ -1,5 +1,16 @@
 # Revision history for staversion
 
+## 0.2.4.0  -- ?
+
+### Internal changes
+
+* `BuildPlanMap` is moved to a dedicated module.
+* Functions about v1 snapshot YAML files are moved to `V1` module.
+* Test files of v1 snapshot YAML files are moved to `build_plan_v1` directory.
+* Add `BuildPlan.Core` module.
+* Add `Eq` and `Show` instances to `BuildPlanMap` type.
+
+
 ## 0.2.3.7  -- 2020-06-21
 
 * Confirm test with `base-4.14.0.0`.
