@@ -7,7 +7,7 @@
 * `BuildPlanMap` is moved to a dedicated module.
 * Functions about v1 snapshot YAML files are moved to `V1` module.
 * Test files of v1 snapshot YAML files are moved to `build_plan_v1` directory.
-* Add `BuildPlan.Core` module.
+* Add `BuildPlan.Core` and `BuildPlan.Pantry` modules.
 * Add `Eq` and `Show` instances to `BuildPlanMap` type.
 * Add `textSatisfying` to `Megaparsec` module.
 

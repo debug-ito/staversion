@@ -45,6 +45,7 @@ library
                         Staversion.Internal.BuildPlan.Hackage,
                         Staversion.Internal.BuildPlan.Version,
                         Staversion.Internal.BuildPlan.V1,
+                        Staversion.Internal.BuildPlan.Pantry,
                         Staversion.Internal.BuildPlan.Core,
                         Staversion.Internal.Query,
                         Staversion.Internal.Result,
