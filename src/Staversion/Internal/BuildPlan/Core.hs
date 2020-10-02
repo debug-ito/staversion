@@ -35,7 +35,7 @@ import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
 import GHC.Generics (Generic)
 
-import Staversion.Internal.HTTP (Manager)
+import Staversion.Internal.HTTP (Manager, fetchURL)
 import Staversion.Internal.Query (PackageName)
 import Staversion.Internal.Version (Version, versionNumbers, mkVersion, parseVersionText)
 import Staversion.Internal.BuildPlan.BuildPlanMap (BuildPlanMap,  HasVersions(..))
@@ -134,5 +134,4 @@ parseGHCPkgVersions content =
 
 -- | Fetch the \"pkg_versions.txt\" from the Web.
 fetchGHCPkgVersions :: Manager -> IO BSL.ByteString
-fetchGHCPkgVersions = undefined -- TODO.
-
+fetchGHCPkgVersions man = fetchURL man "https://gitlab.haskell.org/bgamari/ghc-utils/-/raw/master/library-versions/pkg_versions.txt"

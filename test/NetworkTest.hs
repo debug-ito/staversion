@@ -3,6 +3,7 @@ module Main (main,spec) where
 import Control.Applicative ((<$>))
 import Control.Monad (forM_)
 import qualified Data.ByteString.Lazy as BSL
+import qualified Data.HashMap.Strict as HM
 import Data.Word (Word)
 import Network.HTTP.Client (newManager, Manager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
@@ -16,6 +17,17 @@ import Staversion.Internal.BuildPlan
     loadBuildPlan,
     packageVersion,
     buildPlanSource
+  )
+import Staversion.Internal.BuildPlan.BuildPlanMap
+  ( HasVersions(..)
+  )
+import Staversion.Internal.BuildPlan.Core
+  ( fetchGHCPkgVersions,
+    parseGHCPkgVersions,
+    ghcName,
+    mkCompilerVersion,
+    Compiler(..),
+    coreCompiler
   )
 import Staversion.Internal.BuildPlan.Hackage (fetchPreferredVersions, latestVersion)
 import Staversion.Internal.BuildPlan.Stackage
@@ -31,6 +43,7 @@ import Staversion.Internal.Query
  ( PackageSource(..), ErrorMsg, Query(..)
  )
 import Staversion.Internal.Result (Result(..), ResultBody'(..), ResultSource(..))
+import Staversion.Internal.Version (mkVersion)
 
 main :: IO ()
 main = hspec spec
@@ -41,6 +54,7 @@ spec = do
   spec_BuildPlan
   spec_Hackage
   spec_Exec
+  spec_GHCcore
 
 spec_Stackage:: Spec
 spec_Stackage = describe "BuildPlan.Stackage" $ beforeAll makeManager $ do
@@ -159,6 +173,17 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
        got_version `shouldSatisfy` (>= ver [4,9,0,0])
      body -> expectationFailure ("Unexpected body: " ++ show body)
     
-    
-    
-    
+spec_GHCcore :: Spec
+spec_GHCcore = describe "BuildPlan.Core" $ do
+  specify "fetchGHCPkgVersions" $ do
+    let ghc8 = Compiler ghcName $ mkCompilerVersion [8,8,1]
+    man <- makeManager
+    e_cbp <- fmap (fmap (HM.lookup ghc8) . parseGHCPkgVersions) $ fetchGHCPkgVersions man
+    case e_cbp of
+      Left e -> expectationFailure ("parse error: " ++ e)
+      Right Nothing -> expectationFailure ("CoreBuildPlan not found for " ++ show ghc8)
+      Right (Just cbp) -> do
+        coreCompiler cbp `shouldBe` ghc8
+        packageVersion cbp "base" `shouldBe` (Just $ mkVersion [4,13,0,0])
+        packageVersion cbp "ghc" `shouldBe` (Just $ mkVersion [8,8,1])
+        packageVersion cbp "foobar" `shouldBe` Nothing
