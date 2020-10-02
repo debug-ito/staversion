@@ -3,7 +3,9 @@
 -- Description: The legacy "version 1" of build plan YAML files
 -- Maintainer: Toshio Ito <debug.ito@gmail.com>
 --
--- 
+-- __This is an internal module. End-users should not use it.__
+--
+-- @since 0.2.4.0
 module Staversion.Internal.BuildPlan.V1
   ( fetchBuildPlanYAML,
     parseBuildPlanMapYAML,
