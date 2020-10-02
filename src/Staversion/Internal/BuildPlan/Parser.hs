@@ -5,7 +5,8 @@
 --
 -- __This is an internal module. End-users should not use it.__
 module Staversion.Internal.BuildPlan.Parser
-  ( parserVersion
+  ( parserVersion,
+    manyTillWithEnd
   ) where
 
 import Control.Applicative (optional)
@@ -24,3 +25,9 @@ parserVersion = do
   case parseVersionText vstr of
     Nothing -> fail ("Cannot parse to a version: " ++ unpack vstr)
     Just v -> return v
+
+manyTillWithEnd :: Parser a -> Parser end -> Parser ([a], end)
+manyTillWithEnd pa pe = do
+  as <- P.manyTill pa $ P.lookAhead pe
+  e <- pe
+  return (as, e)
