@@ -11,6 +11,8 @@ module Staversion.Internal.BuildPlan.Core
     Compiler(..),
     CompilerVersion(..),
     CompilerName,
+    -- * Versions
+    mkCompilerVersion,
     -- * GHC
     ghcName,
     parseGHCPkgVersions,
@@ -24,7 +26,7 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 
 import Staversion.Internal.HTTP (Manager)
-import Staversion.Internal.Version (Version, versionNumbers)
+import Staversion.Internal.Version (Version, versionNumbers, mkVersion)
 import Staversion.Internal.BuildPlan.BuildPlanMap (BuildPlanMap,  HasVersions(..))
 
 -- | Name of a compiler
@@ -35,6 +37,10 @@ data CompilerVersion =
   CVHead -- ^ the HEAD version
   | CVNumbered Version -- ^ a numbered version.
   deriving (Show,Eq,Ord,Generic)
+
+-- | Make a 'CVNumbered' "CompilerVersion".
+mkCompilerVersion :: [Int] -> CompilerVersion
+mkCompilerVersion = CVNumbered . mkVersion
 
 instance Hashable CompilerVersion where
   hashWithSalt s CVHead = hashWithSalt s ()
