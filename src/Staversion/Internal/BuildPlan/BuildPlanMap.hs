@@ -24,7 +24,7 @@ import Staversion.Internal.Version (Version)
 
 -- | A data structure that keeps a map between package names and their
 -- versions.
-newtype BuildPlanMap = BuildPlanMap (HM.HashMap PackageName Version) deriving (Semigroup,Monoid)
+newtype BuildPlanMap = BuildPlanMap (HM.HashMap PackageName Version) deriving (Semigroup,Monoid,Show,Eq)
 
 fromMap :: HM.HashMap PackageName Version -> BuildPlanMap
 fromMap = BuildPlanMap
