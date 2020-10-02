@@ -22,12 +22,14 @@ module Staversion.Internal.BuildPlan.Core
   ) where
 
 import qualified Data.ByteString.Lazy as BSL
+import Data.Foldable (foldlM)
 import Data.Hashable (Hashable(..))
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
 import Staversion.Internal.HTTP (Manager)
+import Staversion.Internal.Query (PackageName)
 import Staversion.Internal.Version (Version, versionNumbers, mkVersion)
 import Staversion.Internal.BuildPlan.BuildPlanMap (BuildPlanMap,  HasVersions(..))
 
@@ -58,12 +60,6 @@ data Compiler =
 
 instance Hashable Compiler
 
--- instance Hashable Compiler where
---   hashWithSalt s c =
---     s `hashWithSalt` (compilerName c) `hashWithSalt` hashable_version
---     where
---       hashable_version = versionNumbers $ compilerVersion c
-
 -- | Build plan of the core packages for a compiler.
 data CoreBuildPlanMap =
   CoreBuildPlanMap
@@ -79,9 +75,26 @@ instance HasVersions CoreBuildPlanMap where
 ghcName :: CompilerName
 ghcName = "ghc"
 
+type PkgVersions = HM.HashMap Compiler CoreBuildPlanMap
+
+addVersions :: Compiler -> [(PackageName, Version)] -> PkgVersions -> PkgVersions
+addVersions = undefined -- TODO
+
+parsePkgVersionsLine :: Text -> Either String (Compiler, [(PackageName, Version)])
+parsePkgVersionsLine = undefined -- TODO
+
 -- | Parse the \"pkg_versions.txt\" file for GHC core packages.
 parseGHCPkgVersions :: BSL.ByteString -> Either String (HM.HashMap Compiler CoreBuildPlanMap)
-parseGHCPkgVersions = undefined -- TODO.
+parseGHCPkgVersions content =
+  foldlM f HM.empty $ filter isWhiteLine $ map removeComment $ toLines content
+  where
+    toLines :: BSL.ByteString -> [Text]
+    toLines = undefined -- TODO
+    removeComment = undefined -- TODO
+    isWhiteLine = undefined -- TODO
+    f acc line = do
+      (c, vers) <- parsePkgVersionsLine line
+      return $ addVersions c vers acc
 
 -- | Fetch the \"pkg_versions.txt\" from the Web.
 fetchGHCPkgVersions :: Manager -> IO BSL.ByteString
