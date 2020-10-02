@@ -58,6 +58,7 @@ library
                         Staversion.Internal.Version,
                         Staversion.Internal.StackConfig
   other-modules:        Paths_staversion,
+                        Staversion.Internal.BuildPlan.Parser,
                         Staversion.Internal.HTTP,
                         Staversion.Internal.Megaparsec,
                         Staversion.Internal.EIO

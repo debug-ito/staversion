@@ -21,10 +21,10 @@ module Staversion.Internal.BuildPlan.Core
     fetchGHCPkgVersions
   ) where
 
+import Control.Applicative ((<|>), (<$>), some)
 import Control.Monad (void)
-import Control.Applicative ((<|>), (<$>), some, optional)
 import qualified Data.ByteString.Lazy as BSL
-import Data.Char (isSpace, isDigit)
+import Data.Char (isSpace)
 import Data.Foldable (foldlM)
 import Data.Hashable (Hashable(..))
 import qualified Data.HashMap.Strict as HM
@@ -37,8 +37,9 @@ import GHC.Generics (Generic)
 
 import Staversion.Internal.HTTP (Manager, fetchURL)
 import Staversion.Internal.Query (PackageName)
-import Staversion.Internal.Version (Version, versionNumbers, mkVersion, parseVersionText)
+import Staversion.Internal.Version (Version, versionNumbers, mkVersion)
 import Staversion.Internal.BuildPlan.BuildPlanMap (BuildPlanMap,  HasVersions(..))
+import Staversion.Internal.BuildPlan.Parser (parserVersion)
 import qualified Staversion.Internal.BuildPlan.BuildPlanMap as BuildPlanMap
 import qualified Staversion.Internal.Megaparsec as P
 
@@ -107,12 +108,6 @@ parsePkgVersionsLine input = mapError $ P.runParser parser "" input
     headVersion = do
       void $ P.string "HEAD"
       return CVHead
-    parserVersion = do
-      vstr <- P.textSatisfying (\c -> isDigit c || c == '.')
-      void $ optional $ P.char '*'
-      case parseVersionText vstr of
-        Nothing -> fail ("Cannot parse to a version: " ++ T.unpack vstr)
-        Just v -> return v
     parserPVer = do
       name <- P.textSatisfying (\c -> c /= '/')
       void $ P.char '/'
