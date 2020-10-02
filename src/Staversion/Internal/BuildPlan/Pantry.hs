@@ -11,8 +11,10 @@ module Staversion.Internal.BuildPlan.Pantry
     fetchBuildPlanMapYAML
   ) where
 
+import Control.Monad (void)
 import qualified Data.ByteString.Lazy as BSL
 import Data.Monoid ((<>))
+import Data.Text (pack)
 
 import Staversion.Internal.BuildPlan.BuildPlanMap
   ( BuildPlanMap,
@@ -22,9 +24,12 @@ import Staversion.Internal.BuildPlan.Core
   ( Compiler,
     CoreBuildPlanMap(..)
   )
+import Staversion.Internal.BuildPlan.Parser (parserVersion, manyTillWithEnd)
 import Staversion.Internal.BuildPlan.Stackage (ExactResolver(..))
+import qualified Staversion.Internal.Megaparsec as P
 import Staversion.Internal.HTTP (Manager)
-import Staversion.Internal.Query (ErrorMsg)
+import Staversion.Internal.Query (ErrorMsg, PackageName)
+import Staversion.Internal.Version (Version)
 
 -- | A build plan map loaded from a Pantry YAML file. This is not a
 -- complete 'BuildPlanMap', because it implicitly refers to
@@ -57,3 +62,15 @@ parseBuildPlanMapYAML = undefined -- TODO
 -- | Fetch a Pantry build plan file from the Web.
 fetchBuildPlanMapYAML :: Manager -> ExactResolver -> IO BSL.ByteString
 fetchBuildPlanMapYAML = undefined -- TODO
+
+parserPackage :: P.Parser () -- ^ Parser of a symbol that follows the packageName-version string.
+              -> P.Parser (PackageName, Version)
+parserPackage end = do
+  (pstr, ver) <- manyTillWithEnd P.anyChar versionAndEnd
+  return (pack pstr, ver)
+  where
+    versionAndEnd = do
+      void $ P.char '-'
+      v <- parserVersion
+      end
+      return v
