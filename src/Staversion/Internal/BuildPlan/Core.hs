@@ -6,7 +6,7 @@
 -- 
 module Staversion.Internal.BuildPlan.Core
   ( -- * Types
-    CoreBuildPlan(..),
+    CoreBuildPlanMap(..),
     Compiler(..),
     CompilerName,
     -- * GHC
@@ -42,22 +42,22 @@ instance Hashable Compiler where
       hashable_version = versionNumbers $ compilerVersion c
 
 -- | Build plan of the core packages for a compiler.
-data CoreBuildPlan =
-  CoreBuildPlan
-  { cbpCompiler :: Compiler,
-    cbpMap :: BuildPlanMap
+data CoreBuildPlanMap =
+  CoreBuildPlanMap
+  { coreCompiler :: Compiler,
+    coreMap :: BuildPlanMap
   }
   deriving (Show,Eq)
 
-instance HasVersions CoreBuildPlan where
-  packageVersion cbp = packageVersion $ cbpMap cbp
+instance HasVersions CoreBuildPlanMap where
+  packageVersion cbp = packageVersion $ coreMap cbp
 
 -- | Name of ghc.
 ghcName :: CompilerName
 ghcName = "ghc"
 
 -- | Parse the \"pkg_versions.txt\" file for GHC core packages.
-parseGHCPkgVersions :: BSL.ByteString -> Either String (HM.HashMap Compiler CoreBuildPlan)
+parseGHCPkgVersions :: BSL.ByteString -> Either String (HM.HashMap Compiler CoreBuildPlanMap)
 parseGHCPkgVersions = undefined -- TODO.
 
 -- | Fetch the \"pkg_versions.txt\" from the Web.
