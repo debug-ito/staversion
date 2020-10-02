@@ -77,6 +77,6 @@ textSatisfying :: (Char -> Bool) -> Parser Text
 #if MIN_VERSION_megaparsec(6,0,0)
 textSatisfying p = takeWhileP Nothing p
 #else
-textSatisfying p = T.pack $ many $ satisfy p
+textSatisfying p = fmap T.pack $ many $ satisfy p
 #endif
 
