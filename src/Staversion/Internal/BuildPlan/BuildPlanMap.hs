@@ -11,6 +11,7 @@ module Staversion.Internal.BuildPlan.BuildPlanMap
   ( BuildPlanMap,
     fromMap,
     fromList,
+    toList,
     HasVersions(..)
   ) where
 
@@ -33,6 +34,9 @@ fromMap = BuildPlanMap
 
 fromList :: [(PackageName, Version)] -> BuildPlanMap
 fromList = BuildPlanMap . HM.fromList
+
+toList :: BuildPlanMap -> [(PackageName, Version)]
+toList (BuildPlanMap m) = HM.toList m
 
 -- | Types that have mapping between 'PackageName' and 'Version'.
 class HasVersions t where
