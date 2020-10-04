@@ -6,29 +6,35 @@
 -- 
 module Staversion.Internal.BuildPlan.Pantry
   ( PantryBuildPlanMap,
+    PantryName,
     pantryCompiler,
+    pantryName,
     toBuildPlanMap,
     coresToBuildPlanMap,
     parseBuildPlanMapYAML,
     fetchBuildPlanMapYAML
   ) where
 
+import Control.Applicative ((<$>), (<*>), empty)
 import Control.Monad (void)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
-import Data.Aeson (FromJSON(..), Value(..))
+import Data.Aeson (FromJSON(..), Value(..), (.:))
+import qualified Data.Aeson.Types as Aeson
 import qualified Data.HashMap.Strict as HM
 import Data.Monoid ((<>))
-import Data.Text (pack)
+import Data.Text (pack, Text)
 import qualified Data.Yaml as Yaml
 
 import Staversion.Internal.BuildPlan.BuildPlanMap
   ( BuildPlanMap,
-    HasVersions(..)
+    HasVersions(..),
   )
+import qualified Staversion.Internal.BuildPlan.BuildPlanMap as BuildPlanMap
 import Staversion.Internal.BuildPlan.Core
-  ( Compiler,
-    CoreBuildPlanMap(..)
+  ( Compiler(..),
+    CoreBuildPlanMap(..),
+    CompilerVersion(..)
   )
 import Staversion.Internal.BuildPlan.Parser (parserVersion, manyTillWithEnd)
 import Staversion.Internal.BuildPlan.Stackage (ExactResolver(..))
@@ -37,13 +43,17 @@ import Staversion.Internal.HTTP (Manager)
 import Staversion.Internal.Query (ErrorMsg, PackageName)
 import Staversion.Internal.Version (Version)
 
+-- | Name of a pantry snapshot
+type PantryName = Text
+
 -- | A build plan map loaded from a Pantry YAML file. This is not a
 -- complete 'BuildPlanMap', because it implicitly refers to
 -- 'CoreBuildPlanMap'. That's why its data constructor is not
 -- exported.
 data PantryBuildPlanMap =
   PantryBuildPlanMap
-  { pantryCompiler :: Compiler,
+  { pantryName :: PantryName,
+    pantryCompiler :: Compiler,
     pantryMap :: BuildPlanMap
   }
 
@@ -51,7 +61,38 @@ instance HasVersions PantryBuildPlanMap where
   packageVersion pbp = packageVersion (pantryMap pbp)
 
 instance FromJSON PantryBuildPlanMap where
-  parseJSON = undefined -- TODO
+  parseJSON (Object o) =
+    PantryBuildPlanMap
+    <$> (o .: "name")
+    <*> fmap unPantryCompiler (o .: "compiler")
+    <*> fmap fromPantryPackageList (o .: "packages")
+  parseJSON _ = empty
+
+-- | Internal type to parse a package in Pantry YAML.
+newtype PantryPackage = PantryPackage { unPantryPackage :: (PackageName, Version) }
+  deriving (Show,Eq,Ord)
+
+fromPantryPackageList :: [PantryPackage] -> BuildPlanMap
+fromPantryPackageList = BuildPlanMap.fromList . map unPantryPackage
+
+instance FromJSON PantryPackage where
+  parseJSON (Object o) = fmap PantryPackage $ parsePText =<< (o .: "hackage")
+    where
+      parsePText :: Text -> Aeson.Parser (PackageName, Version)
+      parsePText t = either (fail . show) return $ P.runParser the_parser "" t
+      the_parser = parserPackage (void $ P.char '@')
+  parseJSON _ = empty
+
+-- | Internal type to parse a compiler in Pantry YAML.
+newtype PantryCompiler = PantryCompiler { unPantryCompiler :: Compiler }
+  deriving (Show,Eq,Ord)
+
+instance FromJSON PantryCompiler where
+  parseJSON (String s) = fmap toCompiler $ either (fail . show) return $ P.runParser the_parser "" s
+    where
+      the_parser = parserPackage (P.eof)
+      toCompiler (name, ver) = PantryCompiler $ Compiler name $ CVNumbered ver
+  parseJSON _ = empty
 
 -- | Combine 'PantryBuildPlanMap' and 'CoreBuildPlanMap' to make a
 -- complete 'BuildPlanMap'.

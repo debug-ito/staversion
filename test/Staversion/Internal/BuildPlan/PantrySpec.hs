@@ -18,7 +18,7 @@ import Staversion.Internal.BuildPlan.Core
 import Staversion.Internal.BuildPlan.Pantry
   ( PantryBuildPlanMap,
     parseBuildPlanMapYAML,
-    pantryCompiler,
+    pantryCompiler, pantryName,
     coresToBuildPlanMap
   )
 import Staversion.Internal.Query (PackageName)
@@ -36,6 +36,10 @@ spec = do
       pbp <- loadBuildPlan ("lts" </> "4" </> "2.yaml")
       pantryCompiler pbp `shouldBe` (Compiler "ghc" $ mkCompilerVersion [7,10,3])
     before (loadBuildPlan ("lts" </> "4" </> "2.yaml")) $ describe "PantryBP lts-4.2" $ do
+      specify "pantryCompiler" $ \pbp -> do
+        pantryCompiler pbp `shouldBe` (Compiler "ghc" $ mkCompilerVersion [7,10,3])
+      specify "pantryName" $ \pbp -> do
+        pantryName pbp `shouldBe` "lts-4.2"
       specPackage "wrap" (Just [0,0,0])
       specPackage "x509" (Just [1,6,3])
       specPackage "type-level-numbers" (Just [0,1,1,1])
