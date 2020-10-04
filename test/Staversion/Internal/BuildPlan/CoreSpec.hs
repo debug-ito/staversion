@@ -34,9 +34,7 @@ spec = do
       specGHCPlan CVHead "Cabal" (Just [3,3,0,0])
       specGHCPlan CVHead "ghc" (Just [8,11,0,20200324])
       specGHCPlan CVHead "Win32" (Just [2,6,1,0])
-
-      -- "rts" is included in pkg_versions.txt, but it's not exactly a Haskell package.
-      specGHCPlan (mkCompilerVersion [8,4,1]) "rts" Nothing
+      specGHCPlan (mkCompilerVersion [8,4,1]) "rts" (Just [1,0])
 
 specGHCAll :: Spec
 specGHCAll = do

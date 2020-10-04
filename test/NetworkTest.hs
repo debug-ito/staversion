@@ -9,7 +9,7 @@ import Network.HTTP.Client (newManager, Manager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Test.Hspec
 
-import Staversion.Internal.TestUtil (ver)
+import Staversion.Internal.TestUtil (ver, stablePList)
 
 
 import Staversion.Internal.BuildPlan
@@ -203,6 +203,6 @@ spec_buildPlans_resolver er = specify spec_name $ \(man, cores) -> do
   pbp <- (either fail return . Pantry.parseBuildPlanMapYAML . BSL.toStrict)
          =<< Pantry.fetchBuildPlanMapYAML man er
   pantry_bp <- either fail return $ Pantry.coresToBuildPlanMap cores pbp
-  BuildPlanMap.toList pantry_bp `shouldMatchList` BuildPlanMap.toList v1_bp
+  stablePList pantry_bp `shouldMatchList` stablePList v1_bp
   where
     spec_name = show er

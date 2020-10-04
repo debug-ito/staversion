@@ -5,7 +5,8 @@ module Staversion.Internal.TestUtil
          vthis,
          vors, vors',
          vint,
-         specPackage
+         specPackage,
+         stablePList
        ) where
 
 import Data.Maybe (fromJust)
@@ -13,8 +14,9 @@ import Data.Text (unpack)
 import Test.Hspec (specify, SpecWith, shouldBe)
 
 import Staversion.Internal.BuildPlan.BuildPlanMap
-  ( HasVersions(..)
+  ( HasVersions(..), BuildPlanMap
   )
+import qualified Staversion.Internal.BuildPlan.BuildPlanMap as BuildPlanMap
 import Staversion.Internal.Query ( PackageName
                                  )
 import Staversion.Internal.Result (ResultBody, ResultBody'(..))
@@ -59,4 +61,13 @@ specPackage :: HasVersions t => PackageName -> Maybe [Int] -> SpecWith t
 specPackage pname exp_vers = specify spec_name $ \t -> packageVersion t pname `shouldBe` (fmap V.mkVersion exp_vers)
   where
     spec_name = unpack pname ++ ", " ++ show exp_vers
-  
+
+-- | Extract list of versions of packages from BuildPlanMap, which are
+-- relatively stable between build plan formats (V1 and Pantry).
+--
+-- \"rts\" pseudo-package and \"Win32\" package are included in some
+-- build plans of specific format, but not in others.
+stablePList :: BuildPlanMap -> [(PackageName, Version)]
+stablePList = filter (not . isUnstablePackage) . BuildPlanMap.toList
+  where
+    isUnstablePackage (pname, _) = pname == "rts" || pname == "Win32"

@@ -26,7 +26,7 @@ import qualified Staversion.Internal.BuildPlan.V1 as V1
 import Staversion.Internal.Query (PackageName)
 import Staversion.Internal.Version (mkVersion)
 
-import Staversion.Internal.TestUtil (specPackage)
+import Staversion.Internal.TestUtil (specPackage, stablePList)
 
 main :: IO ()
 main = hspec spec
@@ -74,6 +74,6 @@ specV1Compatibility :: FilePath -> SpecWith BuildPlanMap
 specV1Compatibility exp_v1_resolver = do
   specify spec_name $ \pantry_bp -> do
     v1_bp <- either fail return =<< V1.loadBuildPlanMapYAML ("test" </> "data" </> "build_plan_v1" </> exp_v1_resolver <.> "yaml")
-    BuildPlanMap.toList pantry_bp `shouldMatchList` BuildPlanMap.toList v1_bp
+    stablePList pantry_bp `shouldMatchList` stablePList v1_bp
   where
     spec_name = exp_v1_resolver ++ ": V1 and Pantry should return the same BuildPlanMap"
