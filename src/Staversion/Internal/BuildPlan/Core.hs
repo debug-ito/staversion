@@ -9,6 +9,7 @@
 -- @since 0.2.4.0
 module Staversion.Internal.BuildPlan.Core
   ( -- * Types
+    CompilerCores,
     CoreBuildPlanMap(..),
     Compiler(..),
     CompilerVersion(..),
@@ -85,9 +86,10 @@ instance HasVersions CoreBuildPlanMap where
 ghcName :: CompilerName
 ghcName = "ghc"
 
-type PkgVersions = HM.HashMap Compiler CoreBuildPlanMap
+-- | Compilers and its corresponding core packages.
+type CompilerCores = HM.HashMap Compiler CoreBuildPlanMap
 
-addVersions :: Compiler -> [(PackageName, Version)] -> PkgVersions -> PkgVersions
+addVersions :: Compiler -> [(PackageName, Version)] -> CompilerCores -> CompilerCores
 addVersions c pkgs = HM.insertWith merge c inserted_cbp
   where
     inserted_cbp = CoreBuildPlanMap c $ BuildPlanMap.fromList pkgs
