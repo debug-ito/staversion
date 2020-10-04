@@ -6,7 +6,9 @@
 -- 
 module Staversion.Internal.BuildPlan.Pantry
   ( PantryBuildPlanMap,
+    pantryCompiler,
     toBuildPlanMap,
+    coresToBuildPlanMap,
     parseBuildPlanMapYAML,
     fetchBuildPlanMapYAML
   ) where
@@ -15,6 +17,7 @@ import Control.Monad (void)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import Data.Aeson (FromJSON(..), Value(..))
+import qualified Data.HashMap.Strict as HM
 import Data.Monoid ((<>))
 import Data.Text (pack)
 import qualified Data.Yaml as Yaml
@@ -60,6 +63,15 @@ toBuildPlanMap cbp pbp =
   where
     ccv = coreCompiler cbp
     pcv = pantryCompiler pbp
+
+-- | Select a 'CoreBuildPlanMap' from the given map to make a complete
+-- 'BuildPlanMap' from 'PantryBuildPlanMap'.
+coresToBuildPlanMap :: HM.HashMap Compiler CoreBuildPlanMap -> PantryBuildPlanMap -> Either String BuildPlanMap
+coresToBuildPlanMap cmap pbp = do
+  cbp <- maybe (Left ("No CoreBuildPlanMap for compiler " ++ show compiler)) Right $ HM.lookup compiler cmap
+  toBuildPlanMap cbp pbp
+  where
+    compiler = pantryCompiler pbp
 
 -- | Parse a YAML document for a 'CoreBuildPlanMap'.
 parseBuildPlanMapYAML :: BS.ByteString -> Either ErrorMsg PantryBuildPlanMap
