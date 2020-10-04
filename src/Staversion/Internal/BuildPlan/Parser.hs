@@ -28,6 +28,6 @@ parserVersion = do
 
 manyTillWithEnd :: Parser a -> Parser end -> Parser ([a], end)
 manyTillWithEnd pa pe = do
-  as <- P.manyTill pa $ P.lookAhead pe
+  as <- P.manyTill pa $ P.lookAhead $ P.try pe
   e <- pe
   return (as, e)
