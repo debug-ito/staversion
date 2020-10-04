@@ -32,9 +32,6 @@ main = hspec spec
 spec :: Spec
 spec = do
   describe "parseBuildPlanMapYAML" $ do
-    specify "pantryCompiler" $ do
-      pbp <- loadBuildPlan ("lts" </> "4" </> "2.yaml")
-      pantryCompiler pbp `shouldBe` (Compiler "ghc" $ mkCompilerVersion [7,10,3])
     before (loadBuildPlan ("lts" </> "4" </> "2.yaml")) $ describe "PantryBP lts-4.2" $ do
       specify "pantryCompiler" $ \pbp -> do
         pantryCompiler pbp `shouldBe` (Compiler "ghc" $ mkCompilerVersion [7,10,3])
