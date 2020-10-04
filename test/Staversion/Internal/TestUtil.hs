@@ -4,10 +4,17 @@ module Staversion.Internal.TestUtil
          vor,
          vthis,
          vors, vors',
-         vint
+         vint,
+         specPackage
        ) where
 
 import Data.Maybe (fromJust)
+import Data.Text (unpack)
+import Test.Hspec (specify, SpecWith, shouldBe)
+
+import Staversion.Internal.BuildPlan.BuildPlanMap
+  ( HasVersions(..)
+  )
 import Staversion.Internal.Query ( PackageName
                                  )
 import Staversion.Internal.Result (ResultBody, ResultBody'(..))
@@ -48,3 +55,8 @@ vint :: [Int] -> [Int] ->V.VersionRange
 vint vl vu = V.fromVersionIntervals $ V.mkVersionIntervals [interval] where
   interval = (V.LowerBound (ver vl) V.InclusiveBound, V.UpperBound (ver vu) V.ExclusiveBound)
 
+specPackage :: HasVersions t => PackageName -> Maybe [Int] -> SpecWith t
+specPackage pname exp_vers = specify spec_name $ \t -> packageVersion t pname `shouldBe` (fmap V.mkVersion exp_vers)
+  where
+    spec_name = unpack pname ++ ", " ++ show exp_vers
+  
