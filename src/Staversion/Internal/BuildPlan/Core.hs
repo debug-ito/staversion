@@ -125,7 +125,8 @@ parseGHCPkgVersions content =
     isWhiteLine = T.all isSpace
     f acc line = do
       (c, vers) <- parsePkgVersionsLine line
-      return $ addVersions c vers acc
+      return $ addVersions c (filter (not . isPseudoPackage) vers) acc
+    isPseudoPackage (pname, _) = pname == "rts"
 
 -- | Fetch the \"pkg_versions.txt\" from the Web.
 fetchGHCPkgVersions :: Manager -> IO BSL.ByteString

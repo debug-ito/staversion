@@ -4,11 +4,12 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import Data.Monoid ((<>))
 import Data.Text (unpack)
-import System.FilePath ((</>))
+import System.FilePath ((</>), (<.>))
 import Test.Hspec
 
 import Staversion.Internal.BuildPlan.BuildPlanMap
   (HasVersions(..), BuildPlanMap)
+import qualified Staversion.Internal.BuildPlan.BuildPlanMap as BuildPlanMap
 import Staversion.Internal.BuildPlan.Core
   ( Compiler(..),
     mkCompilerVersion,
@@ -21,6 +22,7 @@ import Staversion.Internal.BuildPlan.Pantry
     pantryCompiler, pantryName,
     coresToBuildPlanMap
   )
+import qualified Staversion.Internal.BuildPlan.V1 as V1
 import Staversion.Internal.Query (PackageName)
 import Staversion.Internal.Version (mkVersion)
 
@@ -50,6 +52,7 @@ spec = do
       specPackage "fooooobar" (Nothing)
       specPackage "base" (Just [4,8,2,0])
       specPackage "ghc" (Just [7,10,3])
+      specV1Compatibility "lts-4.2"
       
 loadBuildPlan :: FilePath -> IO PantryBuildPlanMap
 loadBuildPlan file_subpath = parseIO =<< BS.readFile filepath
@@ -66,3 +69,11 @@ loadCompleteBuildPlan filename = do
     pkg_versions = "test" </> "data" </> "build_plan_ghc" </> "pkg_versions.txt"
     loadCores = parseCoresIO =<< BSL.readFile pkg_versions
     parseCoresIO = either fail return . parseGHCPkgVersions
+
+specV1Compatibility :: FilePath -> SpecWith BuildPlanMap
+specV1Compatibility exp_v1_resolver = do
+  specify spec_name $ \pantry_bp -> do
+    v1_bp <- either fail return =<< V1.loadBuildPlanMapYAML ("test" </> "data" </> "build_plan_v1" </> exp_v1_resolver <.> "yaml")
+    BuildPlanMap.toList pantry_bp `shouldMatchList` BuildPlanMap.toList v1_bp
+  where
+    spec_name = exp_v1_resolver ++ ": V1 and Pantry should return the same BuildPlanMap"
