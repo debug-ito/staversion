@@ -39,7 +39,7 @@ import Staversion.Internal.BuildPlan.Core
 import Staversion.Internal.BuildPlan.Parser (parserVersion, manyTillWithEnd)
 import Staversion.Internal.BuildPlan.Stackage (ExactResolver(..))
 import qualified Staversion.Internal.Megaparsec as P
-import Staversion.Internal.HTTP (Manager)
+import Staversion.Internal.HTTP (Manager, fetchURL)
 import Staversion.Internal.Query (ErrorMsg, PackageName)
 import Staversion.Internal.Version (Version)
 
@@ -122,7 +122,13 @@ parseBuildPlanMapYAML = either (Left . toErrorMsg) Right . Yaml.decodeEither'
 
 -- | Fetch a Pantry build plan file from the Web.
 fetchBuildPlanMapYAML :: Manager -> ExactResolver -> IO BSL.ByteString
-fetchBuildPlanMapYAML = undefined -- TODO
+fetchBuildPlanMapYAML man er = fetchURL man url
+  where
+    url = "https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/" <> resolver_part
+    resolver_part =
+      case er of
+        ExactLTS major minor -> "lts/" ++ show major ++ "/" ++ show minor ++ ".yaml"
+        ExactNightly year month day -> "nightly/" ++ show year ++ "/" ++ show month ++ "/" ++ show day ++ ".yaml"
 
 parserPackage :: P.Parser () -- ^ Parser of a symbol that follows the packageName-version string.
               -> P.Parser (PackageName, Version)
