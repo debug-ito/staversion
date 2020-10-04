@@ -139,7 +139,7 @@ test-suite network-test
   -- other-extensions:     
   other-modules:        Staversion.Internal.TestUtil
   build-depends:        base, staversion, http-client, http-client-tls, bytestring, Cabal,
-                        unordered-containers,
+                        unordered-containers, text,
                         hspec
 
                         

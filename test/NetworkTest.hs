@@ -21,15 +21,18 @@ import Staversion.Internal.BuildPlan
 import Staversion.Internal.BuildPlan.BuildPlanMap
   ( HasVersions(..)
   )
+import qualified Staversion.Internal.BuildPlan.BuildPlanMap as BuildPlanMap
 import Staversion.Internal.BuildPlan.Core
   ( fetchGHCPkgVersions,
     parseGHCPkgVersions,
     ghcName,
     mkCompilerVersion,
     Compiler(..),
-    coreCompiler
+    coreCompiler,
+    CompilerCores
   )
 import Staversion.Internal.BuildPlan.Hackage (fetchPreferredVersions, latestVersion)
+import qualified Staversion.Internal.BuildPlan.Pantry as Pantry
 import Staversion.Internal.BuildPlan.Stackage
   ( fetchDisambiguator,
     PartialResolver(..), ExactResolver(..),
@@ -55,6 +58,7 @@ spec = do
   spec_Hackage
   spec_Exec
   spec_GHCcore
+  spec_buildPlans
 
 spec_Stackage:: Spec
 spec_Stackage = describe "BuildPlan.Stackage" $ beforeAll makeManager $ do
@@ -67,13 +71,6 @@ spec_Stackage = describe "BuildPlan.Stackage" $ beforeAll makeManager $ do
          case dis (PartialLTSMajor major) of
           Just eresolver -> (PartialExact eresolver) `shouldBeAboveLTSMinorResolver` (major,minor_min)
           Nothing -> expectationFailure "Unexpected disambiguation error."
-  describe "fetchBuildPlanYAML" $ do
-    it "fetches a LTS build plan" $ \man -> do
-      raw_yaml <- V1.fetchBuildPlanYAML man (ExactLTS 2 22)
-      BSL.length raw_yaml `shouldSatisfy` (> 0)
-    it "fetchces a nightly build plan" $ \man -> do
-      raw_yaml <- V1.fetchBuildPlanYAML man (ExactNightly 2016 10 20)
-      BSL.length raw_yaml `shouldSatisfy` (> 0)
 
 makeManager :: IO Manager
 makeManager = newManager tlsManagerSettings
@@ -187,3 +184,25 @@ spec_GHCcore = describe "BuildPlan.Core" $ do
         packageVersion cbp "base" `shouldBe` (Just $ mkVersion [4,13,0,0])
         packageVersion cbp "ghc" `shouldBe` (Just $ mkVersion [8,8,1])
         packageVersion cbp "foobar" `shouldBe` Nothing
+
+spec_buildPlans :: Spec
+spec_buildPlans = do
+  beforeAll setup $ describe "fetchBuildPlanYAML (V1, Pantry)" $ do
+    spec_buildPlans_resolver $ ExactLTS 2 22
+    spec_buildPlans_resolver $ ExactNightly 2016 11 9
+  where
+    setup = do
+      man <- makeManager
+      cores <- (either fail return . parseGHCPkgVersions) =<< fetchGHCPkgVersions man
+      return (man, cores)
+
+spec_buildPlans_resolver :: ExactResolver -> SpecWith (Manager, CompilerCores)
+spec_buildPlans_resolver er = specify spec_name $ \(man, cores) -> do
+  v1_bp <- (either fail return . V1.parseBuildPlanMapYAML . BSL.toStrict)
+           =<< V1.fetchBuildPlanYAML man er
+  pbp <- (either fail return . Pantry.parseBuildPlanMapYAML . BSL.toStrict)
+         =<< Pantry.fetchBuildPlanMapYAML man er
+  pantry_bp <- either fail return $ Pantry.coresToBuildPlanMap cores pbp
+  BuildPlanMap.toList pantry_bp `shouldMatchList` BuildPlanMap.toList v1_bp
+  where
+    spec_name = show er
