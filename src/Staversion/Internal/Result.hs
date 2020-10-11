@@ -10,6 +10,7 @@ module Staversion.Internal.Result
          resultSourceDesc,
          ResultBody,
          ResultBody'(..),
+         resultPackages,
          AggregatedResult(..),
          singletonResult
        ) where
@@ -70,3 +71,11 @@ singletonResult ret = AggregatedResult { aggResultIn = (resultIn ret :| []),
                                          aggResultFor = resultFor ret,
                                          aggResultBody = (fmap . fmap . fmap) thisVersion $ resultBody ret
                                        }
+
+-- | Get package names and corresponding values from 'ResultBody'',
+-- regardless of its internal structure.
+--
+-- @since 0.2.4.0
+resultPackages :: ResultBody' a -> [(PackageName, a)]
+resultPackages (SimpleResultBody p a) = [(p, a)]
+resultPackages (CabalResultBody _ _ pairs) = pairs

@@ -10,6 +10,7 @@
 * Add `BuildPlan.Core` and `BuildPlan.Pantry` modules.
 * Add `Eq` and `Show` instances to `BuildPlanMap` type.
 * Add `textSatisfying` to `Megaparsec` module.
+* Add `resultPackages` function to `Result` module.
 
 
 ## 0.2.3.7  -- 2020-06-21
