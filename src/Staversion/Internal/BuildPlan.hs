@@ -52,6 +52,8 @@ import Staversion.Internal.BuildPlan.BuildPlanMap
   ( BuildPlanMap, HasVersions(..)
   )
 import qualified Staversion.Internal.BuildPlan.BuildPlanMap as BPMap
+import Staversion.Internal.BuildPlan.Core (CompilerCores)
+import qualified Staversion.Internal.BuildPlan.Core as Core
 import Staversion.Internal.BuildPlan.Hackage
   ( RegisteredVersions, latestVersion,
     fetchPreferredVersions
@@ -90,6 +92,8 @@ data BuildPlanManager =
                      manDisambiguator :: IORef (Maybe Disambiguator),
                      -- ^ (accessor function) cache of resolver
                      -- disambigutor
+                     manCores :: IORef (Maybe CompilerCores),
+                     -- ^ cache of compiler core packages.
                      manLogger :: Logger,
                      manStackConfig :: StackConfig
                      -- ^ (accessor function)
@@ -104,9 +108,11 @@ newBuildPlanManager plan_dir logger enable_network = do
           then Just <$> niceHTTPManager
           else return Nothing
   disam <- newIORef Nothing
+  cores <- newIORef Nothing
   return $ BuildPlanManager { manBuildPlanDir = plan_dir,
                               manHttpManager = mman,
                               manDisambiguator = disam,
+                              manCores = cores,
                               manLogger = logger,
                               manStackConfig = StackConfig.newStackConfig logger
                             }
@@ -118,6 +124,19 @@ httpExceptionToEIO :: String -> EIO a -> EIO a
 httpExceptionToEIO context action = toEIO $ (runEIO action) `catch` handler where
   handler :: OurHttpException -> IO (Either ErrorMsg a)
   handler e = return $ Left (context ++ ": " ++ show e)
+
+getCores :: BuildPlanManager -> EIO CompilerCores
+getCores man = do
+  mcores <- liftIO $ readIORef $ manCores man
+  case mcores of
+    Just c -> return c
+    Nothing -> do
+      http <- httpManagerM man
+      liftIO $ logDebug (manLogger man) "fetching GHC pkg_versions"
+      cores <- httpExceptionToEIO "Failed to fetch GHC pkg_versions"
+               $ toEIO $ fmap Core.parseGHCPkgVersions $ Core.fetchGHCPkgVersions http
+      liftIO $ writeIORef (manCores man) $ Just cores
+      return cores
 
 loadBuildPlan :: BuildPlanManager
               -> [PackageName]
