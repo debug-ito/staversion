@@ -18,10 +18,12 @@ module Staversion.Internal.Megaparsec
          module Text.Megaparsec.Char,
          string,
          string'
+#else
+         space1
 #endif
        ) where
 
-import Control.Applicative (many)
+import Control.Applicative (many, some)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Text.Megaparsec
@@ -80,3 +82,8 @@ textSatisfying p = takeWhileP Nothing p
 textSatisfying p = fmap T.pack $ many $ satisfy p
 #endif
 
+#if MIN_VERSION_megaparsec(6,0,0)
+#else
+space1 :: Parser ()
+space1 = skipSome spaceChar
+#endif
