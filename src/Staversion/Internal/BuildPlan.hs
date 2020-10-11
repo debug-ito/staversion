@@ -38,7 +38,7 @@ import qualified System.IO.Error as IOE
 import Text.Read (readMaybe)
 
 import Staversion.Internal.EIO
-  ( EIO, maybeToEIO, runEIO, toEIO, loggedElse
+  ( EIO, maybeToEIO, runEIO, toEIO, loggedElse, eitherToEIO
   )
 import Staversion.Internal.Log
   ( Logger, logDebug, logWarn
@@ -58,6 +58,7 @@ import Staversion.Internal.BuildPlan.Hackage
   ( RegisteredVersions, latestVersion,
     fetchPreferredVersions
   )
+import qualified Staversion.Internal.BuildPlan.Pantry as Pantry
 import Staversion.Internal.BuildPlan.Stackage
   ( Disambiguator,
     fetchDisambiguator,
@@ -212,15 +213,15 @@ tryDisambiguate bp_man presolver = impl where
   
 loadBuildPlan_stackageNetwork :: BuildPlanManager -> ExactResolver -> EIO BuildPlan
 loadBuildPlan_stackageNetwork man e_resolver = do
+  cores <- getCores man
   http_man <- httpManagerM man
   liftIO $ logDebug (manLogger man) ("Fetch build plan from network: resolver = " ++ show e_resolver)
-  yaml_data <- httpExceptionToEIO ("Downloading build plan failed: " ++ show e_resolver) $ liftIO $ V1.fetchBuildPlanYAML http_man e_resolver
-  makeBuildPlan <$> (toEIO $ return $ V1.parseBuildPlanMapYAML $ BSL.toStrict yaml_data)
-  where
-    makeBuildPlan bp_map = BuildPlan { buildPlanMap = bp_map,
-                                       buildPlanSource = SourceStackage $ formatExactResolverString e_resolver
-                                     }
-
+  yaml_data <- httpExceptionToEIO ("Downloading build plan failed: " ++ show e_resolver)
+               $ liftIO $ Pantry.fetchBuildPlanMapYAML http_man e_resolver
+  bp_map <- eitherToEIO $ (Pantry.coresToBuildPlanMap cores) =<< (Pantry.parseBuildPlanMapYAML $ BSL.toStrict yaml_data)
+  return $ BuildPlan { buildPlanMap = bp_map,
+                       buildPlanSource = SourceStackage $ formatExactResolverString e_resolver
+                     }
 registeredVersionToBuildPlanMap :: PackageName -> RegisteredVersions -> BuildPlanMap
 registeredVersionToBuildPlanMap name rvers = BPMap.fromList $ pairs where
   pairs = case latestVersion rvers of
