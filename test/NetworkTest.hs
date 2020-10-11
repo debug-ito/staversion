@@ -45,7 +45,7 @@ import Staversion.Internal.Log (defaultLogger, Logger(loggerThreshold))
 import Staversion.Internal.Query
  ( PackageSource(..), ErrorMsg, Query(..)
  )
-import Staversion.Internal.Result (Result(..), ResultBody'(..), ResultSource(..))
+import Staversion.Internal.Result (Result(..), ResultBody'(..), ResultSource(..), resultPackages)
 import Staversion.Internal.Version (mkVersion)
 
 main :: IO ()
@@ -169,6 +169,19 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
        got_name `shouldBe` "base"
        got_version `shouldSatisfy` (>= ver [4,9,0,0])
      body -> expectationFailure ("Unexpected body: " ++ show body)
+  it "should search nightly resolver" $ do
+    let comm = Command { commBuildPlanDir = ".",
+                         commLogger = quietLogger,
+                         commSources = [SourceStackage "nightly"],
+                         commQueries = [QueryName "base"],
+                         commAllowNetwork = True,
+                         commAggregator = Nothing,
+                         commFormatConfig = defFormatConfig,
+                         commStackCommand = "stack"
+                       }
+    results <- processCommand comm
+    map (fmap (map fst . resultPackages) . resultBody) results
+      `shouldBe` [Right ["base"]]
     
 spec_GHCcore :: Spec
 spec_GHCcore = describe "BuildPlan.Core" $ do
