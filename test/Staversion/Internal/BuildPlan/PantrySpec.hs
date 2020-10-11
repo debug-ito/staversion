@@ -38,11 +38,20 @@ spec = do
       specify "pantryCompiler" $ \pbp -> do
         pantryCompiler pbp `shouldBe` (Compiler "ghc" $ mkCompilerVersion [7,10,3])
       specify "pantryName" $ \pbp -> do
-        pantryName pbp `shouldBe` "lts-4.2"
+        pantryName pbp `shouldBe` Just "lts-4.2"
       specPackage "wrap" (Just [0,0,0])
       specPackage "x509" (Just [1,6,3])
       specPackage "type-level-numbers" (Just [0,1,1,1])
       specPackage "fooooobar" (Nothing)
+      specPackage "base" (Nothing)
+      specPackage "ghc" (Nothing)
+    before (loadBuildPlan ("lts" </> "15" </> "3.yaml")) $ describe "PantryBP lts-15.3" $ do
+      specify "pantryCompiler" $ \pbp -> do
+        pantryCompiler pbp `shouldBe` (Compiler "ghc" $ mkCompilerVersion [8,8,2])
+      specify "pantryName" $ \pbp -> do
+        pantryName pbp `shouldBe` Nothing
+      specPackage "x509" (Just [1,7,5])
+      specPackage "type-level-numbers" (Just [0,1,1,1])
       specPackage "base" (Nothing)
       specPackage "ghc" (Nothing)
     before (loadCompleteBuildPlan ("lts" </> "4" </> "2.yaml")) $ describe "PantryBP lts-4.2 + Core" $ do

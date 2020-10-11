@@ -15,11 +15,11 @@ module Staversion.Internal.BuildPlan.Pantry
     fetchBuildPlanMapYAML
   ) where
 
-import Control.Applicative ((<$>), (<*>), empty)
+import Control.Applicative ((<$>), (<*>), empty, (<|>))
 import Control.Monad (void)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
-import Data.Aeson (FromJSON(..), Value(..), (.:))
+import Data.Aeson (FromJSON(..), Value(..), (.:), (.:!))
 import qualified Data.Aeson.Types as Aeson
 import qualified Data.HashMap.Strict as HM
 import Data.Monoid ((<>))
@@ -53,7 +53,7 @@ type PantryName = Text
 -- exported.
 data PantryBuildPlanMap =
   PantryBuildPlanMap
-  { pantryName :: PantryName,
+  { pantryName :: Maybe PantryName,
     pantryCompiler :: Compiler,
     pantryMap :: BuildPlanMap
   }
@@ -64,9 +64,14 @@ instance HasVersions PantryBuildPlanMap where
 instance FromJSON PantryBuildPlanMap where
   parseJSON (Object o) =
     PantryBuildPlanMap
-    <$> (o .: "name")
-    <*> fmap unPantryCompiler (o .: "compiler")
+    <$> (o .:! "name")
+    <*> fmap unPantryCompiler parserCompiler
     <*> fmap fromPantryPackageList (o .: "packages")
+    where
+      parserCompiler = (o .: "compiler") <|> parserResolverCompiler
+      parserResolverCompiler = do
+        res <- o .: "resolver"
+        res .: "compiler"
   parseJSON _ = empty
 
 -- | Internal type to parse a package in Pantry YAML.
