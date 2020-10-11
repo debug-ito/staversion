@@ -169,10 +169,10 @@ spec_Exec = describe "Exec" $ describe "processCommand" $ do
        got_name `shouldBe` "base"
        got_version `shouldSatisfy` (>= ver [4,9,0,0])
      body -> expectationFailure ("Unexpected body: " ++ show body)
-  it "should search nightly resolver" $ do
+  it "should search a stackage resolver with Pantry format only" $ do
     let comm = Command { commBuildPlanDir = ".",
                          commLogger = quietLogger,
-                         commSources = [SourceStackage "nightly"],
+                         commSources = [SourceStackage "lts-16.11"],
                          commQueries = [QueryName "base"],
                          commAllowNetwork = True,
                          commAggregator = Nothing,
