@@ -34,7 +34,8 @@ import qualified Staversion.Internal.BuildPlan.BuildPlanMap as BuildPlanMap
 import Staversion.Internal.BuildPlan.Core
   ( Compiler(..),
     CoreBuildPlanMap(..),
-    CompilerVersion(..)
+    CompilerVersion(..),
+    CompilerCores
   )
 import Staversion.Internal.BuildPlan.Parser (parserVersion, manyTillWithEnd)
 import Staversion.Internal.BuildPlan.Stackage (ExactResolver(..))
@@ -107,7 +108,7 @@ toBuildPlanMap cbp pbp =
 
 -- | Select a 'CoreBuildPlanMap' from the given map to make a complete
 -- 'BuildPlanMap' from 'PantryBuildPlanMap'.
-coresToBuildPlanMap :: HM.HashMap Compiler CoreBuildPlanMap -> PantryBuildPlanMap -> Either String BuildPlanMap
+coresToBuildPlanMap :: CompilerCores -> PantryBuildPlanMap -> Either String BuildPlanMap
 coresToBuildPlanMap cmap pbp = do
   cbp <- maybe (Left ("No CoreBuildPlanMap for compiler " ++ show compiler)) Right $ HM.lookup compiler cmap
   toBuildPlanMap cbp pbp
