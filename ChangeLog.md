@@ -2,6 +2,9 @@
 
 ## 0.2.4.0  -- ?
 
+* Now staversion supports fetching and parsing build plan YAML files of the "Pantry" format (Fix #6).
+  * Note that it still parses YAML files stored in the local storage in the old "V1" format.
+
 ### Internal changes
 
 * `BuildPlanMap` is moved to a dedicated module.
