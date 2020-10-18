@@ -11,6 +11,7 @@
 * Add `Eq` and `Show` instances to `BuildPlanMap` type.
 * Add `textSatisfying` to `Megaparsec` module.
 * Add `resultPackages` function to `Result` module.
+* Confirm test with `megaparsec-9.0.0`
 
 
 ## 0.2.3.7  -- 2020-06-21
