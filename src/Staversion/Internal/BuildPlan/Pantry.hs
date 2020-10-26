@@ -3,7 +3,9 @@
 -- Description: Pantry YAML format of build plan
 -- Maintainer: Toshio Ito <debug.ito@gmail.com>
 --
--- 
+-- __This is an internal module. End-users should not use it.__
+--
+-- @since 0.2.4.0
 module Staversion.Internal.BuildPlan.Pantry
   ( PantryBuildPlanMap,
     PantryName,
