@@ -1,5 +1,5 @@
 name:                   staversion
-version:                0.2.4.0
+version:                0.2.4.1
 author:                 Toshio Ito <debug.ito@gmail.com>
 maintainer:             Toshio Ito <debug.ito@gmail.com>
 license:                BSD3
@@ -64,7 +64,7 @@ library
                         Staversion.Internal.HTTP,
                         Staversion.Internal.Megaparsec,
                         Staversion.Internal.EIO
-  build-depends:        base >=4.8 && <4.15,
+  build-depends:        base >=4.8 && <4.16,
                         unordered-containers >=0.2.3 && <0.3,
                         hashable >=1.2.6.1 && <1.4,
                         aeson >=0.8.0 && <1.6,
@@ -82,7 +82,7 @@ library
                         transformers-compat >=0.4.0 && <0.7,
                         megaparsec >=4.2.0 && <9.1,
                         semigroups >=0.18.0.1 && <0.20,
-                        Cabal >=1.22.6.0 && <3.3,
+                        Cabal >=1.22.6.0 && <3.5,
                         pretty >=1.1.2.0 && <1.2,
                         ansi-wl-pprint >=0.6.7.3 && <0.7,
                         process >=1.2.3.0 && <1.7
