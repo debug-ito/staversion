@@ -118,6 +118,7 @@ test-suite spec
                         Staversion.Internal.AggregateSpec,
                         Staversion.Internal.CommandSpec,
                         Staversion.Internal.TestUtil
+  build-tool-depends:   hspec-discover:hspec-discover
   build-depends:        base, staversion, text, filepath, bytestring,
                         Cabal, semigroups, unordered-containers,
                         hspec >=2.1.7,
