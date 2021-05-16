@@ -1,4 +1,7 @@
 module Main
        (main) where
 
-import Staversion.Internal.Exec (main)
+import qualified Staversion.Internal.Exec as E
+
+main :: IO ()
+main = E.main
