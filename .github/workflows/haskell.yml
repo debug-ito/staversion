@@ -1,46 +1,73 @@
 name: Haskell CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - $default-branch
+      - ci-*
+  pull_request:
+    branches:
+      - $default-branch
+      - ci-*
 
 jobs:
   stack:
+    name: Stack GHC ${{ matrix.plan.ghc }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macOS-latest]
+        os: [ubuntu-latest]
         plan:
+          - ghc: '9.4.4'
+            resolver: 'nightly-2023-03-10'
+            allow-fail: false
+            flags: ''
+          - ghc: '9.2.7'
+            resolver: 'lts-20.13'
+          - ghc: '9.0.2'
+            resolver: 'lts-19.33'
+          - ghc: '8.10.7'
+            resolver: 'lts-18.28'
+          - ghc: '8.8.4'
+            resolver: 'lts-16.31'
           - ghc: '8.6.5'
             resolver: 'lts-14.27'
+          - ghc: '8.4.4'
+            resolver: 'lts-12.26'
           - ghc: '8.2.2'
             resolver: 'lts-11.22'
           - ghc: '8.0.2'
             resolver: 'lts-9.21'
-            
+
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.plan.allow-fail == true }}
     env:
       STACK: stack --no-terminal --system-ghc --resolver ${{ matrix.plan.resolver }}
-      FLAGS: ${{ matrix.flags }}
+      FLAGS: ${{ matrix.plan.flags }}
 
     steps:
-    - uses: actions/checkout@v2
-      
-    - uses: haskell/actions/setup@v1
+    - uses: actions/checkout@v3
+
+    - uses: haskell/actions/setup@v2
       id: cabal-setup-haskell
       with:
         ghc-version: ${{ matrix.plan.ghc }}
         enable-stack: true
 
-    - uses: actions/cache@v2
-      ## Looks like caching in macOS causes weird failures in the steps later.
-      if: runner.os != 'macOS'
+    - name: Get stack version
+      run: |
+        STACK_VERSION=$(stack --numeric-version)
+        echo "STACK_VERSION=${STACK_VERSION}" >> "${GITHUB_ENV}"
+
+    - uses: actions/cache@v3
       with:
         path: ~/.stack
-        key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml') }}-${{ matrix.plan.resolver }}
-    
+        key: ${{ runner.os }}-stack-${{ env.STACK_VERSION }}-ghc-${{ matrix.plan.ghc }}-resolver-${{ matrix.plan.resolver }}
+
     - name: Configure
       run: |
         set -ex
+        echo "resolver: ${{ matrix.plan.resolver }}" > stack.yaml
         rm -f stack.yaml.lock
         $STACK clean
 
@@ -53,40 +80,56 @@ jobs:
 
 
   cabal:
+    name: Cabal GHC ${{ matrix.plan.ghc }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macOS-latest]
+        os: [ubuntu-latest]
         plan:
-          - ghc: latest
+          - ghc: '9.6.1'
             allow-fail: true
+          - ghc: '9.4'
+          - ghc: '9.2'
+          - ghc: '9.0'
           - ghc: '8.10'
+          - ghc: '8.8'
+          - ghc: '8.6'
+          - ghc: '8.4'
+          - ghc: '8.2'
+          - ghc: '8.0'
 
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.plan.allow-fail == true }}
 
     steps:
-    - uses: actions/checkout@v2
-      
-    - uses: haskell/actions/setup@v1
+    - uses: actions/checkout@v3
+
+    - uses: haskell/actions/setup@v2
       id: cabal-setup-haskell
       with:
         ghc-version: ${{ matrix.plan.ghc }}
+        cabal-update: true
+
+    - name: Get GHC and cabal version
+      run: |
+        GHC_VERSION=$(ghc --numeric-version)
+        echo "GHC_VERSION=${GHC_VERSION}" >> "${GITHUB_ENV}"
+        CABAL_VERSION=$(cabal --numeric-version)
+        echo "CABAL_VERSION=${CABAL_VERSION}" >> "${GITHUB_ENV}"
 
     - name: Configure and freeze
       run: |
         set -ex
         rm -f cabal.project.freeze
-        cabal v2-update
         cabal v2-configure --enable-tests --enable-benchmarks --test-show-details streaming
         cabal v2-freeze
         test -f cabal.project.freeze
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ${{ steps.cabal-setup-haskell.outputs.cabal-store }}
-        key: ${{ runner.os }}-cabal-${{ hashFiles('cabal.project.freeze') }}
-        restore-keys: |
-          ${{ runner.os }}-cabal-
+        key:          ${{ runner.os }}-cabal-${{ env.CABAL_VERSION }}-ghc-${{ env.GHC_VERSION }}-freeze-${{ hashFiles('cabal.project.freeze') }}
+        restore-keys: ${{ runner.os }}-cabal-${{ env.CABAL_VERSION }}-ghc-${{ env.GHC_VERSION }}-
 
     - name: Install dependencies
       run: cabal v2-build --only-dependencies all
