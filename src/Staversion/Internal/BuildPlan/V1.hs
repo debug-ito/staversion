@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- |
 -- Module: Staversion.Internal.BuildPlan.V1
 -- Description: The legacy "version 1" of build plan YAML files
@@ -6,6 +7,7 @@
 -- __This is an internal module. End-users should not use it.__
 --
 -- @since 0.2.4.0
+
 module Staversion.Internal.BuildPlan.V1
   ( fetchBuildPlanYAML,
     parseBuildPlanMapYAML,
@@ -13,7 +15,12 @@ module Staversion.Internal.BuildPlan.V1
   ) where
 
 import Control.Applicative (empty)
+
 import Data.Aeson (FromJSON(..), (.:), Value(..), Object)
+#if MIN_VERSION_aeson(2,0,0)
+import Data.Aeson.KeyMap (toHashMapText)
+#endif
+
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.HashMap.Strict as HM
@@ -41,7 +48,9 @@ fetchBuildPlanYAML man resolver = fetchURL man url where
 newtype V1BuildPlanMap = V1BuildPlanMap (HM.HashMap PackageName Version) deriving (Show,Eq)
 
 instance FromJSON V1BuildPlanMap where
-  parseJSON (Object object) = (\p1 p2 -> V1BuildPlanMap $ p1 <> p2) <$> core_packages <*> other_packages where
+  parseJSON (Object object) =
+    (\p1 p2 -> V1BuildPlanMap $ toHashMapText p1 <> toHashMapText p2) <$> core_packages <*> other_packages
+    where
     core_packages = parseSysInfo =<< (object .: "system-info")
     parseSysInfo (Object o) = parseCorePackages =<< (o .: "core-packages")
     parseSysInfo _ = empty
@@ -53,6 +62,9 @@ instance FromJSON V1BuildPlanMap where
     parsePackages _ = empty
     parsePackageObject (Object o) = unVersionJSON <$> (o .: "version")
     parsePackageObject _ = empty
+#if !MIN_VERSION_aeson(2,0,0)
+    toHashMapText = id
+#endif
   parseJSON _ = empty
 
 toBuildPlanMap :: V1BuildPlanMap -> BuildPlanMap
