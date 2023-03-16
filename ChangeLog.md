@@ -1,6 +1,8 @@
 # Revision history for staversion
 
-## 0.2.4.2  -- ??
+## 0.2.4.2  -- 2023-03-16
+
+* Support Cabal >= 3.6 and aeson >= 2 (#10)
 
 ## 0.2.4.1  -- 2021-05-16
 
