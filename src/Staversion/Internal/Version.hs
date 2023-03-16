@@ -32,11 +32,24 @@ module Staversion.Internal.Version
 import Data.Maybe (listToMaybe, fromJust)
 import Data.Text (Text, unpack)
 
-import qualified Distribution.Version as V
 #if MIN_VERSION_Cabal(2,2,0)
-import qualified Distribution.Pretty as DP
+
+#if MIN_VERSION_Cabal(3,6,0)
+import qualified Distribution.Types.VersionInterval.Legacy as V
 #else
+import qualified Distribution.Types.VersionInterval as V
+#endif
+
+import qualified Distribution.Version as V (simplifyVersionRange)
+import qualified Distribution.Types.Version as V
+import qualified Distribution.Types.VersionRange as V
+import qualified Distribution.Pretty as DP
+
+#else
+
+import qualified Distribution.Version as V
 import qualified Distribution.Text as DT
+
 #endif
 
 import Data.Version (parseVersion)
@@ -75,7 +88,6 @@ versionNumbers :: V.Version -> [Int]
 versionNumbers = V.versionBranch
 
 #endif
-
 
 #if MIN_VERSION_Cabal(2,2,0)
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- |
 -- Module: Staversion.Internal.BuildPlan.Stackage
 -- Description: dealing with Stackage and build-plan repositories online.
@@ -7,6 +8,7 @@
 --
 -- This module is meant to be exposed only to
 -- "Staversion.Internal.BuildPlan" and test modules.
+
 module Staversion.Internal.BuildPlan.Stackage
        ( -- * High level API
          ExactResolver(..),
@@ -27,11 +29,16 @@ import Data.Aeson (FromJSON(..), Value(..))
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as BSL
 import Data.Function (on)
+#if MIN_VERSION_aeson(2,0,0)
+import Data.Aeson.Key (toString)
+import qualified Data.Aeson.KeyMap as HM
+#else
+import Data.Text (unpack)
 import qualified Data.HashMap.Strict as HM
+#endif
 import qualified Data.Map as M
 import Data.Maybe (listToMaybe)
 import Data.List (sortBy)
-import Data.Text (unpack)
 import Data.Word (Word)
 import Data.IORef (IORef)
 import System.IO.Error (ioError, userError)
@@ -99,12 +106,16 @@ fetchDisambiguator man = (return . toEither . parseDisambiguator) =<< fetchURL m
 newtype DisamMap = DisamMap { unDisamMap :: M.Map PartialResolver ExactResolver }
 
 instance FromJSON DisamMap where
-  parseJSON (Object o) = fmap (DisamMap . M.fromList) $ mapM parsePair $ HM.toList o where
+  parseJSON (Object o) = fmap (DisamMap . M.fromList) $ mapM parsePair $ HM.toList o
+    where
     parsePair (k,v) = (,) <$> parseKey k <*> parseValue v
-    parseKey key = maybe empty return $ parseResolverString $ unpack key
+    parseKey key = maybe empty return $ parseResolverString $ toString key
     parseValue v = (expectExact . parseResolverString) =<< parseJSON v
     expectExact (Just (PartialExact e)) = return e
     expectExact _ = empty
+#if !MIN_VERSION_aeson(2,0,0)
+    toString = unpack
+#endif
   parseJSON _ = empty
 
 parseDisambiguator :: BSL.ByteString -- ^ disambiguation JSON text.
