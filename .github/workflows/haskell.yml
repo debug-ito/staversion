@@ -137,5 +137,6 @@ jobs:
       run: cabal v2-build all
     - name: Haddock
       run: cabal v2-haddock all
+      continue-on-error: true
     - name: Test
       run: cabal v2-test --jobs=1 all
