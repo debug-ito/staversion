@@ -1,5 +1,7 @@
 # Revision history for staversion
 
+## 0.2.4.2  -- ??
+
 ## 0.2.4.1  -- 2021-05-16
 
 * Confirm test with `base-4.15.0.0` and `Cabal-3.4.0.0`.
