@@ -1,5 +1,9 @@
 # Revision history for staversion
 
+## 0.2.4.3  -- 2024-03-11
+
+* Support GHC 9.8 (#11)
+
 ## 0.2.4.2  -- 2023-03-16
 
 * Support Cabal >= 3.6 and aeson >= 2 (#10)
