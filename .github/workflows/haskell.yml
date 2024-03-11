@@ -18,12 +18,16 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         plan:
-          - ghc: '9.4.4'
-            resolver: 'nightly-2023-03-10'
+          - ghc: '9.8.2'
+            resolver: 'nightly-2024-03-08'
             allow-fail: false
             flags: ''
-          - ghc: '9.2.7'
-            resolver: 'lts-20.13'
+          - ghc: '9.6.4'
+            resolver: 'lts-22.12'
+          - ghc: '9.4.8'
+            resolver: 'lts-21.25'
+          - ghc: '9.2.8'
+            resolver: 'lts-20.26'
           - ghc: '9.0.2'
             resolver: 'lts-19.33'
           - ghc: '8.10.7'
@@ -36,8 +40,7 @@ jobs:
             resolver: 'lts-12.26'
           - ghc: '8.2.2'
             resolver: 'lts-11.22'
-          - ghc: '8.0.2'
-            resolver: 'lts-9.21'
+          # Stack 2.15 dropped support for GHC 8.0 and lower
 
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.plan.allow-fail == true }}
@@ -46,9 +49,9 @@ jobs:
       FLAGS: ${{ matrix.plan.flags }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - uses: haskell/actions/setup@v2
+    - uses: haskell-actions/setup@v2
       id: cabal-setup-haskell
       with:
         ghc-version: ${{ matrix.plan.ghc }}
@@ -59,7 +62,7 @@ jobs:
         STACK_VERSION=$(stack --numeric-version)
         echo "STACK_VERSION=${STACK_VERSION}" >> "${GITHUB_ENV}"
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       with:
         path: ~/.stack
         key: ${{ runner.os }}-stack-${{ env.STACK_VERSION }}-ghc-${{ matrix.plan.ghc }}-resolver-${{ matrix.plan.resolver }}
@@ -86,8 +89,9 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         plan:
-          - ghc: '9.6.1'
+          - ghc: '9.8'
             allow-fail: true
+          - ghc: '9.6'
           - ghc: '9.4'
           - ghc: '9.2'
           - ghc: '9.0'
@@ -102,20 +106,13 @@ jobs:
     continue-on-error: ${{ matrix.plan.allow-fail == true }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - uses: haskell/actions/setup@v2
+    - uses: haskell-actions/setup@v2
       id: cabal-setup-haskell
       with:
         ghc-version: ${{ matrix.plan.ghc }}
         cabal-update: true
-
-    - name: Get GHC and cabal version
-      run: |
-        GHC_VERSION=$(ghc --numeric-version)
-        echo "GHC_VERSION=${GHC_VERSION}" >> "${GITHUB_ENV}"
-        CABAL_VERSION=$(cabal --numeric-version)
-        echo "CABAL_VERSION=${CABAL_VERSION}" >> "${GITHUB_ENV}"
 
     - name: Configure and freeze
       run: |
@@ -125,11 +122,13 @@ jobs:
         cabal v2-freeze
         test -f cabal.project.freeze
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
+      env:
+        key: ${{ runner.os }}-cabal-${{ steps.cabal-setup-haskell.outputs.cabal-version }}-ghc-${{ steps.cabal-setup-haskell.outputs.ghc-version }}
       with:
         path: ${{ steps.cabal-setup-haskell.outputs.cabal-store }}
-        key:          ${{ runner.os }}-cabal-${{ env.CABAL_VERSION }}-ghc-${{ env.GHC_VERSION }}-freeze-${{ hashFiles('cabal.project.freeze') }}
-        restore-keys: ${{ runner.os }}-cabal-${{ env.CABAL_VERSION }}-ghc-${{ env.GHC_VERSION }}-
+        key:          ${{ env.key }}-freeze-${{ hashFiles('cabal.project.freeze') }}
+        restore-keys: ${{ env.key }}-
 
     - name: Install dependencies
       run: cabal v2-build --only-dependencies all
